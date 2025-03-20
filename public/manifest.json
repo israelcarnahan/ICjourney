@@ -1,0 +1,21 @@
+{
+  "name": "Israel's Journey Planner",
+  "short_name": "Journey Planner",
+  "description": "Optimize your field sales routes and territory management",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a0745",
+  "theme_color": "#1a0745",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

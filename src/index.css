@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-950 min-h-screen text-dark-100;
+    background-attachment: fixed;
+  }
+
+  .animated-border {
+    background: linear-gradient(90deg, theme(colors.neon.purple), theme(colors.neon.pink), theme(colors.neon.blue), theme(colors.neon.purple));
+    background-size: 200% 100%;
+    animation: border-gradient 12s linear infinite;
+    padding: 2px;
+    will-change: background-position;
+  }
+
+  .clip-path-half {
+    clip-path: polygon(0 0, 50% 0, 50% 100%, 0 100%);
+  }
+}
+
+/* Custom scrollbar styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thumb-eggplant-700::-webkit-scrollbar-thumb {
+  background-color: theme('colors.eggplant.700');
+  border-radius: theme('borderRadius.full');
+}
+
+.scrollbar-track-dark-900::-webkit-scrollbar-track {
+  background-color: theme('colors.dark.900');
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* Animation for dialog fade in/out */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+/* React DatePicker Custom Styles */
+.react-datepicker-wrapper {
+  @apply w-full;
+}
+
+.react-datepicker__input-container {
+  @apply w-full;
+}
+
+.react-datepicker__input-container input::placeholder {
+  @apply text-eggplant-400;
+}
+
+.react-datepicker {
+  @apply bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 border border-eggplant-700 rounded-lg shadow-lg !important;
+}
+
+.react-datepicker__header {
+  @apply bg-gradient-to-r from-eggplant-800/90 via-dark-800/95 to-eggplant-800/90 border-b border-eggplant-700 rounded-t-lg !important;
+}
+
+.react-datepicker__current-month,
+.react-datepicker__day-name {
+  @apply text-eggplant-100 !important;
+}
+
+.react-datepicker__day {
+  @apply text-eggplant-100 hover:bg-eggplant-700/50 rounded transition-colors !important;
+}
+
+.react-datepicker__day--selected {
+  @apply bg-gradient-to-r from-neon-purple via-neon-pink to-neon-blue text-white !important;
+}
+
+.react-datepicker__day--keyboard-selected {
+  @apply bg-gradient-to-r from-neon-purple/20 via-neon-pink/20 to-neon-blue/20 text-white !important;
+}
+
+.react-datepicker__day--outside-month {
+  @apply text-eggplant-500 !important;
+}
+
+.react-datepicker__navigation-icon::before {
+  @apply border-eggplant-100 !important;
+}
+
+.react-datepicker__navigation:hover *::before {
+  @apply border-neon-blue !important;
+}
+
+.date-picker-popper {
+  @apply z-50;
+}
+
+@keyframes sparkle {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1) rotate(180deg);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes border-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes wave {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 100px 0%; }
+}
+
+.animate-sparkle {
+  animation: sparkle 1s ease-in-out forwards;
+}
+
+@keyframes gradient-y {
+  0%, 100% {
+    background-size: 400% 400%;
+    background-position: center top;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: center center;
+  }
+}
+
+@keyframes gradient-x {
+  0%, 100% {
+    background-size: 200% 100%;
+    background-position: left center;
+  }
+  50% {
+    background-size: 200% 100%;
+    background-position: right center;
+  }
+}
+
+@keyframes gradient-xy {
+  0%, 100% {
+    background-size: 400% 400%;
+    background-position: left center;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
+
+@keyframes cursor-gradient {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(10px, 10px); }
+  100% { transform: translate(0, 0); }
+}
