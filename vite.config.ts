@@ -1,92 +1,97 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  envDir: '.',
-  base: '/',
+  envDir: ".",
+  base: "/",
+  preview: {
+    allowedHosts: ["israelsjourneyplanner.onrender.com"],
+  },
   resolve: {
-    dedupe: ['react', 'react-dom'],
+    dedupe: ["react", "react-dom"],
     alias: {
-      '@': '/src'
-    }
+      "@": "/src",
+    },
   },
   esbuild: {
     keepNames: true,
     treeShaking: true,
-    minifyIdentifiers: false
+    minifyIdentifiers: false,
   },
   server: {
     port: 5173,
     host: true,
     fs: {
-      strict: true
+      strict: true,
     },
     headers: {
-      'Link': '</fetch.worker.js>; rel=preload; as=worker'
-    }
+      Link: "</fetch.worker.js>; rel=preload; as=worker",
+    },
   },
   build: {
-    outDir: 'dist',
-    assetsDir: 'assets',
-    target: 'esnext',
-    minify: 'esbuild',
+    outDir: "dist",
+    assetsDir: "assets",
+    target: "esnext",
+    minify: "esbuild",
     cssMinify: true,
     sourcemap: false,
     reportCompressedSize: false,
     chunkSizeWarningLimit: 1000,
     commonjsOptions: {
-      transformMixedEsModules: true
+      transformMixedEsModules: true,
     },
     rollupOptions: {
       treeshake: {
         moduleSideEffects: true,
         propertyReadSideEffects: false,
-        preset: 'recommended'
+        preset: "recommended",
       },
       input: {
-        main: './index.html'
+        main: "./index.html",
       },
       output: {
-        format: 'es',
+        format: "es",
         inlineDynamicImports: false,
-        entryFileNames: 'assets/[name].[hash].js',
-        chunkFileNames: 'assets/[name].[hash].js',
-        assetFileNames: 'assets/[name].[hash].[ext]',
+        entryFileNames: "assets/[name].[hash].js",
+        chunkFileNames: "assets/[name].[hash].js",
+        assetFileNames: "assets/[name].[hash].[ext]",
         manualChunks: {
-          'vendor': [
-            'react',
-            'react-dom',
-            'react-router-dom',
-            'date-fns',
-            'react-datepicker',
-            'lucide-react',
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-tooltip',
-            'react-virtualized',
-            'xlsx',
-            'react-dropzone',
-            'clsx'
-          ]
-        }
-      }
-    }
+          "react-vendor": ["react", "react-dom", "react-router-dom"],
+          "maps-vendor": [
+            "@googlemaps/js-api-loader",
+            "@react-google-maps/api",
+          ],
+          "ui-vendor": [
+            "lucide-react",
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-label",
+          ],
+          "utils-vendor": [
+            "date-fns",
+            "class-variance-authority",
+            "clsx",
+            "tailwind-merge",
+          ],
+        },
+      },
+    },
   },
   optimizeDeps: {
     include: [
-      'react',
-      'react-dom',
-      'react-router-dom',
-      'date-fns',
-      'react-virtualized',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-tooltip',
-      'lucide-react'
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "date-fns",
+      "react-virtualized",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-tooltip",
+      "lucide-react",
     ],
     exclude: [],
     esbuildOptions: {
       keepNames: true,
-      minifyIdentifiers: false
-    }
-  }
+      minifyIdentifiers: false,
+    },
+  },
 });
