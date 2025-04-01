@@ -1,31 +1,37 @@
 # Journey Planner
 
-A modern web application for efficiently planning and managing pub visits across territories. Built with React, TypeScript, and Google Maps integration.
+A modern web application for efficiently planning and managing visits across territories. Built with React and TypeScript.
 
 ## Features
 
-- 📅 Interactive schedule planning and management
-- 🗺️ Territory coverage visualization with heat maps
-- 🚗 Vehicle selection and route optimization
-- ⏱️ Smart time management with opening hours consideration
-- 📊 Coverage statistics and reporting
-- 📱 Responsive design for mobile and desktop
+- Interactive visit planning interface
+- Real-time route optimization
+- Customizable visit schedules
+- Export functionality for various formats
+- Responsive design for all devices
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
-
-- Node.js (v16 or higher)
+- Node.js (v18 or higher)
 - npm or yarn
-- Google Maps API key
 
-### Installation
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Application Configuration
+VITE_APP_TITLE=Journey Planner
+VITE_APP_DESCRIPTION=Plan your visits efficiently
+```
+
+## Installation
 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/israelcarnahan/JourneyPlanner_April1.git
-cd JourneyPlanner_April1
+git clone https://github.com/yourusername/journey-planner.git
+cd journey-planner
 ```
 
 2. Install dependencies:
@@ -34,59 +40,33 @@ cd JourneyPlanner_April1
 npm install
 ```
 
-3. Set up environment variables:
+3. Create a `.env` file:
 
-   - Copy `.env.example` to `.env`
-   - Fill in your Google Maps API credentials and other configuration
+```bash
+cp .env.example .env
+```
 
-4. Start the development server:
+4. Fill in your configuration
+
+5. Start the development server:
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`
+## Building for Production
 
-## Environment Variables
-
-Create a `.env` file in the root directory with the following variables:
-
-```env
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
-VITE_GOOGLE_OAUTH_CLIENT_ID=your_client_id
-VITE_GOOGLE_OAUTH_CLIENT_SECRET=your_client_secret
+```bash
+npm run build
 ```
-
-See `.env.example` for all available configuration options.
-
-## Project Structure
-
-```
-src/
-├── components/     # React components
-├── context/       # React context providers
-├── hooks/         # Custom React hooks
-├── pages/         # Page components
-├── services/      # External service integrations
-├── utils/         # Utility functions
-└── config/        # Configuration files
-```
-
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-- `npm run type-check` - Run TypeScript type checking
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
 
 ## License
 
