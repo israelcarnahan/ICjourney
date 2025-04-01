@@ -1,7 +1,7 @@
-import React from 'react';
-import DatePicker from 'react-datepicker';
+import React from "react";
+import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { Calendar } from 'lucide-react';
+import { Calendar } from "lucide-react";
 
 interface CustomDatePickerProps {
   selected: Date | null;
@@ -9,14 +9,16 @@ interface CustomDatePickerProps {
   placeholderText?: string;
   className?: string;
   icon?: React.ReactNode;
+  disabled?: boolean;
 }
 
 const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
   selected,
   onChange,
   placeholderText,
-  className = '',
-  icon = <Calendar className="h-5 w-5 text-neon-purple" />
+  className = "",
+  icon = <Calendar className="h-5 w-5 text-neon-purple" />,
+  disabled = false,
 }) => {
   return (
     <div className="relative w-full">
@@ -27,13 +29,16 @@ const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
         selected={selected}
         onChange={onChange}
         placeholderText={placeholderText}
-        className={`w-full pl-10 py-2 rounded-md border border-eggplant-700 bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 text-eggplant-100 shadow-sm focus:border-neon-blue focus:ring focus:ring-neon-blue focus:ring-opacity-50 text-sm transition-all duration-200 ${className}`}
+        className={`w-full pl-10 py-2 rounded-md border border-eggplant-700 bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 text-eggplant-100 shadow-sm focus:border-neon-blue focus:ring focus:ring-neon-blue focus:ring-opacity-50 text-sm transition-all duration-200 ${
+          disabled ? "opacity-50 cursor-not-allowed" : ""
+        } ${className}`}
         dateFormat="yyyy-MM-dd"
         calendarClassName="bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 border border-eggplant-700 rounded-lg shadow-lg text-eggplant-100"
         showPopperArrow={false}
         popperClassName="date-picker-popper"
         wrapperClassName="w-full"
         popperPlacement="bottom-start"
+        disabled={disabled}
       />
     </div>
   );

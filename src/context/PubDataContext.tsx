@@ -1,69 +1,50 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { useEffect, useCallback } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
+import { useCallback } from "react";
+import { AlertTriangle } from "lucide-react";
 
-interface FileMetadata {
-  fileId: string;
-  fileName: string;
-  type: string;
-  uploadTime: number;
-  priority?: number;
-  deadline?: string;
-  followUpDays?: number;
+// Ensure process.env is available
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      NODE_ENV: "development" | "production" | "test";
+    }
+  }
 }
 
-interface UserFiles {
-  files: FileMetadata[];
-  pubs: Pub[];
-}
+export type UUID = string;
+
+export type ListType = "wins" | "hitlist" | "unvisited" | "masterhouse";
 
 export interface Pub {
-  id?: string;
-  pub: string;
+  uuid: UUID;
+  fileId: string;
+  fileName: string;
+  listType: ListType;
+  deadline?: string;
+  priorityLevel?: number;
+  followUpDays?: number;
   zip: string;
-  install_date?: string;
-  last_visited?: string | null;
-  short_post?: string;
+  pub: string;
+  mileageToNext?: number;
+  driveTimeToNext?: number;
+  last_visited?: string;
   rtm?: string;
   landlord?: string;
   notes?: string;
-  Priority?: string;
-  zip_prefix?: string;
-  zip_numeric?: number;
-  win_date?: string;
-  win_type?: string;
   scheduledTime?: string;
   visitNotes?: string;
-  isBooked?: boolean;
-  deadline?: string;
-  priorityLevel?: number;
-  fileName?: string;
-  fileId?: string;
-  uploadTime?: number;
-  followUpDays?: number;
-  listType?: string;
-}
-
-export interface PubDataContextType {
-  userFiles: UserFiles;
-  schedule: ScheduleDay[];
-  businessDays: number;
-  visitsPerDay: number;
-  homeAddress: string;
-  setUserFiles: (files: UserFiles) => void;
-  setSchedule: (schedule: ScheduleDay[]) => void;
-  setBusinessDays: (days: number) => void;
-  setVisitsPerDay: (visits: number) => void;
-  setHomeAddress: (address: string) => void;
-  resetAllData: () => void;
-  addPubList: (pubs: Pub[], type: string, fileName: string, deadline?: string) => void;
-  removePubList: (fileName: string) => void;
-  updatePubList: (fileName: string, updates: Partial<Pub>) => void;
+  Priority?: string;
 }
 
 export interface ScheduleDay {
   date: string;
-  visits: ScheduleVisit[];
+  visits: Pub[];
   totalMileage?: number;
   totalDriveTime?: number;
   startMileage?: number;
@@ -73,233 +54,338 @@ export interface ScheduleDay {
   schedulingErrors?: string[];
 }
 
-export interface ScheduleVisit extends Pub {
-  mileageToNext?: number;
-  driveTimeToNext?: number;
+export interface FileMetadata {
+  fileId: string;
+  fileName: string;
+  type: ListType;
+  count: number;
+  priority?: number;
+  deadline?: string;
+  color?: string;
+  name: string;
+  followUpDays?: number;
+  uploadTime?: number;
 }
 
-const PubDataContext = createContext<PubDataContextType | undefined>(undefined);
-
-if (process.env.NODE_ENV !== 'production') {
-  PubDataContext.displayName = 'PubDataContext';
+export interface ExtendedPub extends Pub {
+  Priority?: string;
+  uploadTime?: number;
 }
 
-// Separate hook into named function declaration for Fast Refresh compatibility
-export function usePubData() {
+export interface UserFiles {
+  pubs: ExtendedPub[];
+  files: FileMetadata[];
+}
+
+export type VehicleType =
+  | "car"
+  | "truck"
+  | "bike"
+  | "bus"
+  | "train"
+  | "plane"
+  | "boat"
+  | "fairy";
+export type VehicleColor =
+  | "purple"
+  | "blue"
+  | "pink"
+  | "green"
+  | "orange"
+  | "yellow";
+
+export interface PubDataContextType {
+  userFiles: UserFiles;
+  schedule: ScheduleDay[];
+  visitsPerDay: number;
+  businessDays: number;
+  homeAddress: string;
+  searchRadius: number;
+  selectedVehicle: VehicleType;
+  selectedVehicleColor: VehicleColor;
+  setUserFiles: (files: UserFiles | ((prev: UserFiles) => UserFiles)) => void;
+  setSchedule: (schedule: ScheduleDay[]) => void;
+  setBusinessDays: (days: number) => void;
+  setVisitsPerDay: (visits: number) => void;
+  setHomeAddress: (address: string) => void;
+  setSearchRadius: (radius: number) => void;
+  setSelectedVehicle: (vehicle: VehicleType) => void;
+  setSelectedVehicleColor: (color: VehicleColor) => void;
+  resetAllData: () => void;
+  isInitialized: boolean;
+  initializationError: string | null;
+}
+
+const STORAGE_KEYS = {
+  USER_FILES: "userFiles",
+  SCHEDULE: "schedule",
+  BUSINESS_DAYS: "businessDays",
+  VISITS_PER_DAY: "visitsPerDay",
+  HOME_ADDRESS: "homeAddress",
+  SEARCH_RADIUS: "searchRadius",
+  VEHICLE_TYPE: "vehicleType",
+  VEHICLE_COLOR: "vehicleColor",
+} as const;
+
+const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (error) {
+    console.warn(`Error loading ${key} from storage:`, error);
+    return defaultValue;
+  }
+};
+
+const saveToStorage = <T,>(key: string, value: T): void => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn(`Error saving ${key} to storage:`, error);
+  }
+};
+
+const defaultContext: PubDataContextType = {
+  userFiles: { pubs: [], files: [] },
+  schedule: [],
+  visitsPerDay: 5,
+  businessDays: 5,
+  homeAddress: "",
+  searchRadius: 15,
+  selectedVehicle: "car",
+  selectedVehicleColor: "purple",
+  setUserFiles: () => {},
+  setSchedule: () => {},
+  setBusinessDays: () => {},
+  setVisitsPerDay: () => {},
+  setHomeAddress: () => {},
+  setSearchRadius: () => {},
+  setSelectedVehicle: () => {},
+  setSelectedVehicleColor: () => {},
+  resetAllData: () => {},
+  isInitialized: false,
+  initializationError: null,
+};
+
+export const PubDataContext = createContext<PubDataContextType>(defaultContext);
+
+export const usePubData = (): PubDataContextType => {
   const context = useContext(PubDataContext);
-  if (context === undefined) {
-    console.warn('usePubData must be used within a PubDataProvider');
-    return {
-      wishlistPubs: [],
-      unvisitedPubs: [],
-      masterfilePubs: [],
-      repslyWins: [],
-      schedule: [],
-      businessDays: 0,
-      visitsPerDay: 5,
-      homeAddress: '',
-      repslyDeadline: '',
-      setWishlistPubs: () => {},
-      setUnvisitedPubs: () => {},
-      setMasterfilePubs: () => {},
-      setRepslyWins: () => {},
-      setSchedule: () => {},
-      setBusinessDays: () => {},
-      setVisitsPerDay: () => {},
-      setHomeAddress: () => {},
-      setRepslyDeadline: () => {},
-      resetAllData: () => {},
-      addPubList: () => {},
-      removePubList: () => {},
-      updatePubList: () => {}
-    };
+  if (!context) {
+    throw new Error("usePubData must be used within a PubDataProvider");
   }
   return context;
-}
+};
 
-export const PubDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Initialize state from localStorage if available
-  const [userFiles, setUserFiles] = useState<UserFiles>(() => {
-    try {
-      const saved = localStorage.getItem('userFiles');
-      return saved ? JSON.parse(saved) : { files: [], pubs: [] };
-    } catch (e) {
-      return { files: [], pubs: [] };
-    }
-  });
-  const [schedule, setSchedule] = useState<ScheduleDay[]>(() => {
-    try {
-      const saved = localStorage.getItem('schedule');
-      const parsed = saved ? JSON.parse(saved) : [];
-      console.log('Loaded initial schedule:', parsed);
-      return parsed;
-    } catch (e) {
-      console.error('Error loading schedule from localStorage:', e);
-      return [];
-    }
-  });
-  const [businessDays, setBusinessDays] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem('businessDays');
-      return saved ? parseInt(saved) : 100;
-    } catch (e) {
-      return 100;
-    }
-  });
-  const [visitsPerDay, setVisitsPerDay] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem('visitsPerDay');
-      return saved ? parseInt(saved) : 5;
-    } catch (e) {
-      return 5;
-    }
-  });
-  const [homeAddress, setHomeAddress] = useState<string>(() => {
-    try {
-      return localStorage.getItem('homeAddress') || "";
-    } catch (e) {
-      return "";
-    }
-  });
+const INITIALIZATION_TIMEOUT = 2000; // 2 seconds timeout for initialization
 
-  const resetAllData = useCallback(() => {
-    setUserFiles({ files: [], pubs: [] });
-    setSchedule([]);
-    setBusinessDays(100);
-    setVisitsPerDay(5);
-    setHomeAddress("");
-    
-    // Clear localStorage
-    localStorage.removeItem('userFiles');
-    localStorage.removeItem('schedule');
-    localStorage.removeItem('businessDays');
-    localStorage.removeItem('visitsPerDay');
-    localStorage.removeItem('homeAddress');
-  }, []);
+export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
+  // Initialize state with persisted values
+  const [userFiles, setUserFiles] = useState<UserFiles>(() =>
+    loadFromStorage(STORAGE_KEYS.USER_FILES, { pubs: [], files: [] })
+  );
+  const [schedule, setSchedule] = useState<ScheduleDay[]>(() =>
+    loadFromStorage(STORAGE_KEYS.SCHEDULE, [])
+  );
+  const [businessDays, setBusinessDays] = useState<number>(() =>
+    loadFromStorage(STORAGE_KEYS.BUSINESS_DAYS, 5)
+  );
+  const [visitsPerDay, setVisitsPerDay] = useState<number>(() =>
+    loadFromStorage(STORAGE_KEYS.VISITS_PER_DAY, 5)
+  );
+  const [homeAddress, setHomeAddress] = useState<string>(() =>
+    loadFromStorage(STORAGE_KEYS.HOME_ADDRESS, "")
+  );
+  const [searchRadius, setSearchRadius] = useState<number>(() =>
+    loadFromStorage(STORAGE_KEYS.SEARCH_RADIUS, 15)
+  );
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleType>(
+    loadFromStorage(STORAGE_KEYS.VEHICLE_TYPE, "car")
+  );
+  const [selectedVehicleColor, setSelectedVehicleColor] =
+    useState<VehicleColor>(
+      loadFromStorage(STORAGE_KEYS.VEHICLE_COLOR, "purple")
+    );
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [initializationError, setInitializationError] = useState<string | null>(
+    null
+  );
 
-  // Reset data on mount
+  // Initialize context
   useEffect(() => {
-    resetAllData();
-  }, [resetAllData]);
+    const initializeContext = async () => {
+      try {
+        // Add a small delay to ensure all state is properly loaded
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
-  // Persist state changes to localStorage
-  useEffect(() => {
-    try {
-      // Only save if schedule has actual content
-      if (!schedule || schedule.length === 0) return;
-      
-      // Debounce the save operation
-      const saveTimeout = setTimeout(() => {
-        console.debug('Saving schedule to localStorage');
-        localStorage.setItem('schedule', JSON.stringify(schedule));
-      }, 1000);
-      return () => clearTimeout(saveTimeout);
-    } catch (e) {
-      console.error('Failed to save state to localStorage:', e);
-    }
-  }, [schedule]);
+        // Validate loaded data
+        if (typeof businessDays !== "number" || businessDays < 0) {
+          setBusinessDays(5);
+        }
+        if (typeof visitsPerDay !== "number" || visitsPerDay < 0) {
+          setVisitsPerDay(5);
+        }
+        if (
+          typeof searchRadius !== "number" ||
+          searchRadius < 5 ||
+          searchRadius > 30
+        ) {
+          setSearchRadius(15);
+        }
 
-  // Add a new pub list
-  const addPubList = (pubs: Pub[], type: string, fileName: string, deadline?: string) => {
-    // Generate a single fileId for the entire list
-    const fileId = uuidv4();
-    const uploadTime = Date.now();
-    
-    console.debug('Adding pub list:', {
-      type,
-      fileName,
-      pubCount: pubs.length,
-      deadline
-    });
+        // Set initialization flag
+        setIsInitialized(true);
+        setInitializationError(null);
+      } catch (error) {
+        console.error("Error initializing context:", error);
+        setInitializationError(
+          error instanceof Error
+            ? error.message
+            : "Failed to initialize application"
+        );
 
-    const pubsWithMetadata = pubs.map(pub => ({
-      ...pub,
-      fileName,
-      fileId,
-      listType: type,
-      uploadTime
-    }));
-    
-    const fileMetadata: FileMetadata = {
-      fileId,
-      fileName,
-      type,
-      uploadTime,
-      ...(deadline && { deadline }),
+        // Reset to default state on error
+        resetAllData();
+      }
     };
 
-    setUserFiles(prev => {
-      // Create new arrays to ensure state updates properly
-      const updatedFiles = [...prev.files, fileMetadata];
-      const updatedPubs = [...prev.pubs, ...pubsWithMetadata];
-      
-      console.debug('Updating user files:', {
-        prevFilesCount: prev.files.length,
-        newFilesCount: updatedFiles.length,
-        prevPubsCount: prev.pubs.length,
-        newPubsCount: updatedPubs.length
+    const initializationTimeout = setTimeout(() => {
+      if (!isInitialized) {
+        setInitializationError("Initialization timed out");
+        resetAllData();
+        setIsInitialized(true); // Force initialization to prevent infinite loading
+      }
+    }, INITIALIZATION_TIMEOUT);
+
+    initializeContext();
+
+    return () => {
+      clearTimeout(initializationTimeout);
+    };
+  }, []);
+
+  // Persist state changes
+  useEffect(() => {
+    if (isInitialized) {
+      saveToStorage(STORAGE_KEYS.USER_FILES, userFiles);
+    }
+  }, [userFiles, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      saveToStorage(STORAGE_KEYS.SCHEDULE, schedule);
+    }
+  }, [schedule, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      saveToStorage(STORAGE_KEYS.BUSINESS_DAYS, businessDays);
+    }
+  }, [businessDays, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      saveToStorage(STORAGE_KEYS.VISITS_PER_DAY, visitsPerDay);
+    }
+  }, [visitsPerDay, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      saveToStorage(STORAGE_KEYS.HOME_ADDRESS, homeAddress);
+    }
+  }, [homeAddress, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      saveToStorage(STORAGE_KEYS.SEARCH_RADIUS, searchRadius);
+    }
+  }, [searchRadius, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      saveToStorage(STORAGE_KEYS.VEHICLE_TYPE, selectedVehicle);
+    }
+  }, [selectedVehicle, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      saveToStorage(STORAGE_KEYS.VEHICLE_COLOR, selectedVehicleColor);
+    }
+  }, [selectedVehicleColor, isInitialized]);
+
+  const resetAllData = useCallback(() => {
+    try {
+      setUserFiles({ pubs: [], files: [] });
+      setSchedule([]);
+      setBusinessDays(5);
+      setVisitsPerDay(5);
+      setHomeAddress("");
+      setSearchRadius(15);
+      setSelectedVehicle("car");
+      setSelectedVehicleColor("purple");
+      setInitializationError(null);
+
+      // Clear storage
+      Object.values(STORAGE_KEYS).forEach((key) => {
+        localStorage.removeItem(key);
       });
-      
-      return {
-        files: updatedFiles,
-        pubs: updatedPubs
-      };
-    });
-  };
+    } catch (error) {
+      console.error("Error resetting data:", error);
+      setInitializationError("Failed to reset application data");
+    }
+  }, []);
 
-  // Remove a pub list by filename
-  const removePubList = (fileId: string) => {
-    setUserFiles(prev => ({
-      files: prev.files.filter(file => file.fileId !== fileId),
-      pubs: prev.pubs.filter(pub => pub.fileId !== fileId)
-    }));
-  };
-
-  // Update a pub list
-  const updatePubList = (fileId: string, updates: Partial<Pub>) => {
-    setUserFiles(prev => ({
-      ...prev,
-      pubs: prev.pubs.map(pub => 
-        pub.fileId === fileId ? { ...pub, ...updates } : pub
-      )
-    }));
-  };
-
-  // Extract pubs by type from userFiles
-  const masterfilePubs = userFiles.pubs.filter(pub => pub.listType === 'masterhouse');
-  const recentWins = userFiles.pubs.filter(pub => pub.listType === 'wins');
-  const wishlistPubs = userFiles.pubs.filter(pub => pub.listType === 'hitlist');
-  const unvisitedPubs = userFiles.pubs.filter(pub => pub.listType === 'unvisited');
-
-  const value = React.useMemo(() => ({
+  const value: PubDataContextType = {
     userFiles,
     schedule,
     businessDays,
     visitsPerDay,
     homeAddress,
+    searchRadius,
+    selectedVehicle,
+    selectedVehicleColor,
     setUserFiles,
     setSchedule,
     setBusinessDays,
     setVisitsPerDay,
     setHomeAddress,
-    addPubList,
-    removePubList,
-    updatePubList
-  }), [
-    userFiles,
-    schedule,
-    businessDays,
-    visitsPerDay,
-    homeAddress,
+    setSearchRadius,
+    setSelectedVehicle,
+    setSelectedVehicleColor,
     resetAllData,
-    addPubList,
-    removePubList,
-    updatePubList
-  ]);
+    isInitialized,
+    initializationError,
+  };
+
+  // Show error state if initialization failed
+  if (initializationError) {
+    return (
+      <div className="min-h-screen bg-eggplant-900 flex items-center justify-center p-4">
+        <div className="bg-eggplant-800 rounded-lg shadow-xl p-6 max-w-md w-full">
+          <div className="flex items-center gap-3 mb-4">
+            <AlertTriangle className="h-6 w-6 text-red-400" />
+            <h2 className="text-xl font-semibold text-eggplant-100">
+              Initialization Error
+            </h2>
+          </div>
+          <p className="text-eggplant-200 mb-4">{initializationError}</p>
+          <button
+            onClick={() => {
+              resetAllData();
+              window.location.reload();
+            }}
+            className="bg-neon-purple text-white px-4 py-2 rounded hover:bg-neon-purple/90 transition-colors"
+          >
+            Reset and Reload
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <PubDataContext.Provider value={value}>
-      {children}
-    </PubDataContext.Provider>
+    <PubDataContext.Provider value={value}>{children}</PubDataContext.Provider>
   );
 };

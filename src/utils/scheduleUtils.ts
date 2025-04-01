@@ -1,44 +1,54 @@
-import { Pub, ScheduleDay, ScheduleVisit } from '../context/PubDataContext';
-import { format, addBusinessDays } from 'date-fns';
+import { Pub, ScheduleDay, ScheduleVisit } from "../context/PubDataContext";
+import { format, addBusinessDays } from "date-fns";
 
 export const extractNumericPart = (postcode: string): [string, number] => {
   // Extract the first part of the postcode (letters + number)
-  const match = postcode.trim().toUpperCase().match(/^([A-Z]+)(\d+)/);
-  if (!match) return ['', 0];
+  const match = postcode
+    .trim()
+    .toUpperCase()
+    .match(/^([A-Z]+)(\d+)/);
+  if (!match) return ["", 0];
   return [match[1], parseInt(match[2], 10)];
 };
 
-export const calculateDistance = (from: string, to: string): { mileage: number; driveTime: number } => {
+export const calculateDistance = (
+  from: string,
+  to: string
+): { mileage: number; driveTime: number } => {
   const [fromPrefix, fromNum] = extractNumericPart(from);
   const [toPrefix, toNum] = extractNumericPart(to);
-  
+
   // If postcodes are in different areas, estimate higher distance
   if (fromPrefix !== toPrefix) {
     return { mileage: 50, driveTime: 90 };
   }
-  
+
   // Calculate distance based on numeric difference
   const numDiff = Math.abs(fromNum - toNum);
   const baseDistance = numDiff * 2.5; // Roughly 2.5 miles per postcode number difference
   const baseTime = numDiff * 5; // Roughly 5 minutes per postcode number difference
-  
+
   return {
     mileage: baseDistance + (Math.random() * 2 - 1), // Add some randomness ±1 mile
-    driveTime: Math.round(baseTime + (Math.random() * 10 - 5)) // Add some randomness ±5 minutes
+    driveTime: Math.round(baseTime + (Math.random() * 10 - 5)), // Add some randomness ±5 minutes
   };
 };
 
-export const findNearestPubs = (fromPub: Pub, pubs: Pub[], limit: number): Pub[] => {
+export const findNearestPubs = (
+  fromPub: Pub,
+  pubs: Pub[],
+  limit: number
+): Pub[] => {
   if (!fromPub.zip || !pubs.length) return [];
-  
+
   const [basePrefix, baseNum] = extractNumericPart(fromPub.zip);
-  
+
   return pubs
-    .filter(pub => {
+    .filter((pub) => {
       if (!pub.zip) return false;
       const [pubPrefix, pubNum] = extractNumericPart(pub.zip);
       return (
-        pubPrefix === basePrefix && 
+        pubPrefix === basePrefix &&
         Math.abs(pubNum - baseNum) <= 1 &&
         pub.pub !== fromPub.pub
       );
@@ -48,50 +58,55 @@ export const findNearestPubs = (fromPub: Pub, pubs: Pub[], limit: number): Pub[]
 
 export const getPriorityOrder = (pub: Pub): number => {
   switch (pub.Priority) {
-    case 'RecentWin': return 1;
-    case 'Wishlist': return pub.priorityLevel || 2;
-    case 'Unvisited': return 3;
-    default: return 4;
+    case "RecentWin":
+      return 1;
+    case "Wishlist":
+      return pub.priorityLevel || 2;
+    case "Unvisited":
+      return 3;
+    default:
+      return 4;
   }
 };
 
-export const planVisits = async (
+export async function planVisits(
   pubs: Pub[],
   startDate: Date,
   businessDays: number,
   homeAddress: string,
-  visitsPerDay: number
-): Promise<ScheduleDay[]> => {
-  console.debug('Starting schedule planning:', {
+  visitsPerDay: number,
+  searchRadius: number = 15 // Default to balanced radius if not provided
+): Promise<ScheduleDay[]> {
+  console.debug("Starting schedule planning:", {
     pubCount: pubs.length,
     businessDays,
-    visitsPerDay
+    visitsPerDay,
   });
 
   const schedule: ScheduleDay[] = [];
   const [homePrefix] = extractNumericPart(homeAddress);
-  
+
   // Track scheduled pubs to prevent duplicates
   const scheduledPubs = new Set<string>();
-  
+
   // Group pubs by priority level
   const priorityGroups: Record<string, Pub[]> = {
     deadline: [],
     recentWin: [],
     wishlist: [],
     unvisited: [],
-    other: []
+    other: [],
   };
 
   // Sort pubs into priority groups
-  pubs.forEach(pub => {
+  pubs.forEach((pub) => {
     if (pub.deadline) {
       priorityGroups.deadline.push(pub);
-    } else if (pub.Priority === 'RecentWin') {
+    } else if (pub.Priority === "RecentWin") {
       priorityGroups.recentWin.push(pub);
-    } else if (pub.Priority === 'Wishlist') {
+    } else if (pub.Priority === "Wishlist") {
       priorityGroups.wishlist.push(pub);
-    } else if (pub.Priority === 'Unvisited') {
+    } else if (pub.Priority === "Unvisited") {
       priorityGroups.unvisited.push(pub);
     } else {
       priorityGroups.other.push(pub);
@@ -104,7 +119,7 @@ export const planVisits = async (
     const dateB = new Date(b.deadline!).getTime();
     return dateA - dateB;
   });
-  
+
   // Group each priority level by postcode area
   const groupByPostcode = (pubs: Pub[]): Record<string, Pub[]> => {
     return pubs.reduce((acc, pub) => {
@@ -116,25 +131,41 @@ export const planVisits = async (
     }, {} as Record<string, Pub[]>);
   };
 
+  const isWithinRadius = (pub: Pub, lastLocation: string): boolean => {
+    // For now, use a simple postcode comparison
+    // This will be replaced with actual distance calculation from the Maps API
+    const pubCode = pub.zip.replace(/\s+/g, "").slice(0, 2);
+    const lastCode = lastLocation.replace(/\s+/g, "").slice(0, 2);
+
+    // Convert postcode difference to approximate miles (simplified for now)
+    const codeDiff = Math.abs(parseInt(pubCode, 36) - parseInt(lastCode, 36));
+    const approxMiles = codeDiff * 2; // Rough approximation
+
+    return approxMiles <= searchRadius;
+  };
+
   // Process each priority group
-  const processGroup = async (pubs: Pub[], currentDate: Date): Promise<[ScheduleDay[], Date]> => {
+  const processGroup = async (
+    pubs: Pub[],
+    currentDate: Date
+  ): Promise<[ScheduleDay[], Date]> => {
     const groupSchedule: ScheduleDay[] = [];
     const postcodeGroups = groupByPostcode(pubs);
     let remainingVisits = visitsPerDay;
-    
+
     // Randomize postcode order while keeping home area first
     const postcodes = Object.keys(postcodeGroups);
     const homeIndex = postcodes.indexOf(homePrefix);
     if (homeIndex !== -1) {
       postcodes.splice(homeIndex, 1);
     }
-    
+
     // Fisher-Yates shuffle for remaining postcodes
     for (let i = postcodes.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [postcodes[i], postcodes[j]] = [postcodes[j], postcodes[i]];
     }
-    
+
     // Put home area first if it exists
     if (homeIndex !== -1) {
       postcodes.unshift(homePrefix);
@@ -142,12 +173,17 @@ export const planVisits = async (
 
     for (const postcode of postcodes) {
       const areaPubs = postcodeGroups[postcode];
-      
+
       // Randomize pubs within each area
-      const availablePubs = areaPubs.filter(pub => !scheduledPubs.has(pub.pub));
+      const availablePubs = areaPubs.filter(
+        (pub) => !scheduledPubs.has(pub.pub)
+      );
       for (let i = availablePubs.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [availablePubs[i], availablePubs[j]] = [availablePubs[j], availablePubs[i]];
+        [availablePubs[i], availablePubs[j]] = [
+          availablePubs[j],
+          availablePubs[i],
+        ];
       }
 
       while (availablePubs.length > 0 && remainingVisits > 0) {
@@ -159,40 +195,43 @@ export const planVisits = async (
         let totalDriveTime = 0;
 
         // Calculate metrics
-        const firstPubMetrics = calculateDistance(homeAddress, dayVisits[0].zip || '');
+        const firstPubMetrics = calculateDistance(
+          homeAddress,
+          dayVisits[0].zip || ""
+        );
         totalMileage += firstPubMetrics.mileage;
         totalDriveTime += firstPubMetrics.driveTime;
 
         dayVisits.forEach((pub, index) => {
           const visit: ScheduleVisit = { ...pub };
-          
+
           if (index < dayVisits.length - 1) {
             const nextPub = dayVisits[index + 1];
-            const metrics = calculateDistance(pub.zip || '', nextPub.zip || '');
+            const metrics = calculateDistance(pub.zip || "", nextPub.zip || "");
             visit.mileageToNext = metrics.mileage;
             visit.driveTimeToNext = metrics.driveTime;
             totalMileage += metrics.mileage;
             totalDriveTime += metrics.driveTime;
           }
-          
+
           visits.push(visit);
           scheduledPubs.add(pub.pub);
         });
-        
+
         // Reset remaining visits for next day
         if (visits.length > 0) {
           remainingVisits = visitsPerDay;
         }
 
         const lastPubMetrics = calculateDistance(
-          dayVisits[dayVisits.length - 1].zip || '',
+          dayVisits[dayVisits.length - 1].zip || "",
           homeAddress
         );
         totalMileage += lastPubMetrics.mileage;
         totalDriveTime += lastPubMetrics.driveTime;
 
         const schedulingErrors: string[] = [];
-        
+
         // Check if we have fewer visits than requested
         if (dayVisits.length < visitsPerDay) {
           schedulingErrors.push(
@@ -200,20 +239,23 @@ export const planVisits = async (
           );
         }
 
-        dayVisits.forEach(visit => {
+        dayVisits.forEach((visit) => {
           if (visit.deadline) {
             const deadlineDate = new Date(visit.deadline);
             const visitDate = new Date(currentDate);
             if (visitDate > deadlineDate) {
               schedulingErrors.push(
-                `${visit.pub} scheduled after deadline (${format(deadlineDate, 'MMM d, yyyy')})`
+                `${visit.pub} scheduled after deadline (${format(
+                  deadlineDate,
+                  "MMM d, yyyy"
+                )})`
               );
             }
           }
         });
 
         groupSchedule.push({
-          date: format(currentDate, 'yyyy-MM-dd'),
+          date: format(currentDate, "yyyy-MM-dd"),
           visits,
           totalMileage,
           totalDriveTime,
@@ -221,7 +263,7 @@ export const planVisits = async (
           startDriveTime: firstPubMetrics.driveTime,
           endMileage: lastPubMetrics.mileage,
           endDriveTime: lastPubMetrics.driveTime,
-          ...(schedulingErrors.length > 0 && { schedulingErrors })
+          ...(schedulingErrors.length > 0 && { schedulingErrors }),
         });
 
         currentDate = addBusinessDays(currentDate, 1);
@@ -236,30 +278,43 @@ export const planVisits = async (
 
   // Process deadline pubs first to ensure they're scheduled
   if (priorityGroups.deadline.length > 0) {
-    const [deadlineSchedule, newDate] = await processGroup(priorityGroups.deadline, currentDate);
+    const [deadlineSchedule, newDate] = await processGroup(
+      priorityGroups.deadline,
+      currentDate
+    );
     schedule.push(...deadlineSchedule);
     currentDate = newDate;
     remainingDays -= deadlineSchedule.length;
   }
 
   // Process each priority group in order
-  for (const group of ['recentWin', 'wishlist', 'unvisited', 'other']) {
+  for (const group of ["recentWin", "wishlist", "unvisited", "other"]) {
     if (remainingDays <= 0) break;
-    
+
     const groupPubs = priorityGroups[group as keyof typeof priorityGroups];
     if (groupPubs.length === 0) continue;
-    
+
     const [groupSchedule, newDate] = await processGroup(groupPubs, currentDate);
-    schedule.push(...groupSchedule);
-    
+
+    // Only take as many days as we have remaining
+    const daysToTake = Math.min(groupSchedule.length, remainingDays);
+    schedule.push(...groupSchedule.slice(0, daysToTake));
+
+    // If we've used exactly the days we want, stop scheduling
+    remainingDays -= daysToTake;
+    if (remainingDays <= 0) break;
+
     currentDate = newDate;
-    remainingDays -= groupSchedule.length;
   }
-  
-  console.debug('Schedule planning complete:', {
-    daysGenerated: schedule.length,
-    totalVisits: schedule.reduce((acc, day) => acc + day.visits.length, 0)
+
+  // Ensure we don't return more days than requested
+  const finalSchedule = schedule.slice(0, businessDays);
+
+  console.debug("Schedule planning complete:", {
+    daysRequested: businessDays,
+    daysGenerated: finalSchedule.length,
+    totalVisits: finalSchedule.reduce((acc, day) => acc + day.visits.length, 0),
   });
 
-  return schedule;
-};
+  return finalSchedule;
+}

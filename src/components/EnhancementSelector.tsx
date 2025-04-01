@@ -142,7 +142,7 @@ const EnhancementSelector: React.FC<EnhancementSelectorProps> = ({
 
   const onDrop = React.useCallback(
     async (acceptedFiles: File[]) => {
-      if (!selectedOption) return;
+      if (!selectedOption || isDisabled) return;
 
       if (acceptedFiles.length === 0) {
         setError("Please select a valid Excel file");
@@ -168,7 +168,7 @@ const EnhancementSelector: React.FC<EnhancementSelectorProps> = ({
         setIsProcessing(false);
       }
     },
-    [selectedOption]
+    [selectedOption, isDisabled]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -180,7 +180,7 @@ const EnhancementSelector: React.FC<EnhancementSelectorProps> = ({
       "application/vnd.ms-excel": [".xls"],
     },
     maxFiles: 1,
-    disabled: !selectedOption,
+    disabled: !selectedOption || isDisabled,
   });
 
   const handleSubmit = () => {
@@ -251,19 +251,34 @@ const EnhancementSelector: React.FC<EnhancementSelectorProps> = ({
     // Don't count masterhouse files in the limit
     const additionalFilesCount = Object.entries(fileCountByType)
       .filter(([type]) => type !== "masterhouse")
-      .reduce((sum, [_, count]) => sum + count, 0);
+      .reduce((sum, [_, count]) => sum + (count as number), 0);
     return additionalFilesCount >= maxFiles;
   }, [fileCountByType, maxFiles]);
 
   // Show warning if limit is reached
   if (isFileLimitReached) {
     return (
-      <div className="w-full h-[72px] rounded-md border border-dashed border-yellow-700/50 bg-yellow-900/20 flex items-center justify-center p-4">
-        <p className="text-xs text-yellow-200 text-center">
-          Maximum number of additional lists ({maxFiles}) reached. Please remove
-          some lists to add more.
-        </p>
-      </div>
+      <button
+        className={clsx(
+          "w-full h-[72px] rounded-md border border-dashed",
+          "transition-all duration-300 transform",
+          "flex items-center justify-center gap-2",
+          "bg-eggplant-800/20 border-eggplant-700/30 cursor-not-allowed"
+        )}
+        disabled={true}
+      >
+        <Plus className="h-4 w-4 text-eggplant-400" />
+        <span className="text-xs font-medium text-eggplant-400">
+          Add Your Lists
+        </span>
+        <span className="text-xs text-eggplant-300 ml-2">
+          (
+          {Object.entries(fileCountByType)
+            .filter(([type]) => type !== "masterhouse")
+            .reduce((sum, [_, count]) => sum + (count as number), 0)}
+          /{maxFiles})
+        </span>
+      </button>
     );
   }
 
@@ -299,7 +314,7 @@ const EnhancementSelector: React.FC<EnhancementSelectorProps> = ({
             (
             {Object.entries(fileCountByType)
               .filter(([type]) => type !== "masterhouse")
-              .reduce((sum, [_, count]) => sum + count, 0)}
+              .reduce((sum, [_, count]) => sum + (count as number), 0)}
             /{maxFiles})
           </span>
         </button>
@@ -324,7 +339,12 @@ const EnhancementSelector: React.FC<EnhancementSelectorProps> = ({
             </Dialog.Close>
           </div>
 
-          <div className="space-y-4">
+          <div
+            className={clsx(
+              "space-y-4",
+              isDisabled && "opacity-75 pointer-events-none"
+            )}
+          >
             {error && (
               <div className="p-3 rounded-lg bg-red-900/20 border border-red-700/50 text-red-200 flex items-start gap-2">
                 <AlertTriangle className="h-5 w-5 flex-shrink-0" />
@@ -484,7 +504,7 @@ const EnhancementSelector: React.FC<EnhancementSelectorProps> = ({
                             <label className="block text-sm font-medium text-eggplant-100 mb-2">
                               Priority Level
                             </label>
-                            <div className="flex gap-1">
+                            <div className="flex gap-2">
                               {[1, 2, 3].map((level) => (
                                 <button
                                   key={`priority-${level}`}
@@ -496,26 +516,64 @@ const EnhancementSelector: React.FC<EnhancementSelectorProps> = ({
                                     }))
                                   }
                                   className={clsx(
-                                    "px-3 py-1.5 rounded-lg text-sm transition-colors",
+                                    "px-4 py-2 rounded-lg text-sm transition-all border-2 shadow-sm",
                                     config.priorityLevel === level
-                                      ? "bg-gradient-to-r from-neon-purple to-neon-blue text-white"
+                                      ? "bg-gradient-to-r from-neon-purple to-neon-blue text-white border-transparent shadow-md transform scale-105"
                                       : usedPriorityLevels.includes(level)
-                                      ? "bg-eggplant-900/50 text-eggplant-400 cursor-not-allowed"
-                                      : "bg-eggplant-800/50 text-eggplant-200 hover:bg-eggplant-700/50"
+                                      ? "border-eggplant-700 bg-eggplant-800/30 text-eggplant-400 cursor-not-allowed opacity-70"
+                                      : "border-eggplant-700 bg-eggplant-800 text-eggplant-200 hover:bg-eggplant-700 hover:border-neon-purple/30"
                                   )}
                                 >
                                   {level}
                                   {usedPriorityLevels.includes(level) && (
-                                    <span className="ml-1 text-xs">(Used)</span>
+                                    <div className="mt-1 flex items-center justify-center">
+                                      <span className="text-xs text-eggplant-400 inline-flex items-center">
+                                        <svg
+                                          className="w-3 h-3 mr-1"
+                                          fill="none"
+                                          viewBox="0 0 24 24"
+                                          stroke="currentColor"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M12 15v2m0 0v2m0-2h2m-2 0H9"
+                                          />
+                                        </svg>
+                                        In use
+                                      </span>
+                                    </div>
                                   )}
                                 </button>
                               ))}
                             </div>
-                            <p className="mt-2 text-xs text-eggplant-300">
-                              {usedPriorityLevels.length > 0
-                                ? "Grayed out levels are already in use by other lists"
-                                : "Choose a priority level for this list"}
-                            </p>
+                            {usedPriorityLevels.length > 0 ? (
+                              <div className="mt-2 flex items-center p-2 rounded-lg bg-eggplant-800/50 border border-eggplant-700">
+                                <svg
+                                  className="w-4 h-4 text-eggplant-300 mr-2 flex-shrink-0"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  />
+                                </svg>
+                                <p className="text-xs text-eggplant-300">
+                                  Priority levels already assigned to other
+                                  lists are marked as "In use"
+                                </p>
+                              </div>
+                            ) : (
+                              <p className="mt-2 text-xs text-eggplant-300 italic">
+                                Higher priority (1) lists will be scheduled
+                                before lower priority lists
+                              </p>
+                            )}
                           </div>
                         )}
                       </>
