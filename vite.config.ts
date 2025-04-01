@@ -6,7 +6,10 @@ export default defineConfig({
   envDir: ".",
   base: "/",
   preview: {
-    allowedHosts: ["israelsjourneyplanner.onrender.com"],
+    allowedHosts: [
+      "israelsjourneyplanner.onrender.com",
+      "icjourney.onrender.com",
+    ],
   },
   resolve: {
     dedupe: ["react", "react-dom"],
