@@ -58,10 +58,6 @@ export default defineConfig({
         assetFileNames: "assets/[name].[hash].[ext]",
         manualChunks: {
           "react-vendor": ["react", "react-dom", "react-router-dom"],
-          "maps-vendor": [
-            "@googlemaps/js-api-loader",
-            "@react-google-maps/api",
-          ],
           "ui-vendor": [
             "lucide-react",
             "@radix-ui/react-dialog",

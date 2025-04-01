@@ -1,8 +1,6 @@
-import { getMockPlaceData } from '../utils/mockData';
-
+// Placeholder Maps Service
 class MapsService {
   private static instance: MapsService;
-  private isLoaded = true;
 
   private constructor() {}
 
@@ -14,61 +12,39 @@ class MapsService {
   }
 
   async initialize(): Promise<void> {
+    console.log("Maps service initialization placeholder");
     return Promise.resolve();
   }
 
-  isInitialized(): boolean {
-    return this.isLoaded;
-  }
-
-  getPlacesService(): any {
-    return {
-      findPlaceFromQuery: (request: any, callback: Function) => {
-        const mockData = getMockPlaceData(request.query.split(' ')[0]);
-        callback([{
-          place_id: 'mock-place-id',
-          rating: mockData.rating,
-          user_ratings_total: mockData.totalRatings
-        }], 'OK');
-      },
-      getDetails: (request: any, callback: Function) => {
-        const mockData = getMockPlaceData(request.placeId);
-        callback({
-          rating: mockData.rating,
-          user_ratings_total: mockData.totalRatings,
-          formatted_phone_number: mockData.phoneNumber,
-          website: mockData.website,
-          opening_hours: {
-            weekday_text: mockData.openingHours
-          }
-        }, 'OK');
-      }
-    };
-  }
-
-  getGeocoder(): any {
-    return {
-      geocode: (request: any, callback: Function) => {
-        callback([{
-          geometry: {
-            location: { lat: () => 51.5074, lng: () => -0.1278 }
-          }
-        }], 'OK');
-      }
-    };
-  }
-
   getPlaceDetails(query: string) {
-    const mockData = getMockPlaceData(query);
     return {
       isOpen: true,
       openNow: true,
-      openingHours: mockData.openingHours,
+      openingHours: [
+        "Monday: 9:00 AM – 11:00 PM",
+        "Tuesday: 9:00 AM – 11:00 PM",
+        "Wednesday: 9:00 AM – 11:00 PM",
+        "Thursday: 9:00 AM – 11:00 PM",
+        "Friday: 9:00 AM – 11:00 PM",
+        "Saturday: 10:00 AM – 11:00 PM",
+        "Sunday: 10:00 AM – 10:30 PM",
+      ],
       currentPeriod: {
-        open: '09:00',
-        close: '23:00'
-      }
+        open: "09:00",
+        close: "23:00",
+      },
     };
+  }
+
+  calculateDistance(
+    origin: { lat: number; lng: number },
+    destination: { lat: number; lng: number }
+  ): number {
+    // Simple placeholder distance calculation using Euclidean distance
+    return Math.sqrt(
+      Math.pow(destination.lat - origin.lat, 2) +
+        Math.pow(destination.lng - origin.lng, 2)
+    );
   }
 }
 
