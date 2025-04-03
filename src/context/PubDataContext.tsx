@@ -42,9 +42,29 @@ export interface Pub {
   Priority?: string;
 }
 
+export interface BusinessHours {
+  openTime: string;
+  closeTime: string;
+}
+
 export interface ScheduleDay {
-  date: string;
-  visits: Pub[];
+  pub: string;
+  arrival: Date;
+  departure: Date;
+  businessHours: BusinessHours;
+  Priority: string;
+  mileageToNext: number;
+  driveTimeToNext: number;
+  uuid: string;
+  fileId: string;
+  fileName: string;
+  listType: ListType;
+  deadline?: string;
+  priorityLevel?: number;
+  visitNotes?: string;
+
+  date?: string;
+  visits?: Pub[];
   totalMileage?: number;
   totalDriveTime?: number;
   startMileage?: number;
@@ -103,6 +123,7 @@ export interface PubDataContextType {
   searchRadius: number;
   selectedVehicle: VehicleType;
   selectedVehicleColor: VehicleColor;
+  selectedDate: Date;
   setUserFiles: (files: UserFiles | ((prev: UserFiles) => UserFiles)) => void;
   setSchedule: (schedule: ScheduleDay[]) => void;
   setBusinessDays: (days: number) => void;
@@ -111,6 +132,7 @@ export interface PubDataContextType {
   setSearchRadius: (radius: number) => void;
   setSelectedVehicle: (vehicle: VehicleType) => void;
   setSelectedVehicleColor: (color: VehicleColor) => void;
+  setSelectedDate: (date: Date) => void;
   resetAllData: () => void;
   isInitialized: boolean;
   initializationError: string | null;
@@ -125,6 +147,7 @@ const STORAGE_KEYS = {
   SEARCH_RADIUS: "searchRadius",
   VEHICLE_TYPE: "vehicleType",
   VEHICLE_COLOR: "vehicleColor",
+  SELECTED_DATE: "selectedDate",
 } as const;
 
 const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
@@ -154,6 +177,7 @@ const defaultContext: PubDataContextType = {
   searchRadius: 15,
   selectedVehicle: "car",
   selectedVehicleColor: "purple",
+  selectedDate: new Date(),
   setUserFiles: () => {},
   setSchedule: () => {},
   setBusinessDays: () => {},
@@ -162,6 +186,7 @@ const defaultContext: PubDataContextType = {
   setSearchRadius: () => {},
   setSelectedVehicle: () => {},
   setSelectedVehicleColor: () => {},
+  setSelectedDate: () => {},
   resetAllData: () => {},
   isInitialized: false,
   initializationError: null,
@@ -208,6 +233,9 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
     useState<VehicleColor>(
       loadFromStorage(STORAGE_KEYS.VEHICLE_COLOR, "purple")
     );
+  const [selectedDate, setSelectedDate] = useState<Date>(() =>
+    loadFromStorage(STORAGE_KEYS.SELECTED_DATE, new Date())
+  );
   const [isInitialized, setIsInitialized] = useState(false);
   const [initializationError, setInitializationError] = useState<string | null>(
     null
@@ -315,6 +343,12 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, [selectedVehicleColor, isInitialized]);
 
+  useEffect(() => {
+    if (isInitialized) {
+      saveToStorage(STORAGE_KEYS.SELECTED_DATE, selectedDate);
+    }
+  }, [selectedDate, isInitialized]);
+
   const resetAllData = useCallback(() => {
     try {
       setUserFiles({ pubs: [], files: [] });
@@ -325,6 +359,7 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
       setSearchRadius(15);
       setSelectedVehicle("car");
       setSelectedVehicleColor("purple");
+      setSelectedDate(new Date());
       setInitializationError(null);
 
       // Clear storage
@@ -346,6 +381,7 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
     searchRadius,
     selectedVehicle,
     selectedVehicleColor,
+    selectedDate,
     setUserFiles,
     setSchedule,
     setBusinessDays,
@@ -354,6 +390,7 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
     setSearchRadius,
     setSelectedVehicle,
     setSelectedVehicleColor,
+    setSelectedDate,
     resetAllData,
     isInitialized,
     initializationError,

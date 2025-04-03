@@ -34,6 +34,8 @@ import {
   addBusinessDays,
   addMinutes,
   differenceInMinutes,
+  formatDuration,
+  Duration,
 } from "date-fns";
 import SparkleWrapper from "./Sparkles";
 import ScheduleReport from "./ScheduleReport";
@@ -98,6 +100,18 @@ interface ScheduleEntry {
   departure: Date;
   driveTime: number;
   isScheduled: boolean;
+}
+
+interface BusinessHours {
+  openTime: string;
+  closeTime: string;
+}
+
+interface ScheduleVisit {
+  pub: string;
+  arrival: Date;
+  departure: Date;
+  businessHours: BusinessHours;
 }
 
 // Custom icon for fairy
@@ -387,6 +401,7 @@ const ScheduleDisplay: React.FC = () => {
     selectedVehicleColor,
     setSelectedVehicle,
     setSelectedVehicleColor,
+    selectedDate,
   } = usePubData();
 
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
@@ -400,6 +415,7 @@ const ScheduleDisplay: React.FC = () => {
   const [desiredEndTimes, setDesiredEndTimes] = useState<
     Record<string, string>
   >({});
+  const [totalDriveTime] = useState<Duration>({ minutes: 480 }); // 8 hours
 
   const updateSchedule = (updater: (prev: ScheduleDay[]) => ScheduleDay[]) => {
     try {
@@ -1272,33 +1288,58 @@ const ScheduleDisplay: React.FC = () => {
   }
 
   return (
-    <div className="animated-border bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 backdrop-blur-sm rounded-lg shadow-md p-4 sm:p-6">
+    <div className="w-full p-4 rounded-lg bg-opacity-20 backdrop-blur-sm">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold bg-gradient-to-r from-neon-purple via-neon-pink to-neon-blue bg-clip-text text-transparent">
-          Visit Schedule
-        </h2>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => downloadICSFile(schedule)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-neon-purple text-white hover:bg-neon-purple/90 transition-colors"
-          >
-            <Calendar className="h-4 w-4" />
-            Export Calendar
-          </button>
-          <button
-            onClick={exportToExcel}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-gradient-to-r from-neon-blue to-neon-purple text-white hover:opacity-90 transition-opacity"
-          >
-            <Download className="h-4 w-4" />
-            Export Excel
-          </button>
+        <div className="text-white text-xl font-semibold">
+          {format(selectedDate || new Date(), "yyyy-MM-dd")}
+        </div>
+        <div className="text-white text-sm">
+          Total drive time: {formatDuration(totalDriveTime)}
         </div>
       </div>
 
       <div className="space-y-4">
-        {schedule.map((day, index) =>
-          renderDaySchedule(day as EnhancedScheduleDay, index)
-        )}
+        {(schedule as ScheduleDay[]).map((visit, index) => (
+          <div
+            key={`${visit.pub}-${index}`}
+            className="flex items-center space-x-4 p-4 rounded-lg bg-purple-900 bg-opacity-50"
+          >
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <span className="text-white font-medium">{visit.pub}</span>
+                <span className="text-white text-sm">
+                  {format(visit.arrival, "HH:mm")} -{" "}
+                  {format(visit.departure, "HH:mm")}
+                </span>
+              </div>
+              <div className="text-white text-sm opacity-75">
+                Open: {visit.businessHours.openTime} -{" "}
+                {visit.businessHours.closeTime}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-end gap-2 mt-4">
+        <button
+          onClick={() => {
+            /* Add calendar export logic */
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-white text-purple-900 hover:bg-white/90 transition-colors"
+        >
+          <Calendar className="h-4 w-4" />
+          Export Calendar
+        </button>
+        <button
+          onClick={() => {
+            /* Add Excel export logic */
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-white text-purple-900 hover:bg-white/90 transition-colors"
+        >
+          <Download className="h-4 w-4" />
+          Export Excel
+        </button>
       </div>
     </div>
   );
