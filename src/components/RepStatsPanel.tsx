@@ -239,7 +239,8 @@ const RepStatsPanel: React.FC = () => {
               {schedule.reduce((acc, day) => acc + day.visits.length, 0)} visits
             </div>
             <div className="text-xs text-eggplant-300 mt-1">
-              {schedule.length} week days planned
+              {schedule.length}{" "}
+              {schedule.length === 1 ? "week day" : "week days"} planned
             </div>
           </div>
 

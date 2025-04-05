@@ -35,14 +35,15 @@ const ScheduleSettings: React.FC<ScheduleSettingsProps> = ({
   const handleEndDateChange = (date: Date) => {
     setEndDate(date);
     const days = differenceInBusinessDays(date, startDate);
-    setBusinessDays(days >= 0 ? days + 1 : 1);
+    const businessDays = days <= 0 ? 1 : days + 1;
+    setBusinessDays(businessDays);
   };
 
   const handleStartDateChange = (date: Date) => {
     setStartDate(date);
-    // When start date changes, recalculate business days based on current end date
     const days = differenceInBusinessDays(endDate, date);
-    setBusinessDays(days >= 0 ? days + 1 : 1);
+    const businessDays = days <= 0 ? 1 : days + 1;
+    setBusinessDays(businessDays);
   };
 
   const handleVisitsPerDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -230,7 +231,8 @@ const ScheduleSettings: React.FC<ScheduleSettingsProps> = ({
             disabled={isDisabled || isGenerating}
           />
           <p className="mt-1 text-sm text-eggplant-300">
-            {businessDays} week days selected
+            {businessDays} {businessDays === 1 ? "week day" : "week days"}{" "}
+            selected
           </p>
         </div>
 
