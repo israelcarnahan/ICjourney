@@ -16,10 +16,10 @@ import {
   Bike,
   Truck,
   LucideIcon,
+  Users,
 } from "lucide-react";
 import {
   usePubData,
-  ScheduleDay,
   ExtendedPub,
   VehicleType,
   VehicleColor,
@@ -62,6 +62,7 @@ import {
   ThimbleIcon,
   WheelbarrowIcon,
 } from "./icons/MonopolyIcons";
+import { Visit, EnhancedScheduleDay } from "../types";
 
 interface OpeningHoursResult {
   isOpen: boolean;
@@ -75,23 +76,20 @@ interface OpeningHoursMap {
   [key: string]: OpeningHoursResult;
 }
 
-interface ScheduleVisit extends ExtendedPub {
+interface ScheduleVisit extends Pub {
+  driveTimeToNext?: number;
+  scheduledTime?: string;
+  arrival?: Date;
+  departure?: Date;
   Priority: string;
-  mileageToNext: number;
-  driveTimeToNext: number;
-}
-
-interface EnhancedScheduleDay extends ScheduleDay {
-  schedulingErrors?: string[];
-  visits: ScheduleVisit[];
 }
 
 interface Visit extends Pub {
   driveTimeToNext?: number;
   scheduledTime?: string;
-  visitNotes?: string;
-  accountName?: string;
-  openingTime?: string;
+  arrival?: Date;
+  departure?: Date;
+  Priority: string;
 }
 
 interface ScheduleEntry {
@@ -112,6 +110,20 @@ interface ScheduleVisit {
   arrival: Date;
   departure: Date;
   businessHours: BusinessHours;
+}
+
+interface ScheduleDay {
+  date: string;
+  visits: Visit[];
+  totalDriveTime: number;
+  totalMileage: number;
+  startDriveTime: number;
+  endDriveTime: number;
+  schedulingErrors?: string[];
+}
+
+interface EnhancedScheduleDay extends ScheduleDay {
+  totalMileage?: number;
 }
 
 // Custom icon for fairy
@@ -304,24 +316,34 @@ const getScheduleTimes = (
   const averageVisitTime = 45; // minutes
   const minDriveTime = 30; // minimum minutes between visits
 
-  // First pass: Schedule fixed appointments
-  const scheduledVisits = visits.filter(
-    (v): v is Visit & Required<Pick<Visit, "scheduledTime">> =>
-      Boolean(v.scheduledTime)
-  );
+  // First: Sort visits by their scheduled times
+  const sortedVisits = [...visits].sort((a, b) => {
+    if (!a.scheduledTime || a.scheduledTime === "Anytime") return 1;
+    if (!b.scheduledTime || b.scheduledTime === "Anytime") return -1;
 
-  // Initialize schedule array with all visits starting at the earliest possible time
-  const schedule: ScheduleEntry[] = visits.map((visit) => ({
+    const [aHours, aMinutes] = a.scheduledTime.split(":").map(Number);
+    const [bHours, bMinutes] = b.scheduledTime.split(":").map(Number);
+    return aHours * 60 + aMinutes - (bHours * 60 + bMinutes);
+  });
+
+  // Initialize schedule array with all visits
+  const schedule: ScheduleEntry[] = sortedVisits.map((visit) => ({
     pub: visit.pub,
     arrival: dayStart,
     departure: addMinutes(dayStart, averageVisitTime),
     driveTime: visit.driveTimeToNext || minDriveTime,
-    isScheduled: Boolean(visit.scheduledTime),
+    isScheduled:
+      Boolean(visit.scheduledTime) && visit.scheduledTime !== "Anytime",
   }));
 
-  // Update scheduled visits with their fixed times
+  // First pass: Schedule fixed appointments
+  const scheduledVisits = sortedVisits.filter(
+    (v): v is Visit & Required<Pick<Visit, "scheduledTime">> =>
+      Boolean(v.scheduledTime) && v.scheduledTime !== "Anytime"
+  );
+
   for (const visit of scheduledVisits) {
-    const index = visits.findIndex((v) => v.pub === visit.pub);
+    const index = sortedVisits.findIndex((v) => v.pub === visit.pub);
     if (index === -1) continue;
 
     const appointmentTime = parseTimeToDate(visit.scheduledTime);
@@ -334,10 +356,17 @@ const getScheduleTimes = (
     };
   }
 
-  // Second pass: Schedule unscheduled visits in available time slots
+  // Second pass: Schedule unscheduled and flexible visits in available time slots
   let currentTime = dayStart;
   for (let i = 0; i < schedule.length; i++) {
-    if (schedule[i].isScheduled) continue;
+    if (schedule[i].isScheduled) {
+      // For scheduled visits, update currentTime to after this visit
+      currentTime = addMinutes(
+        schedule[i].departure,
+        schedule[i].driveTime || minDriveTime
+      );
+      continue;
+    }
 
     // Find the next scheduled visit (if any)
     const nextScheduledIndex = schedule.findIndex(
@@ -380,20 +409,53 @@ const getScheduleTimes = (
     }
   }
 
+  console.log(
+    "Calculated schedule:",
+    schedule.map((s) => ({
+      pub: s.pub,
+      arrival: format(s.arrival, "HH:mm"),
+      isScheduled: s.isScheduled,
+      scheduledTime: sortedVisits.find((v) => v.pub === s.pub)?.scheduledTime,
+    }))
+  );
+
   return { schedule };
 };
 
-const isOutsideBusinessHours = (time: Date): boolean => {
-  const hours = time.getHours();
-  const minutes = time.getMinutes();
-  const totalMinutes = hours * 60 + minutes;
-  return totalMinutes < 9 * 60 || totalMinutes > 17 * 60;
+const isOutsideBusinessHours = (time: Date | string): boolean => {
+  try {
+    let hours: number;
+    let minutes: number;
+
+    if (time instanceof Date) {
+      hours = time.getHours();
+      minutes = time.getMinutes();
+    } else {
+      [hours, minutes] = time.split(":").map(Number);
+    }
+
+    const totalMinutes = hours * 60 + minutes;
+    return totalMinutes < 9 * 60 || totalMinutes >= 17 * 60;
+  } catch (error) {
+    console.warn("Time validation error:", error);
+    return true;
+  }
 };
+
+interface DriveTimeBarProps {
+  visits: Pub[];
+  totalDriveTime: number;
+  startDriveTime: string;
+  endDriveTime: string;
+  targetVisitsPerDay: number;
+  desiredEndTime?: string;
+  onDesiredEndTimeChange: (time: string) => void;
+}
 
 const ScheduleDisplay: React.FC = () => {
   const {
-    schedule,
-    setSchedule,
+    schedule: contextSchedule,
+    setSchedule: setContextSchedule,
     userFiles,
     homeAddress,
     visitsPerDay,
@@ -417,89 +479,31 @@ const ScheduleDisplay: React.FC = () => {
   >({});
   const [totalDriveTime] = useState<Duration>({ minutes: 480 }); // 8 hours
 
+  // Convert context schedule to our local type
+  const schedule = contextSchedule.map((day) => ({
+    date: day.date || "",
+    visits: (day.visits || []).map((visit) => ({
+      ...visit,
+      Priority: visit.Priority || "Unscheduled",
+    })),
+    totalDriveTime: day.totalDriveTime || 0,
+    totalMileage: day.totalMileage || 0,
+    startDriveTime:
+      typeof day.startDriveTime === "number" ? day.startDriveTime : 0,
+    endDriveTime: typeof day.endDriveTime === "number" ? day.endDriveTime : 0,
+    schedulingErrors: day.schedulingErrors,
+  }));
+
   const updateSchedule = (updater: (prev: ScheduleDay[]) => ScheduleDay[]) => {
-    try {
-      console.log("updateSchedule called");
-
-      // Get the new schedule
-      const newSchedule = updater(schedule);
-      if (!newSchedule) {
-        console.warn("No new schedule returned from updater");
-        return;
-      }
-
-      console.log("New schedule generated", {
-        scheduleLength: newSchedule.length,
-      });
-
-      // Immediately update the schedule state to reflect changes
-      setSchedule(newSchedule);
-      console.log("Schedule state updated");
-
-      // Then process the updates in the background
-      const processUpdates = () => {
-        console.log("Processing background updates");
-        // Recalculate metrics for the affected day
-        const updatedSchedule = newSchedule.map((day) => {
-          console.log("Recalculating metrics for day", day.date);
-
-          // Calculate base metrics
-          const metrics = recalculateMetrics(
-            day.visits,
-            homeAddress,
-            desiredEndTimes[day.date]
-          );
-
-          // Get updated schedule times
-          const { schedule: daySchedule } = getScheduleTimes(
-            day.visits,
-            "09:00",
-            desiredEndTimes[day.date]
-          );
-
-          // Check for scheduling conflicts
-          const schedulingErrors: string[] = [];
-          daySchedule.forEach((entry, index) => {
-            if (index > 0) {
-              const prevEntry = daySchedule[index - 1];
-              const gap = differenceInMinutes(
-                entry.arrival,
-                prevEntry.departure
-              );
-              if (gap < 30) {
-                schedulingErrors.push(
-                  `Insufficient travel time between ${prevEntry.pub} and ${entry.pub}`
-                );
-              }
-            }
-            if (isOutsideBusinessHours(entry.arrival)) {
-              schedulingErrors.push(
-                `${entry.pub} is scheduled outside business hours (9 AM - 5 PM)`
-              );
-            }
-          });
-
-          return {
-            ...day,
-            ...metrics,
-            schedulingErrors,
-          };
-        });
-
-        console.log("Applying updated schedule with metrics");
-        // Update the state with the recalculated metrics
-        setSchedule(updatedSchedule);
-      };
-
-      // Use requestIdleCallback if available, otherwise use setTimeout
-      if (typeof window.requestIdleCallback === "function") {
-        window.requestIdleCallback(() => processUpdates());
-      } else {
-        setTimeout(processUpdates, 0);
-      }
-    } catch (error) {
-      console.error("Error in updateSchedule:", error);
-    }
+    const updatedSchedule = updater(schedule);
+    // Convert back to context schedule type when updating
+    setContextSchedule(
+      updatedSchedule.map((day) => ({
+        ...day,
+        date: day.date,
+        visits: day.visits,
+      }))
+    );
   };
 
   const fetchOpeningHours = async (pubName: string, postcode: string) => {
@@ -545,44 +549,28 @@ const ScheduleDisplay: React.FC = () => {
     });
   }, [expandedDays, schedule]);
 
-  const toggleDay = useCallback(
-    (date: string) => {
-      setExpandedDays((prev) => {
-        const newState = { ...prev, [date]: !prev[date] };
+  const toggleDay = (date: string) => {
+    setExpandedDays((prev) => ({
+      ...prev,
+      [date]: !prev[date],
+    }));
+  };
 
-        // Only try to set selected pub if expanding the day
-        if (newState[date]) {
-          const daySchedule = schedule?.find((day) => day?.date === date);
-          const firstVisit = daySchedule?.visits?.[0];
-          setSelectedPub(firstVisit || null);
-        } else {
-          setSelectedPub(null);
-        }
+  const handleKeyPress = (e: React.KeyboardEvent, date: string) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleDay(date);
+    }
+  };
 
-        return newState;
-      });
-    },
-    [schedule]
-  );
-
-  const handleKeyPress = useCallback(
-    (e: React.KeyboardEvent, date: string) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        toggleDay(date);
-      }
-    },
-    [toggleDay]
-  );
-
-  const handleDeleteDay = (dateToDelete: string) => {
+  const handleDeleteDay = (date: string) => {
     if (
       window.confirm(
         "Are you sure you want to delete this day from the schedule?"
       )
     ) {
       updateSchedule((prevSchedule) =>
-        prevSchedule.filter((day) => day.date !== dateToDelete)
+        prevSchedule.filter((day) => day.date !== date)
       );
     }
   };
@@ -740,81 +728,124 @@ const ScheduleDisplay: React.FC = () => {
   const handleDesiredEndTimeChange = (date: string, time: string) => {
     setDesiredEndTimes((prev) => ({ ...prev, [date]: time }));
 
-    // Update schedule with new end time
     updateSchedule((prevSchedule) =>
       prevSchedule.map((day) => {
-        if (day.date !== date) return day;
+        if (!day.date || day.date !== date) return day;
 
-        // Recalculate metrics with new end time
-        const metrics = recalculateMetrics(day.visits, homeAddress, time);
+        const metrics = recalculateMetrics(day.visits || [], homeAddress, time);
+        return {
+          ...day,
+          ...metrics,
+        } as ScheduleDay;
+      })
+    );
+  };
+
+  const handleVisitSchedule = (
+    date: string,
+    visitId: string,
+    time: string,
+    notes?: string
+  ) => {
+    console.log("Scheduling visit:", { date, visitId, time, notes });
+
+    updateSchedule((prevSchedule) =>
+      prevSchedule.map((day) => {
+        if (!day.date || day.date !== date) return day;
+        const visits = day.visits || [];
+
+        // Update the visit's scheduled time and notes
+        const updatedVisits = visits.map((visit) =>
+          visit.pub === visitId
+            ? {
+                ...visit,
+                scheduledTime: time,
+                visitNotes: notes || visit.visitNotes,
+              }
+            : visit
+        );
+
+        // Get optimized schedule times
+        const { schedule: updatedTimes } = getScheduleTimes(
+          updatedVisits,
+          "09:00",
+          desiredEndTimes[date]
+        );
+
+        // Update arrival and departure times for each visit
+        let finalVisits = updatedVisits.map((visit, index) => {
+          const scheduleInfo = updatedTimes[index];
+          return {
+            ...visit,
+            arrival: scheduleInfo.arrival,
+            departure: scheduleInfo.departure,
+          };
+        });
+
+        // Sort visits by their actual times (scheduled or arrival)
+        finalVisits = finalVisits.sort((a, b) => {
+          // Helper function to get the effective time for sorting
+          const getEffectiveTime = (visit: Visit) => {
+            if (visit.scheduledTime && visit.scheduledTime !== "Anytime") {
+              const [hours, minutes] = visit.scheduledTime
+                .split(":")
+                .map(Number);
+              const date = new Date();
+              date.setHours(hours, minutes, 0, 0);
+              return date;
+            }
+            return visit.arrival || new Date(0);
+          };
+
+          const timeA = getEffectiveTime(a);
+          const timeB = getEffectiveTime(b);
+          return timeA.getTime() - timeB.getTime();
+        });
+
+        // Recalculate metrics after sorting
+        const metrics = recalculateMetrics(
+          finalVisits,
+          homeAddress,
+          desiredEndTimes[date]
+        );
+
+        console.log("Updated schedule:", {
+          visits: finalVisits.map((v) => ({
+            pub: v.pub,
+            scheduledTime: v.scheduledTime,
+            arrival: v.arrival ? format(v.arrival, "HH:mm") : null,
+            effectiveTime:
+              v.scheduledTime ||
+              (v.arrival ? format(v.arrival, "HH:mm") : "No time"),
+          })),
+        });
 
         return {
           ...day,
+          visits: finalVisits,
           ...metrics,
         };
       })
     );
   };
 
-  const renderDaySchedule = (day: EnhancedScheduleDay, dayIndex: number) => {
-    const handleVisitSchedule = (
-      visitId: string,
-      time: string,
-      notes: string
-    ) => {
-      console.log("handleVisitSchedule called", { visitId, time, notes });
-      updateSchedule((prevSchedule: ScheduleDay[]) => {
-        if (!prevSchedule) {
-          console.warn("No previous schedule available");
-          return prevSchedule;
-        }
-        return prevSchedule.map((d: ScheduleDay) => {
-          if (d.date !== day.date) return d;
-          console.log("Updating visits for day", d.date);
-          return {
-            ...d,
-            visits: d.visits.map((v: Visit) => {
-              if (v.pub !== visitId) return v;
-              console.log("Updating visit", { pub: v.pub, newTime: time });
-              return {
-                ...v,
-                scheduledTime: time,
-                visitNotes: notes,
-              };
-            }),
-          };
-        });
-      });
-    };
-
-    const isExpanded = expandedDays[day.date];
+  const renderDaySchedule = (day: ScheduleDay, dayIndex: number) => {
+    const isExpanded = expandedDays[day.date || ""];
+    const visits = day.visits || [];
     const hasWarnings =
-      day.visits.length < visitsPerDay ||
-      (day.schedulingErrors?.length ?? 0) > 0;
+      visits.length < visitsPerDay ||
+      (day.schedulingErrors?.length ?? 0) > 0 ||
+      visits.some((v) => v.arrival && isOutsideBusinessHours(v.arrival));
 
-    const renderSchedulingErrors = () => {
-      if (!day.schedulingErrors?.length) return null;
-      return (
-        <div className="mt-2 p-2 rounded-lg bg-red-900/20 border border-red-700/50">
-          <div className="flex items-start gap-2">
-            <AlertTriangle className="h-4 w-4 text-red-400 flex-shrink-0 mt-0.5" />
-            <div>
-              {day.schedulingErrors.map((error, index) => (
-                <p key={index} className="text-xs text-red-200">
-                  {error}
-                </p>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
-    };
+    // Convert drive times to numbers for DriveTimeBar
+    const startDriveTimeMinutes = parseInt(day.startDriveTime || "0", 10);
+    const endDriveTimeMinutes = parseInt(day.endDriveTime || "0", 10);
 
     return (
       <div
         key={day.date}
         className={clsx(
-          "bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 rounded-lg p-4 sm:p-6 transition-all duration-300",
+          "bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 rounded-lg p-4 sm:p-6 transition-all duration-300 mb-4",
           {
             "border border-amber-500/20": hasWarnings && !isExpanded,
             "border-2 border-neon-purple/30": isExpanded,
@@ -824,191 +855,130 @@ const ScheduleDisplay: React.FC = () => {
       >
         <div
           className="flex items-center justify-between cursor-pointer"
-          onClick={() => toggleDay(day.date)}
-          onKeyPress={(e) => handleKeyPress(e, day.date)}
+          onClick={() => toggleDay(day.date || "")}
+          onKeyPress={(e) => handleKeyPress(e, day.date || "")}
           tabIndex={0}
           role="button"
           aria-expanded={isExpanded}
         >
-          <div className="flex items-center">
-            <Calendar className="h-5 w-5 text-neon-blue mr-2" />
-            <h3 className="font-medium text-eggplant-100">{day.date}</h3>
-            {day.visits.length < visitsPerDay && (
+          <div className="flex items-center gap-4">
+            <div className="flex items-center">
+              <Calendar className="h-5 w-5 text-neon-blue mr-2" />
+              <h3 className="font-medium text-eggplant-100">
+                {day.date
+                  ? format(new Date(day.date), "EEEE, MMMM d, yyyy")
+                  : "No date"}
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center text-sm text-eggplant-100">
+                <MapPin className="h-4 w-4 mr-1 text-neon-pink" />
+                <span>{day.totalMileage?.toFixed(1)} miles</span>
+              </div>
+              <div className="flex items-center text-sm text-eggplant-100">
+                <Clock className="h-4 w-4 mr-1 text-neon-purple" />
+                <span>{day.totalDriveTime}m drive time</span>
+              </div>
+              <div className="flex items-center text-sm text-eggplant-100">
+                <Users className="h-4 w-4 mr-1 text-neon-blue" />
+                <span>
+                  {visits.length}/{visitsPerDay} visits
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {hasWarnings && (
               <Tooltip.Provider>
                 <Tooltip.Root>
                   <Tooltip.Trigger asChild>
-                    <div className="ml-2 p-1 rounded-full bg-yellow-900/20 border border-yellow-700/50 cursor-help">
+                    <div className="p-1 rounded-full bg-yellow-900/20 border border-yellow-700/50">
                       <AlertTriangle className="h-4 w-4 text-yellow-400" />
                     </div>
                   </Tooltip.Trigger>
                   <Tooltip.Portal>
                     <Tooltip.Content
-                      className="bg-dark-800 text-eggplant-100 px-4 py-3 rounded-lg text-sm shadow-lg max-w-md"
+                      className="bg-dark-800 text-eggplant-100 px-4 py-3 rounded-lg text-sm shadow-lg"
                       sideOffset={5}
                     >
                       <h4 className="font-medium text-yellow-400 mb-2">
-                        Insufficient Visits
+                        Schedule Warnings
                       </h4>
-                      <p className="text-yellow-200">
-                        Only {day.visits.length} visits scheduled for this day
-                        (target: {visitsPerDay})
-                      </p>
-                      <div className="mt-3 pt-2 border-t border-eggplant-800/50">
-                        <p className="text-xs text-eggplant-300">
-                          Consider adding more visits from nearby pubs to
-                          optimize your schedule.
+                      {visits.length < visitsPerDay && (
+                        <p className="text-yellow-200 mb-2">
+                          Only {visits.length} visits scheduled (target:{" "}
+                          {visitsPerDay})
                         </p>
-                      </div>
+                      )}
+                      {visits.some(
+                        (v) => v.arrival && isOutsideBusinessHours(v.arrival)
+                      ) && (
+                        <p className="text-yellow-200 mb-2">
+                          Some visits are scheduled outside business hours (9 AM
+                          - 5 PM)
+                        </p>
+                      )}
+                      {day.schedulingErrors?.map((error, i) => (
+                        <p key={i} className="text-yellow-200">
+                          {error}
+                        </p>
+                      ))}
                       <Tooltip.Arrow className="fill-dark-800" />
                     </Tooltip.Content>
                   </Tooltip.Portal>
                 </Tooltip.Root>
               </Tooltip.Provider>
             )}
-            {day.visits.some((v) => v.scheduledTime || v.visitNotes) && (
-              <Tooltip.Provider>
-                <Tooltip.Root>
-                  <Tooltip.Trigger asChild>
-                    <div className="ml-2 p-1 rounded-full bg-green-900/20 border border-green-700/50 cursor-help">
-                      <Clock className="h-4 w-4 text-green-400" />
-                    </div>
-                  </Tooltip.Trigger>
-                  <Tooltip.Portal>
-                    <Tooltip.Content
-                      className="bg-dark-800 text-eggplant-100 px-4 py-3 rounded-lg text-sm shadow-lg max-w-md"
-                      sideOffset={5}
-                    >
-                      <h4 className="font-medium text-green-400 mb-2">
-                        Scheduled Visits
-                      </h4>
-                      <div className="space-y-2">
-                        {day.visits.map(
-                          (visit, i) =>
-                            visit.scheduledTime && (
-                              <div key={i} className="flex items-start gap-2">
-                                <Clock className="h-4 w-4 text-green-400 flex-shrink-0 mt-0.5" />
-                                <div>
-                                  <p className="text-green-200">{visit.pub}</p>
-                                  <p className="text-xs text-eggplant-300">
-                                    {visit.scheduledTime}{" "}
-                                    {visit.visitNotes &&
-                                      `- ${visit.visitNotes}`}
-                                  </p>
-                                </div>
-                              </div>
-                            )
-                        )}
-                      </div>
-                      <Tooltip.Arrow className="fill-dark-800" />
-                    </Tooltip.Content>
-                  </Tooltip.Portal>
-                </Tooltip.Root>
-              </Tooltip.Provider>
-            )}
-            {renderSchedulingErrors()}
-          </div>
-
-          <div className="flex items-center space-x-4 w-full sm:w-auto justify-between sm:justify-end">
-            <div className="flex items-center text-sm text-eggplant-100">
-              <MapPin className="h-4 w-4 mr-1 text-neon-pink" />
-              <span className="hidden sm:inline">
-                {day.totalMileage?.toFixed(1)} miles
-              </span>
-              <span className="sm:hidden">
-                {day.totalMileage?.toFixed(1)}mi
-              </span>
-            </div>
-
-            <div className="flex items-center text-sm text-eggplant-100">
-              <Clock className="h-4 w-4 mr-1 text-neon-purple" />
-              <span>{day.totalDriveTime}m</span>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <RescheduleDialog
-                day={day}
-                onReschedule={(newSchedule) => {
-                  updateSchedule((prevSchedule) =>
-                    prevSchedule.map((d) =>
-                      d.date === day.date ? newSchedule : d
-                    )
-                  );
-                }}
-              />
-
-              <Tooltip.Provider>
-                <Tooltip.Root>
-                  <Tooltip.Trigger asChild>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteDay(day.date);
-                      }}
-                      className={`
-                            p-2 rounded-full transition-all duration-300
-                            text-red-400 opacity-0 group-hover:opacity-100
-                            hover:bg-red-900/20 hover:text-red-300
-                          `}
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  </Tooltip.Trigger>
-                  <Tooltip.Portal>
-                    <Tooltip.Content
-                      className="bg-dark-800 text-eggplant-100 px-3 py-2 rounded-lg text-sm shadow-lg"
-                      sideOffset={5}
-                    >
-                      Delete this day
-                      <Tooltip.Arrow className="fill-dark-800" />
-                    </Tooltip.Content>
-                  </Tooltip.Portal>
-                </Tooltip.Root>
-              </Tooltip.Provider>
-
-              <button
-                className={clsx(
-                  "p-2 rounded-full transition-all duration-300",
-                  "hover:bg-eggplant-700/50 text-neon-blue hover:text-neon-purple",
-                  "focus:outline-none focus:ring-2 focus:ring-neon-purple focus:ring-opacity-50"
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleDay(day.date);
-                }}
-                aria-label={
-                  expandedDays[day.date] ? "Collapse day" : "Expand day"
-                }
-              >
-                {expandedDays[day.date] ? (
-                  <ChevronUp className="h-5 w-5" />
-                ) : (
-                  <ChevronDown className="h-5 w-5" />
-                )}
-              </button>
-            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteDay(day.date || "");
+              }}
+              className="p-2 rounded-full transition-colors hover:bg-red-900/20 text-red-400 hover:text-red-300"
+              title="Delete day"
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+            <button
+              className={clsx(
+                "p-2 rounded-full transition-colors",
+                "hover:bg-eggplant-700/50 text-neon-blue hover:text-neon-purple"
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleDay(day.date || "");
+              }}
+              aria-label={isExpanded ? "Collapse day" : "Expand day"}
+            >
+              {isExpanded ? (
+                <ChevronUp className="h-5 w-5" />
+              ) : (
+                <ChevronDown className="h-5 w-5" />
+              )}
+            </button>
           </div>
         </div>
 
         {isExpanded && (
           <div className="mt-4 space-y-4">
             <DriveTimeBar
-              visits={day.visits}
-              totalDriveTime={day.totalDriveTime}
-              startDriveTime={day.startDriveTime}
-              endDriveTime={day.endDriveTime}
+              visits={visits}
+              totalDriveTime={day.totalDriveTime || 0}
+              startDriveTime={startDriveTimeMinutes}
+              endDriveTime={endDriveTimeMinutes}
               targetVisitsPerDay={visitsPerDay}
-              desiredEndTime={desiredEndTimes[day.date]}
+              desiredEndTime={desiredEndTimes[day.date || ""]}
               onDesiredEndTimeChange={(time) =>
-                handleDesiredEndTimeChange(day.date, time)
+                handleDesiredEndTimeChange(day.date || "", time)
               }
             />
-            {renderSchedulingErrors()}
-            <div className="p-4 bg-dark-900/95 backdrop-blur-sm overflow-x-auto">
+            <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-eggplant-800/30">
                 <thead>
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-medium text-eggplant-100 uppercase tracking-wider">
-                      Travel Info
+                      Time
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-eggplant-100 uppercase tracking-wider">
                       Pub
@@ -1020,248 +990,137 @@ const ScheduleDisplay: React.FC = () => {
                       Priority
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-eggplant-100 uppercase tracking-wider">
-                      Opening Hours
+                      Drive Time
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-eggplant-100 uppercase tracking-wider">
-                      Last Visited
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-eggplant-100 uppercase tracking-wider">
-                      RTM
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-eggplant-100 uppercase tracking-wider">
-                      Landlord
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-eggplant-100 uppercase tracking-wider">
-                      Notes
+                      Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-eggplant-800/30">
-                  {(() => {
-                    const { schedule } = getScheduleTimes(
-                      day.visits,
-                      "09:00",
-                      desiredEndTimes[day.date]
-                    );
-                    // Sort visits based on their scheduled/arrival times
-                    const sortedVisits = [...day.visits].sort((a, b) => {
-                      const aInfo = schedule.find(
-                        (s: ScheduleEntry) => s.pub === a.pub
-                      );
-                      const bInfo = schedule.find(
-                        (s: ScheduleEntry) => s.pub === b.pub
-                      );
-                      if (!aInfo || !bInfo) return 0;
-                      return aInfo.arrival.getTime() - bInfo.arrival.getTime();
-                    });
-
-                    return sortedVisits.map((visit) => {
-                      const hoursKey = `${visit.pub}-${visit.zip}`;
-                      const hoursData = openingHours[hoursKey];
-                      const visitInfo = schedule.find(
-                        (s: ScheduleEntry) => s.pub === visit.pub
-                      );
-                      const visitIndex = day.visits.indexOf(visit);
-
-                      const travelInfo =
-                        visitIndex === 0
-                          ? `From Home: ${day.startMileage?.toFixed(1)} mi / ${
-                              day.startDriveTime
-                            } mins`
-                          : visitIndex === day.visits.length - 1
-                          ? `To Home: ${day.endMileage?.toFixed(1)} mi / ${
-                              day.endDriveTime
-                            } mins`
-                          : visit.mileageToNext
-                          ? `Next: ${visit.mileageToNext.toFixed(1)} mi / ${
-                              visit.driveTimeToNext
-                            } mins`
-                          : "End of day";
-
-                      return (
-                        <tr
-                          key={`visit-${day.date}-${visit.pub}-${visit.zip}-${visitIndex}-${dayIndex}`}
-                          className={clsx(
-                            "hover:bg-eggplant-800/20 transition-colors group cursor-pointer",
-                            selectedPub?.pub === visit.pub &&
-                              "bg-eggplant-800/30",
-                            visitInfo &&
-                              isOutsideBusinessHours(visitInfo.arrival) &&
-                              "border-l-2 border-l-amber-400"
-                          )}
-                          onClick={() => handlePubSelect(visit)}
-                        >
-                          <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
-                            <div className="flex items-center gap-2">
-                              <div
+                  {visits.map((visit, visitIndex) => (
+                    <tr key={`${visit.pub}-${visitIndex}`}>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <div className="flex flex-col">
+                            {visit.scheduledTime && (
+                              <span
                                 className={clsx(
-                                  visitInfo &&
-                                    isOutsideBusinessHours(visitInfo.arrival) &&
-                                    "text-amber-400"
+                                  "text-xs",
+                                  visit.scheduledTime === "Anytime"
+                                    ? "text-blue-400"
+                                    : isOutsideBusinessHours(
+                                        visit.scheduledTime
+                                      )
+                                    ? "text-red-400"
+                                    : "text-green-400"
                                 )}
                               >
-                                {visitInfo
-                                  ? format(visitInfo.arrival, "HH:mm")
-                                  : "--:--"}
-                                {visitInfo &&
-                                  isOutsideBusinessHours(visitInfo.arrival) && (
-                                    <Tooltip.Provider>
-                                      <Tooltip.Root>
-                                        <Tooltip.Trigger asChild>
-                                          <AlertTriangle className="h-4 w-4 ml-1 inline-block" />
-                                        </Tooltip.Trigger>
-                                        <Tooltip.Portal>
-                                          <Tooltip.Content
-                                            className="bg-dark-800 text-amber-200 px-3 py-2 rounded-lg text-sm shadow-lg"
-                                            sideOffset={5}
-                                          >
-                                            Visit scheduled outside business
-                                            hours (9 AM - 5 PM)
-                                            <Tooltip.Arrow className="fill-dark-800" />
-                                          </Tooltip.Content>
-                                        </Tooltip.Portal>
-                                      </Tooltip.Root>
-                                    </Tooltip.Provider>
-                                  )}
-                              </div>
-                              <span>{travelInfo}</span>
-                              <VisitScheduler
-                                key={`scheduler-${day.date}-${visit.pub}-${visitIndex}-${dayIndex}`}
-                                visit={visit}
-                                date={day.date}
-                                onSchedule={handleVisitSchedule}
-                              />
-                            </div>
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-eggplant-100 relative">
-                            <div className="flex items-center justify-between">
-                              <span>{visit.pub}</span>
-                              <RemovePubDialog
-                                visit={visit}
-                                onConfirm={() =>
-                                  handleRemovePubVisit(day.date, visit.pub)
-                                }
-                              />
-                            </div>
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
-                            {visit.zip}
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap">
+                                Scheduled:{" "}
+                                {visit.scheduledTime === "Anytime"
+                                  ? "Flexible"
+                                  : visit.scheduledTime}
+                                {visit.scheduledTime !== "Anytime" &&
+                                  isOutsideBusinessHours(visit.scheduledTime) &&
+                                  " ⚠️"}
+                              </span>
+                            )}
                             <span
-                              className={`px-2 py-1 text-xs rounded-full ${getPriorityStyles(
-                                visit.Priority
-                              )}`}
+                              className={clsx(
+                                "text-eggplant-100",
+                                visit.scheduledTime &&
+                                  !isOutsideBusinessHours(
+                                    visit.scheduledTime
+                                  ) &&
+                                  "text-green-200",
+                                visit.scheduledTime &&
+                                  isOutsideBusinessHours(visit.scheduledTime) &&
+                                  "text-red-200",
+                                !visit.scheduledTime &&
+                                  visit.arrival &&
+                                  !isOutsideBusinessHours(visit.arrival) &&
+                                  "text-blue-200",
+                                !visit.scheduledTime &&
+                                  visit.arrival &&
+                                  isOutsideBusinessHours(visit.arrival) &&
+                                  "text-orange-200"
+                              )}
                             >
-                              {visit.Priority}
+                              {visit.arrival
+                                ? format(visit.arrival, "HH:mm")
+                                : visit.scheduledTime
+                                ? visit.scheduledTime
+                                : "Not scheduled"}
                             </span>
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap">
-                            <OpeningHoursIndicator
-                              pub={visit.pub}
-                              postcode={visit.zip}
-                            />
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
-                            {formatDate(visit.last_visited)}
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
-                            {visit.rtm || "-"}
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
-                            {visit.landlord || "-"}
-                          </td>
-                          <td className="px-4 py-2 text-eggplant-100 max-w-xs truncate">
-                            {visit.notes || "-"}
-                          </td>
-                        </tr>
-                      );
-                    });
-                  })()}
+                          </div>
+                          <VisitScheduler
+                            visit={{
+                              ...visit,
+                              scheduledTime:
+                                visit.scheduledTime ||
+                                (visit.arrival
+                                  ? format(visit.arrival, "HH:mm")
+                                  : undefined),
+                            }}
+                            date={day.date || ""}
+                            onSchedule={handleVisitSchedule}
+                          />
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
+                        <div className="flex items-center justify-between">
+                          <span>{visit.pub}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
+                        {visit.zip}
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full ${getPriorityStyles(
+                            visit.Priority || ""
+                          )}`}
+                        >
+                          {visit.Priority}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
+                        {visit.driveTimeToNext
+                          ? `${visit.driveTimeToNext}m`
+                          : "-"}
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <RemovePubDialog
+                            visit={visit}
+                            onConfirm={() =>
+                              handleRemovePubVisit(day.date || "", visit.pub)
+                            }
+                          />
+                          <RescheduleDialog
+                            day={day}
+                            visit={visit}
+                            onReschedule={(newSchedule) => {
+                              updateSchedule((prevSchedule) =>
+                                prevSchedule.map((d) =>
+                                  d.date === day.date ? newSchedule : d
+                                )
+                              );
+                            }}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
-            <div className="grid grid-cols-1 gap-4 p-4 bg-dark-900/95">
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <RouteMap
-                    day={day}
-                    homeAddress={homeAddress}
-                    className="animated-border h-[400px]"
-                  />
-                </div>
-                <UnscheduledPubsPanel
-                  pubs={userFiles.pubs}
-                  selectedPub={selectedPub}
-                  scheduledPubs={day.visits}
-                  onScheduleAnyway={(pub) => {
-                    const daySchedule = schedule.find(
-                      (d) => d.date === day.date
-                    );
-                    if (!daySchedule) return false;
-
-                    // Check if pub is already scheduled
-                    if (daySchedule.visits.some((v) => v.pub === pub.pub)) {
-                      return false;
-                    }
-
-                    // Calculate metrics for the new visit
-                    const updatedVisits = [...daySchedule.visits];
-                    const lastVisit = updatedVisits[updatedVisits.length - 1];
-                    let totalMileage = daySchedule.totalMileage || 0;
-                    let totalDriveTime = daySchedule.totalDriveTime || 0;
-
-                    if (updatedVisits.length === 0) {
-                      const { mileage, driveTime } = calculateDistance(
-                        homeAddress,
-                        pub.zip
-                      );
-                      totalMileage = mileage;
-                      totalDriveTime = driveTime;
-                    } else {
-                      const { mileage, driveTime } = calculateDistance(
-                        lastVisit.zip,
-                        pub.zip
-                      );
-                      lastVisit.mileageToNext = mileage;
-                      lastVisit.driveTimeToNext = driveTime;
-                      totalMileage += mileage;
-                      totalDriveTime += driveTime;
-                    }
-
-                    const {
-                      mileage: mileageToHome,
-                      driveTime: driveTimeToHome,
-                    } = calculateDistance(pub.zip, homeAddress);
-
-                    const newVisit = {
-                      ...pub,
-                      Priority: pub.Priority || "Unvisited",
-                      mileageToNext: 0,
-                      driveTimeToNext: 0,
-                    } satisfies ScheduleVisit;
-
-                    updatedVisits.push(newVisit);
-                    totalMileage += mileageToHome;
-                    totalDriveTime += driveTimeToHome;
-
-                    updateSchedule((prevSchedule) =>
-                      prevSchedule.map((d) => {
-                        if (d.date !== day.date) return d;
-                        return {
-                          ...d,
-                          visits: updatedVisits,
-                          totalMileage,
-                          totalDriveTime,
-                          endMileage: mileageToHome,
-                          endDriveTime: driveTimeToHome,
-                        };
-                      })
-                    );
-                    return true;
-                  }}
-                />
-              </div>
+            <div className="mt-4">
+              <RouteMap
+                day={day}
+                homeAddress={homeAddress}
+                className="h-[400px] rounded-lg animated-border"
+              />
             </div>
           </div>
         )}
@@ -1299,42 +1158,19 @@ const ScheduleDisplay: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {(schedule as ScheduleDay[]).map((visit, index) => (
-          <div
-            key={`${visit.pub}-${index}`}
-            className="flex items-center space-x-4 p-4 rounded-lg bg-purple-900 bg-opacity-50"
-          >
-            <div className="flex-1">
-              <div className="flex items-center justify-between">
-                <span className="text-white font-medium">{visit.pub}</span>
-                <span className="text-white text-sm">
-                  {format(visit.arrival, "HH:mm")} -{" "}
-                  {format(visit.departure, "HH:mm")}
-                </span>
-              </div>
-              <div className="text-white text-sm opacity-75">
-                Open: {visit.businessHours.openTime} -{" "}
-                {visit.businessHours.closeTime}
-              </div>
-            </div>
-          </div>
-        ))}
+        {(schedule || []).map((day, index) => renderDaySchedule(day, index))}
       </div>
 
       <div className="flex justify-end gap-2 mt-4">
         <button
-          onClick={() => {
-            /* Add calendar export logic */
-          }}
+          onClick={() => downloadICSFile(schedule)}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-white text-purple-900 hover:bg-white/90 transition-colors"
         >
           <Calendar className="h-4 w-4" />
           Export Calendar
         </button>
         <button
-          onClick={() => {
-            /* Add Excel export logic */
-          }}
+          onClick={exportToExcel}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-white text-purple-900 hover:bg-white/90 transition-colors"
         >
           <Download className="h-4 w-4" />

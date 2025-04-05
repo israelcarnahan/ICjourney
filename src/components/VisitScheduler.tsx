@@ -42,7 +42,12 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
 interface VisitSchedulerProps {
   visit: ScheduleVisit;
   date: string;
-  onSchedule: (visitId: string, time: string, notes: string) => void;
+  onSchedule: (
+    date: string,
+    visitId: string,
+    time: string,
+    notes: string
+  ) => void;
 }
 
 const VisitScheduler: React.FC<VisitSchedulerProps> = ({
@@ -106,6 +111,17 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
     }
   };
 
+  const isOutsideBusinessHours = (timeStr: string): boolean => {
+    try {
+      const [hours, minutes] = timeStr.split(":").map(Number);
+      const totalMinutes = hours * 60 + minutes;
+      return totalMinutes < 9 * 60 || totalMinutes >= 17 * 60;
+    } catch (error) {
+      console.warn("Time validation error:", error);
+      return true;
+    }
+  };
+
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = e.target.value;
     setSelectedTime(newTime);
@@ -115,9 +131,21 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
     try {
       console.log("handleSchedule called", { selectedTime, isAnytime, notes });
 
-      if (!isAnytime && !validateTimeInput(selectedTime)) {
-        console.warn("Invalid time selected:", selectedTime);
-        return;
+      if (!isAnytime) {
+        if (!validateTimeInput(selectedTime)) {
+          console.warn("Invalid time selected:", selectedTime);
+          return;
+        }
+
+        if (isOutsideBusinessHours(selectedTime)) {
+          if (
+            !window.confirm(
+              "The selected time is outside business hours (9 AM - 5 PM). Do you want to schedule anyway?"
+            )
+          ) {
+            return;
+          }
+        }
       }
 
       console.log("Validation passed, closing dialog");
@@ -127,12 +155,14 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
       console.log("Setting up schedule update");
       // Use setTimeout to ensure the dialog is closed before updating the schedule
       setTimeout(() => {
+        const finalTime = isAnytime ? "Anytime" : selectedTime;
         console.log("Executing schedule update", {
-          visit: visit.pub,
-          time: isAnytime ? "Anytime" : selectedTime,
+          date,
+          visitId: visit.pub,
+          time: finalTime,
           notes,
         });
-        onSchedule(visit.pub, isAnytime ? "Anytime" : selectedTime, notes);
+        onSchedule(date, visit.pub, finalTime, notes);
       }, 0);
     } catch (error) {
       console.error("Error in handleSchedule:", error);
@@ -165,17 +195,20 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
         <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
         <Dialog.Content
           className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md animated-border bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 rounded-lg p-6"
-          aria-describedby="visit-scheduler-dialog-description"
+          aria-describedby="visit-scheduler-description"
         >
           <div className="flex justify-between items-center mb-6">
             <Dialog.Title className="text-xl font-bold text-eggplant-100">
               {visit.scheduledTime ? "Edit Scheduled Visit" : "Schedule Visit"}
             </Dialog.Title>
-            <div id="visit-scheduler-dialog-description" className="sr-only">
+            <Dialog.Description
+              id="visit-scheduler-description"
+              className="sr-only"
+            >
               {visit.scheduledTime ? "Edit scheduled" : "Schedule"} visit time
               and add notes for {visit.pub} on{" "}
               {format(new Date(date), "MMMM d, yyyy")}.
-            </div>
+            </Dialog.Description>
             <Dialog.Close className="text-eggplant-400 hover:text-eggplant-100">
               <Clock className="h-5 w-5" />
             </Dialog.Close>
@@ -216,6 +249,13 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                         {mockData.email}
                       </a>
                     </div>
+                    <div className="flex items-center gap-2 mt-2 text-sm">
+                      <Clock className="h-4 w-4 text-neon-purple" />
+                      <span className="text-eggplant-200">Business Hours:</span>
+                      <span className="text-neon-purple">
+                        9:00 AM - 5:00 PM
+                      </span>
+                    </div>
                   </div>
                 );
               })()}
@@ -243,16 +283,34 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                 disabled={isAnytime}
                 value={selectedTime}
                 onChange={handleTimeChange}
+                min="09:00"
+                max="17:00"
                 className={clsx(
                   "w-full px-3 py-2 bg-dark-900/50 border border-eggplant-700 rounded-lg text-eggplant-100",
                   "focus:border-neon-purple focus:ring-1 focus:ring-neon-purple",
                   isAnytime && "opacity-50 cursor-not-allowed"
                 )}
               />
-              <p className="mt-1 text-xs text-eggplant-300">
-                Currently scheduled for:{" "}
-                {formatTimeDisplay(visit.scheduledTime)}
-              </p>
+              <div className="mt-1 space-y-1">
+                <p className="text-xs text-eggplant-300">
+                  Currently scheduled for:{" "}
+                  {formatTimeDisplay(visit.scheduledTime)}
+                </p>
+                {!isAnytime && selectedTime && (
+                  <p
+                    className={clsx(
+                      "text-xs",
+                      isOutsideBusinessHours(selectedTime)
+                        ? "text-red-400"
+                        : "text-green-400"
+                    )}
+                  >
+                    {isOutsideBusinessHours(selectedTime)
+                      ? "⚠️ Selected time is outside business hours (9 AM - 5 PM)"
+                      : "✓ Selected time is within business hours"}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div>
