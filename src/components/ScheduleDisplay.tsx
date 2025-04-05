@@ -404,8 +404,21 @@ const getScheduleTimes = (
     // If we can't schedule within business hours, show warning
     if (currentTime > desiredEnd) {
       console.warn(
-        `Warning: Visit to ${schedule[i].pub} scheduled outside business hours`
+        `Warning: Visit to ${schedule[i].pub} may be scheduled outside business hours`
       );
+    }
+  }
+
+  // Final pass: Ensure all visits have calculated times
+  for (let i = 0; i < schedule.length; i++) {
+    if (!schedule[i].arrival || !schedule[i].departure) {
+      const prevVisit = schedule[i - 1];
+      const startTime = prevVisit
+        ? addMinutes(prevVisit.departure, prevVisit.driveTime || minDriveTime)
+        : dayStart;
+
+      schedule[i].arrival = startTime;
+      schedule[i].departure = addMinutes(startTime, averageVisitTime);
     }
   }
 
@@ -752,71 +765,85 @@ const ScheduleDisplay: React.FC = () => {
     updateSchedule((prevSchedule) =>
       prevSchedule.map((day) => {
         if (!day.date || day.date !== date) return day;
-        const visits = day.visits || [];
 
-        // Update the visit's scheduled time and notes
-        const updatedVisits = visits.map((visit) =>
-          visit.pub === visitId
-            ? {
-                ...visit,
-                scheduledTime: time,
-                visitNotes: notes || visit.visitNotes,
-              }
-            : visit
+        // Find the visit to update
+        const visitIndex = day.visits.findIndex(
+          (visit) => visit.pub === visitId
         );
+        if (visitIndex === -1) return day;
 
-        // Get optimized schedule times
-        const { schedule: updatedTimes } = getScheduleTimes(
-          updatedVisits,
+        // Create a copy of the visits array
+        const updatedVisits = [...day.visits];
+
+        // Update the specific visit with new scheduled time
+        updatedVisits[visitIndex] = {
+          ...updatedVisits[visitIndex],
+          scheduledTime: time,
+          visitNotes: notes || updatedVisits[visitIndex].visitNotes,
+        };
+
+        // First, sort visits by scheduled times (if any)
+        const sortedByScheduled = [...updatedVisits].sort((a, b) => {
+          // If both have scheduled times, compare them
+          if (
+            a.scheduledTime &&
+            b.scheduledTime &&
+            a.scheduledTime !== "Anytime" &&
+            b.scheduledTime !== "Anytime"
+          ) {
+            const [aHours, aMinutes] = a.scheduledTime.split(":").map(Number);
+            const [bHours, bMinutes] = b.scheduledTime.split(":").map(Number);
+            return aHours * 60 + aMinutes - (bHours * 60 + bMinutes);
+          }
+          // Scheduled visits come before unscheduled ones
+          if (a.scheduledTime && a.scheduledTime !== "Anytime") return -1;
+          if (b.scheduledTime && b.scheduledTime !== "Anytime") return 1;
+          return 0;
+        });
+
+        // Get optimized schedule times based on the new order
+        const { schedule: optimizedTimes } = getScheduleTimes(
+          sortedByScheduled,
           "09:00",
           desiredEndTimes[date]
         );
 
-        // Update arrival and departure times for each visit
-        let finalVisits = updatedVisits.map((visit, index) => {
-          const scheduleInfo = updatedTimes[index];
+        // Update all visits with their calculated times
+        const finalVisits = sortedByScheduled.map((visit, idx) => {
+          const scheduleInfo = optimizedTimes[idx];
+          const isUserScheduled =
+            visit.scheduledTime && visit.scheduledTime !== "Anytime";
+
+          // For user-scheduled visits, use their scheduled time for arrival
+          const arrivalTime = isUserScheduled
+            ? parseTimeToDate(visit.scheduledTime)
+            : scheduleInfo.arrival;
+
           return {
             ...visit,
-            arrival: scheduleInfo.arrival,
-            departure: scheduleInfo.departure,
+            arrival: arrivalTime,
+            departure: addMinutes(arrivalTime, 45), // 45-minute visit duration
+            driveTimeToNext: scheduleInfo.driveTime,
           };
         });
 
-        // Sort visits by their actual times (scheduled or arrival)
-        finalVisits = finalVisits.sort((a, b) => {
-          // Helper function to get the effective time for sorting
-          const getEffectiveTime = (visit: Visit) => {
-            if (visit.scheduledTime && visit.scheduledTime !== "Anytime") {
-              const [hours, minutes] = visit.scheduledTime
-                .split(":")
-                .map(Number);
-              const date = new Date();
-              date.setHours(hours, minutes, 0, 0);
-              return date;
-            }
-            return visit.arrival || new Date(0);
-          };
-
-          const timeA = getEffectiveTime(a);
-          const timeB = getEffectiveTime(b);
-          return timeA.getTime() - timeB.getTime();
-        });
-
-        // Recalculate metrics after sorting
+        // Recalculate drive times and metrics
         const metrics = recalculateMetrics(
           finalVisits,
           homeAddress,
           desiredEndTimes[date]
         );
 
+        // Log the updated schedule for debugging
         console.log("Updated schedule:", {
+          date,
           visits: finalVisits.map((v) => ({
             pub: v.pub,
             scheduledTime: v.scheduledTime,
-            arrival: v.arrival ? format(v.arrival, "HH:mm") : null,
-            effectiveTime:
-              v.scheduledTime ||
-              (v.arrival ? format(v.arrival, "HH:mm") : "No time"),
+            arrival: v.arrival ? format(v.arrival, "HH:mm") : undefined,
+            isScheduled: Boolean(
+              v.scheduledTime && v.scheduledTime !== "Anytime"
+            ),
           })),
         });
 
@@ -827,6 +854,40 @@ const ScheduleDisplay: React.FC = () => {
         };
       })
     );
+  };
+
+  const getOptimizedTime = (
+    visit: Visit,
+    dayIndex: number,
+    visits: Visit[]
+  ): Date => {
+    const baseTime = new Date();
+    baseTime.setHours(9, 0, 0, 0); // Start at 9 AM
+
+    if (dayIndex === 0) {
+      // For first visit of the day
+      if (visits.indexOf(visit) === 0) {
+        return baseTime;
+      }
+    }
+
+    // Calculate cumulative time based on previous visits
+    const visitIndex = visits.indexOf(visit);
+    let currentTime = new Date(baseTime);
+
+    for (let i = 0; i < visitIndex; i++) {
+      const prevVisit = visits[i];
+      // Add visit duration (45 minutes)
+      currentTime = addMinutes(currentTime, 45);
+      // Add drive time to next visit
+      if (prevVisit.driveTimeToNext) {
+        currentTime = addMinutes(currentTime, prevVisit.driveTimeToNext);
+      } else {
+        currentTime = addMinutes(currentTime, 30); // Default 30 minutes if no drive time specified
+      }
+    }
+
+    return currentTime;
   };
 
   const renderDaySchedule = (day: ScheduleDay, dayIndex: number) => {
@@ -998,120 +1059,140 @@ const ScheduleDisplay: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-eggplant-800/30">
-                  {visits.map((visit, visitIndex) => (
-                    <tr key={`${visit.pub}-${visitIndex}`}>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <div className="flex flex-col">
-                            {visit.scheduledTime && (
-                              <span
-                                className={clsx(
-                                  "text-xs",
-                                  visit.scheduledTime === "Anytime"
-                                    ? "text-blue-400"
-                                    : isOutsideBusinessHours(
+                  {[...visits]
+                    .sort((a, b) => {
+                      // Helper function to get effective time for a visit
+                      const getEffectiveTime = (visit: Visit): Date => {
+                        if (
+                          visit.scheduledTime &&
+                          visit.scheduledTime !== "Anytime"
+                        ) {
+                          return parseTimeToDate(visit.scheduledTime);
+                        }
+                        if (visit.arrival) {
+                          return visit.arrival;
+                        }
+                        return getOptimizedTime(visit, dayIndex, visits);
+                      };
+
+                      const timeA = getEffectiveTime(a);
+                      const timeB = getEffectiveTime(b);
+                      return timeA.getTime() - timeB.getTime();
+                    })
+                    .map((visit, visitIndex) => (
+                      <tr key={`${visit.pub}-${visitIndex}`}>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <div className="flex flex-col">
+                              {visit.scheduledTime &&
+                                visit.scheduledTime !== "Anytime" && (
+                                  <span
+                                    className={clsx(
+                                      "text-xs",
+                                      isOutsideBusinessHours(
                                         visit.scheduledTime
                                       )
-                                    ? "text-red-400"
-                                    : "text-green-400"
+                                        ? "text-red-400"
+                                        : "text-green-400"
+                                    )}
+                                  >
+                                    Scheduled: {visit.scheduledTime}
+                                    {isOutsideBusinessHours(
+                                      visit.scheduledTime
+                                    ) && " ⚠️"}
+                                  </span>
+                                )}
+                              {visit.scheduledTime === "Anytime" && (
+                                <span className="text-xs text-blue-400">
+                                  Flexible Time
+                                </span>
+                              )}
+                              <span
+                                className={clsx(
+                                  "text-eggplant-100",
+                                  visit.scheduledTime &&
+                                    !isOutsideBusinessHours(
+                                      visit.scheduledTime
+                                    ) &&
+                                    "text-green-200",
+                                  visit.scheduledTime &&
+                                    isOutsideBusinessHours(
+                                      visit.scheduledTime
+                                    ) &&
+                                    "text-red-200",
+                                  !visit.scheduledTime && "text-blue-200"
                                 )}
                               >
-                                Scheduled:{" "}
-                                {visit.scheduledTime === "Anytime"
-                                  ? "Flexible"
-                                  : visit.scheduledTime}
-                                {visit.scheduledTime !== "Anytime" &&
-                                  isOutsideBusinessHours(visit.scheduledTime) &&
-                                  " ⚠️"}
-                              </span>
-                            )}
-                            <span
-                              className={clsx(
-                                "text-eggplant-100",
-                                visit.scheduledTime &&
-                                  !isOutsideBusinessHours(
-                                    visit.scheduledTime
-                                  ) &&
-                                  "text-green-200",
-                                visit.scheduledTime &&
-                                  isOutsideBusinessHours(visit.scheduledTime) &&
-                                  "text-red-200",
-                                !visit.scheduledTime &&
-                                  visit.arrival &&
-                                  !isOutsideBusinessHours(visit.arrival) &&
-                                  "text-blue-200",
-                                !visit.scheduledTime &&
-                                  visit.arrival &&
-                                  isOutsideBusinessHours(visit.arrival) &&
-                                  "text-orange-200"
-                              )}
-                            >
-                              {visit.arrival
-                                ? format(visit.arrival, "HH:mm")
-                                : visit.scheduledTime
-                                ? visit.scheduledTime
-                                : "Not scheduled"}
-                            </span>
-                          </div>
-                          <VisitScheduler
-                            visit={{
-                              ...visit,
-                              scheduledTime:
-                                visit.scheduledTime ||
-                                (visit.arrival
+                                {visit.arrival
                                   ? format(visit.arrival, "HH:mm")
-                                  : undefined),
-                            }}
-                            date={day.date || ""}
-                            onSchedule={handleVisitSchedule}
-                          />
-                        </div>
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
-                        <div className="flex items-center justify-between">
-                          <span>{visit.pub}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
-                        {visit.zip}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full ${getPriorityStyles(
-                            visit.Priority || ""
-                          )}`}
-                        >
-                          {visit.Priority}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
-                        {visit.driveTimeToNext
-                          ? `${visit.driveTimeToNext}m`
-                          : "-"}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <RemovePubDialog
-                            visit={visit}
-                            onConfirm={() =>
-                              handleRemovePubVisit(day.date || "", visit.pub)
-                            }
-                          />
-                          <RescheduleDialog
-                            day={day}
-                            visit={visit}
-                            onReschedule={(newSchedule) => {
-                              updateSchedule((prevSchedule) =>
-                                prevSchedule.map((d) =>
-                                  d.date === day.date ? newSchedule : d
-                                )
-                              );
-                            }}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                                  : visit.scheduledTime &&
+                                    visit.scheduledTime !== "Anytime"
+                                  ? visit.scheduledTime
+                                  : format(
+                                      getOptimizedTime(visit, dayIndex, visits),
+                                      "HH:mm"
+                                    )}
+                              </span>
+                            </div>
+                            <VisitScheduler
+                              visit={{
+                                ...visit,
+                                scheduledTime:
+                                  visit.scheduledTime ||
+                                  (visit.arrival
+                                    ? format(visit.arrival, "HH:mm")
+                                    : undefined),
+                              }}
+                              date={day.date || ""}
+                              onSchedule={handleVisitSchedule}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
+                          <div className="flex items-center justify-between">
+                            <span>{visit.pub}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
+                          {visit.zip}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${getPriorityStyles(
+                              visit.Priority || ""
+                            )}`}
+                          >
+                            {visit.Priority}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
+                          {visit.driveTimeToNext
+                            ? `${visit.driveTimeToNext}m`
+                            : "-"}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <RemovePubDialog
+                              visit={visit}
+                              onConfirm={() =>
+                                handleRemovePubVisit(day.date || "", visit.pub)
+                              }
+                            />
+                            <RescheduleDialog
+                              day={day}
+                              visit={visit}
+                              onReschedule={(newSchedule) => {
+                                updateSchedule((prevSchedule) =>
+                                  prevSchedule.map((d) =>
+                                    d.date === day.date ? newSchedule : d
+                                  )
+                                );
+                              }}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
