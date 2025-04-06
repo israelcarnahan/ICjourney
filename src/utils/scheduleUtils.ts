@@ -1,5 +1,6 @@
 import { Pub, ScheduleDay } from "../context/PubDataContext";
 import { format, addBusinessDays } from "date-fns";
+import { Visit } from "../types";
 
 export const extractNumericPart = (postcode: string): [string, number] => {
   // Extract the first part of the postcode (letters + number)
@@ -11,58 +12,54 @@ export const extractNumericPart = (postcode: string): [string, number] => {
   return [match[1], parseInt(match[2], 10)];
 };
 
-export const calculateDistance = (
-  from: string,
-  to: string
-): { mileage: number; driveTime: number } => {
-  const [fromPrefix, fromNum] = extractNumericPart(from);
-  const [toPrefix, toNum] = extractNumericPart(to);
+export const calculateDistance = (fromPostcode: string, toPostcode: string) => {
+  // Basic postcode proximity check
+  const fromPrefix = fromPostcode.substring(0, 2);
+  const toPrefix = toPostcode.substring(0, 2);
 
-  // If postcodes are in different areas, estimate higher distance
-  if (fromPrefix !== toPrefix) {
-    return { mileage: 50, driveTime: 90 };
-  }
+  // If postcodes don't share first two characters, they're likely far apart
+  const isFarApart = fromPrefix !== toPrefix;
 
-  // Calculate distance based on numeric difference
-  const numDiff = Math.abs(fromNum - toNum);
-  const baseDistance = numDiff * 2.5; // Roughly 2.5 miles per postcode number difference
-  const baseTime = numDiff * 5; // Roughly 5 minutes per postcode number difference
+  // Calculate a rough estimate based on postcode similarity
+  const baseTime = isFarApart ? 90 : 30;
+  const baseMileage = isFarApart ? 45 : 15;
 
   return {
-    mileage: baseDistance + (Math.random() * 2 - 1), // Add some randomness ±1 mile
-    driveTime: Math.round(baseTime + (Math.random() * 10 - 5)), // Add some randomness ±5 minutes
+    driveTime: baseTime,
+    mileage: baseMileage,
   };
 };
 
 export const findNearestPubs = (
-  fromPub: Pub,
-  pubs: Pub[],
-  limit: number
-): Pub[] => {
-  if (!fromPub.zip || !pubs.length) return [];
+  sourcePub: Visit,
+  availablePubs: Visit[],
+  maxDistance: number
+): Visit[] => {
+  const sourcePrefix = sourcePub.zip.substring(0, 2);
 
-  const [basePrefix, baseNum] = extractNumericPart(fromPub.zip);
-
-  return pubs
+  // Filter pubs by postcode proximity first
+  return availablePubs
     .filter((pub) => {
-      if (!pub.zip) return false;
-      const [pubPrefix, pubNum] = extractNumericPart(pub.zip);
-      return (
-        pubPrefix === basePrefix &&
-        Math.abs(pubNum - baseNum) <= 1 &&
-        pub.pub !== fromPub.pub
-      );
+      const pubPrefix = pub.zip.substring(0, 2);
+      return pubPrefix === sourcePrefix;
     })
-    .slice(0, limit);
+    .map((pub) => ({
+      ...pub,
+      distance: calculateDistance(sourcePub.zip, pub.zip).mileage,
+    }))
+    .filter((pub) => pub.distance <= maxDistance)
+    .sort((a, b) => (a.distance || 0) - (b.distance || 0));
 };
 
-export const getPriorityOrder = (pub: Pub): number => {
-  switch (pub.Priority) {
-    case "RecentWin":
+export const getPriorityOrder = (pub: Visit): number => {
+  switch (pub.Priority?.toLowerCase()) {
+    case "repslywin":
+    case "recent win":
       return 1;
-    case "Wishlist":
-      return pub.priorityLevel || 2;
-    case "Unvisited":
+    case "wishlist":
+    case "hit list":
+      return 2;
+    case "unvisited":
       return 3;
     default:
       return 4;
@@ -296,3 +293,80 @@ export async function planVisits(
 
   return schedule;
 }
+
+export const optimizeRoute = (
+  visits: Visit[],
+  homeAddress: string,
+  maxDriveTime: number = 90 // Maximum drive time between visits in minutes
+): Visit[] => {
+  // Separate fixed and flexible visits
+  const fixedVisits = visits.filter(
+    (v) => v.scheduledTime && v.scheduledTime !== "Anytime"
+  );
+  const flexibleVisits = visits.filter(
+    (v) => !v.scheduledTime || v.scheduledTime === "Anytime"
+  );
+
+  // Sort fixed visits by time
+  fixedVisits.sort((a, b) => {
+    const timeA = parseTimeString(a.scheduledTime!);
+    const timeB = parseTimeString(b.scheduledTime!);
+    return timeA - timeB;
+  });
+
+  // Initialize optimized route with fixed visits
+  const optimizedRoute: Visit[] = [...fixedVisits];
+
+  // For each fixed visit, find nearest flexible visits that can fit in the time gaps
+  for (let i = 0; i < fixedVisits.length - 1; i++) {
+    const currentVisit = fixedVisits[i];
+    const nextVisit = fixedVisits[i + 1];
+
+    const timeGap = getTimeGapMinutes(
+      currentVisit.scheduledTime!,
+      nextVisit.scheduledTime!
+    );
+    const availableTime = timeGap - 45; // Subtract visit duration
+
+    if (availableTime >= 60) {
+      // Minimum time needed for a flexible visit
+      const nearbyVisits = findNearestPubs(
+        currentVisit,
+        flexibleVisits,
+        maxDriveTime
+      ).filter((v) => !optimizedRoute.includes(v));
+
+      if (nearbyVisits.length > 0) {
+        optimizedRoute.splice(i + 1, 0, nearbyVisits[0]);
+        flexibleVisits.splice(flexibleVisits.indexOf(nearbyVisits[0]), 1);
+      }
+    }
+  }
+
+  // Add remaining flexible visits to the start or end of the day
+  const remainingVisits = findNearestPubs(
+    { zip: homeAddress } as Visit,
+    flexibleVisits,
+    maxDriveTime
+  );
+
+  // Add visits to start of day if they're closer to home
+  const morningVisits = remainingVisits.slice(
+    0,
+    Math.floor(remainingVisits.length / 2)
+  );
+  const afternoonVisits = remainingVisits.slice(
+    Math.floor(remainingVisits.length / 2)
+  );
+
+  return [...morningVisits, ...optimizedRoute, ...afternoonVisits];
+};
+
+const parseTimeString = (time: string): number => {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+};
+
+const getTimeGapMinutes = (startTime: string, endTime: string): number => {
+  return parseTimeString(endTime) - parseTimeString(startTime);
+};

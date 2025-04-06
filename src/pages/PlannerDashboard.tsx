@@ -631,7 +631,7 @@ const PlannerDashboard: React.FC = () => {
                     <h2 className="text-xl font-bold mb-2 bg-gradient-to-r from-neon-purple via-neon-pink to-neon-blue bg-clip-text text-transparent">
                       Quick Start 🚀
                     </h2>
-                    <p className="text-xs text-eggplant-200">
+                    <p className="text-xs text-white/80">
                       Upload your territory data and let AI optimize your
                       schedule ✨
                     </p>

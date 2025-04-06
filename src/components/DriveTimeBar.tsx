@@ -452,9 +452,8 @@ const DriveTimeBar: React.FC<DriveTimeBarProps> = ({
       <h3 className="text-lg font-medium text-eggplant-100">
         Journey Timeline
       </h3>
-      <div className="relative h-24 bg-eggplant-800/30 rounded-lg p-4">
-        {/* Time markers */}
-        <div className="absolute top-0 left-0 w-full flex justify-between px-4 text-xs text-eggplant-200">
+      <div className="relative w-full h-32 bg-eggplant-800 rounded-lg p-4">
+        <div className="absolute top-0 left-0 right-0 h-6 flex items-center justify-between px-4">
           <span>8:00</span>
           <span>10:00</span>
           <span>12:00</span>
@@ -463,65 +462,48 @@ const DriveTimeBar: React.FC<DriveTimeBarProps> = ({
           <span>18:00</span>
         </div>
 
-        {/* Timeline */}
-        <div className="relative w-full h-12 bg-eggplant-700/30 rounded mt-4">
-          {/* Visit slots */}
-          {sortedVisits.map((visit, index) => {
+        {/* Vehicle track */}
+        <div className="absolute top-6 left-0 right-0 h-4 flex items-center">
+          <div
+            className="absolute transition-all duration-300"
+            style={{ left: `${getCurrentTimePosition()}%` }}
+          >
+            {getVehicleIcon()}
+          </div>
+        </div>
+
+        {/* Visit blocks track */}
+        <div className="absolute top-10 left-0 right-0 h-16">
+          {visits.map((visit, index) => {
             const position = getVisitPosition(visit);
-            const time = getVisitTime(visit);
-            const isScheduled = Boolean(visit.scheduledTime);
+            const isScheduled = visit.scheduledTime !== undefined;
+            const visitTime = getVisitTime(visit);
 
             return (
               <div
-                key={`${visit.pub}-${index}`}
-                className="absolute transform -translate-x-1/2"
-                style={{ left: `${position}%`, top: "-8px" }}
+                key={visit.pub}
+                className={`absolute h-16 min-w-[120px] p-2 rounded-lg border-2 transition-all duration-300 ${
+                  isScheduled
+                    ? "border-green-400 bg-green-400/10"
+                    : "border-neon-purple bg-neon-purple/10"
+                }`}
+                style={{
+                  left: `${position}%`,
+                  transform: "translateX(-50%)",
+                }}
               >
-                <div className="flex flex-col items-center">
-                  <div
-                    className={clsx(
-                      "w-20 h-20 rounded p-2 text-center text-xs",
-                      isScheduled
-                        ? "bg-eggplant-800/90 border-2 border-green-500/30"
-                        : "bg-eggplant-800/90 border border-neon-purple/30"
-                    )}
-                  >
-                    <div className="text-white truncate" title={visit.pub}>
-                      {visit.pub.split(" ").slice(0, 2).join(" ")}...
-                    </div>
-                    <div
-                      className={clsx(
-                        "flex items-center justify-center gap-1",
-                        isScheduled ? "text-green-400" : "text-neon-purple"
-                      )}
-                    >
-                      <Clock className="h-3 w-3" />
-                      <span>{format(time, "HH:mm")}</span>
-                    </div>
-                    <div
-                      className={clsx(
-                        "text-xs mt-1",
-                        isScheduled ? "text-green-400" : "text-neon-purple"
-                      )}
-                    >
-                      {isScheduled ? "Scheduled" : "Optimized"}
-                    </div>
-                  </div>
+                <div className="text-xs font-medium text-white truncate">
+                  {visit.pub}
+                </div>
+                <div className="text-xs text-eggplant-200">
+                  {format(visitTime, "HH:mm")}
+                </div>
+                <div className="text-xs text-eggplant-300">
+                  {isScheduled ? "Scheduled" : "Optimized"}
                 </div>
               </div>
             );
           })}
-
-          {/* Current time marker with vehicle icon */}
-          <div
-            className="absolute transform -translate-x-1/2"
-            style={{ left: `${getCurrentTimePosition()}%`, top: "-16px" }}
-          >
-            {getVehicleIcon()}
-            <div className="text-xs text-white mt-1">
-              {format(currentTime, "HH:mm")}
-            </div>
-          </div>
         </div>
       </div>
     </div>
