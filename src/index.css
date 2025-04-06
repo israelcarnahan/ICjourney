@@ -4,12 +4,18 @@
 
 @layer base {
   body {
-    @apply bg-dark-950 min-h-screen text-dark-100;
+    @apply bg-dark-950 min-h-screen text-white;
     background-attachment: fixed;
   }
 
   .animated-border {
-    background: linear-gradient(90deg, theme(colors.neon.purple), theme(colors.neon.pink), theme(colors.neon.blue), theme(colors.neon.purple));
+    background: linear-gradient(
+      90deg,
+      theme(colors.neon.purple),
+      theme(colors.neon.pink),
+      theme(colors.neon.blue),
+      theme(colors.neon.purple)
+    );
     background-size: 200% 100%;
     animation: border-gradient 12s linear infinite;
     padding: 2px;
@@ -27,12 +33,12 @@
 }
 
 .scrollbar-thumb-eggplant-700::-webkit-scrollbar-thumb {
-  background-color: theme('colors.eggplant.700');
-  border-radius: theme('borderRadius.full');
+  background-color: theme("colors.eggplant.700");
+  border-radius: theme("borderRadius.full");
 }
 
 .scrollbar-track-dark-900::-webkit-scrollbar-track {
-  background-color: theme('colors.dark.900');
+  background-color: theme("colors.dark.900");
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -41,8 +47,12 @@
 
 /* Animation for dialog fade in/out */
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .animate-fade-in {
@@ -59,7 +69,7 @@
 }
 
 .react-datepicker__input-container input::placeholder {
-  @apply text-eggplant-400;
+  @apply text-white/70;
 }
 
 .react-datepicker {
@@ -72,11 +82,11 @@
 
 .react-datepicker__current-month,
 .react-datepicker__day-name {
-  @apply text-eggplant-100 !important;
+  @apply text-white !important;
 }
 
 .react-datepicker__day {
-  @apply text-eggplant-100 hover:bg-eggplant-700/50 rounded transition-colors !important;
+  @apply text-white hover:bg-eggplant-700/50 rounded transition-colors !important;
 }
 
 .react-datepicker__day--selected {
@@ -88,11 +98,11 @@
 }
 
 .react-datepicker__day--outside-month {
-  @apply text-eggplant-500 !important;
+  @apply text-white/50 !important;
 }
 
 .react-datepicker__navigation-icon::before {
-  @apply border-eggplant-100 !important;
+  @apply border-white !important;
 }
 
 .react-datepicker__navigation:hover *::before {
@@ -119,14 +129,24 @@
 }
 
 @keyframes border-gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @keyframes wave {
-  0% { background-position: 0% 0%; }
-  100% { background-position: 100px 0%; }
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100px 0%;
+  }
 }
 
 .animate-sparkle {
@@ -134,7 +154,8 @@
 }
 
 @keyframes gradient-y {
-  0%, 100% {
+  0%,
+  100% {
     background-size: 400% 400%;
     background-position: center top;
   }
@@ -145,7 +166,8 @@
 }
 
 @keyframes gradient-x {
-  0%, 100% {
+  0%,
+  100% {
     background-size: 200% 100%;
     background-position: left center;
   }
@@ -156,7 +178,8 @@
 }
 
 @keyframes gradient-xy {
-  0%, 100% {
+  0%,
+  100% {
     background-size: 400% 400%;
     background-position: left center;
   }
@@ -167,7 +190,13 @@
 }
 
 @keyframes cursor-gradient {
-  0% { transform: translate(0, 0); }
-  50% { transform: translate(10px, 10px); }
-  100% { transform: translate(0, 0); }
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(10px, 10px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
 }

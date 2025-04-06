@@ -17,6 +17,7 @@ import {
   Truck,
   LucideIcon,
   Users,
+  RefreshCw,
 } from "lucide-react";
 import {
   usePubData,
@@ -25,7 +26,7 @@ import {
   VehicleColor,
   Pub,
 } from "../context/PubDataContext";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import {
   format,
   parseISO,
@@ -62,69 +63,14 @@ import {
   ThimbleIcon,
   WheelbarrowIcon,
 } from "./icons/MonopolyIcons";
-import { Visit, EnhancedScheduleDay } from "../types";
-
-interface OpeningHoursResult {
-  isOpen: boolean;
-  hours?: string;
-  error?: string;
-  openTime?: string;
-  closeTime?: string;
-}
-
-interface OpeningHoursMap {
-  [key: string]: OpeningHoursResult;
-}
-
-interface ScheduleVisit extends Pub {
-  driveTimeToNext?: number;
-  scheduledTime?: string;
-  arrival?: Date;
-  departure?: Date;
-  Priority: string;
-}
-
-interface Visit extends Pub {
-  driveTimeToNext?: number;
-  scheduledTime?: string;
-  arrival?: Date;
-  departure?: Date;
-  Priority: string;
-}
-
-interface ScheduleEntry {
-  pub: string;
-  arrival: Date;
-  departure: Date;
-  driveTime: number;
-  isScheduled: boolean;
-}
-
-interface BusinessHours {
-  openTime: string;
-  closeTime: string;
-}
-
-interface ScheduleVisit {
-  pub: string;
-  arrival: Date;
-  departure: Date;
-  businessHours: BusinessHours;
-}
-
-interface ScheduleDay {
-  date: string;
-  visits: Visit[];
-  totalDriveTime: number;
-  totalMileage: number;
-  startDriveTime: number;
-  endDriveTime: number;
-  schedulingErrors?: string[];
-}
-
-interface EnhancedScheduleDay extends ScheduleDay {
-  totalMileage?: number;
-}
+import {
+  Visit,
+  EnhancedScheduleDay,
+  ScheduleDay,
+  OpeningHoursMap,
+  ScheduleEntry,
+} from "../types";
+import { optimizeRoute } from "../utils/routeOptimization";
 
 // Custom icon for fairy
 const FairyIcon = () => (
@@ -458,8 +404,8 @@ const isOutsideBusinessHours = (time: Date | string): boolean => {
 interface DriveTimeBarProps {
   visits: Pub[];
   totalDriveTime: number;
-  startDriveTime: string;
-  endDriveTime: string;
+  startDriveTime: number;
+  endDriveTime: number;
   targetVisitsPerDay: number;
   desiredEndTime?: string;
   onDesiredEndTimeChange: (time: string) => void;
@@ -485,7 +431,7 @@ const ScheduleDisplay: React.FC = () => {
   const [removedPubs, setRemovedPubs] = useState<Record<string, Set<string>>>(
     {}
   );
-  const [selectedPub, setSelectedPub] = useState<any>(null);
+  const [selectedPub, setSelectedPub] = useState<Visit | null>(null);
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [desiredEndTimes, setDesiredEndTimes] = useState<
     Record<string, string>
@@ -782,9 +728,9 @@ const ScheduleDisplay: React.FC = () => {
           visitNotes: notes || updatedVisits[visitIndex].visitNotes,
         };
 
-        // First, sort visits by scheduled times (if any)
-        const sortedByScheduled = [...updatedVisits].sort((a, b) => {
-          // If both have scheduled times, compare them
+        // Sort visits based on scheduled times and proximity
+        const sortedVisits = [...updatedVisits].sort((a, b) => {
+          // If both have scheduled times, sort by time
           if (
             a.scheduledTime &&
             b.scheduledTime &&
@@ -795,62 +741,29 @@ const ScheduleDisplay: React.FC = () => {
             const [bHours, bMinutes] = b.scheduledTime.split(":").map(Number);
             return aHours * 60 + aMinutes - (bHours * 60 + bMinutes);
           }
-          // Scheduled visits come before unscheduled ones
+          // If only one has a scheduled time, it goes first
           if (a.scheduledTime && a.scheduledTime !== "Anytime") return -1;
           if (b.scheduledTime && b.scheduledTime !== "Anytime") return 1;
-          return 0;
+
+          // For unscheduled visits, maintain their relative order
+          return updatedVisits.indexOf(a) - updatedVisits.indexOf(b);
         });
 
-        // Get optimized schedule times based on the new order
-        const { schedule: optimizedTimes } = getScheduleTimes(
-          sortedByScheduled,
-          "09:00",
-          desiredEndTimes[date]
-        );
-
-        // Update all visits with their calculated times
-        const finalVisits = sortedByScheduled.map((visit, idx) => {
-          const scheduleInfo = optimizedTimes[idx];
-          const isUserScheduled =
-            visit.scheduledTime && visit.scheduledTime !== "Anytime";
-
-          // For user-scheduled visits, use their scheduled time for arrival
-          const arrivalTime = isUserScheduled
-            ? parseTimeToDate(visit.scheduledTime)
-            : scheduleInfo.arrival;
-
-          return {
-            ...visit,
-            arrival: arrivalTime,
-            departure: addMinutes(arrivalTime, 45), // 45-minute visit duration
-            driveTimeToNext: scheduleInfo.driveTime,
-          };
-        });
-
-        // Recalculate drive times and metrics
+        // Recalculate metrics with the new order
         const metrics = recalculateMetrics(
-          finalVisits,
+          sortedVisits,
           homeAddress,
           desiredEndTimes[date]
         );
 
-        // Log the updated schedule for debugging
-        console.log("Updated schedule:", {
-          date,
-          visits: finalVisits.map((v) => ({
-            pub: v.pub,
-            scheduledTime: v.scheduledTime,
-            arrival: v.arrival ? format(v.arrival, "HH:mm") : undefined,
-            isScheduled: Boolean(
-              v.scheduledTime && v.scheduledTime !== "Anytime"
-            ),
-          })),
-        });
-
+        // Return updated day with all required properties
         return {
           ...day,
-          visits: finalVisits,
-          ...metrics,
+          visits: sortedVisits,
+          totalMileage: metrics.totalMileage,
+          totalDriveTime: metrics.totalDriveTime,
+          startDriveTime: metrics.startDriveTime,
+          endDriveTime: metrics.endDriveTime,
         };
       })
     );
@@ -859,7 +772,8 @@ const ScheduleDisplay: React.FC = () => {
   const getOptimizedTime = (
     visit: Visit,
     dayIndex: number,
-    visits: Visit[]
+    visits: Visit[],
+    startDriveTime: number = 0
   ): Date => {
     const baseTime = new Date();
     baseTime.setHours(9, 0, 0, 0); // Start at 9 AM
@@ -867,13 +781,14 @@ const ScheduleDisplay: React.FC = () => {
     if (dayIndex === 0) {
       // For first visit of the day
       if (visits.indexOf(visit) === 0) {
-        return baseTime;
+        return addMinutes(baseTime, startDriveTime);
       }
     }
 
     // Calculate cumulative time based on previous visits
     const visitIndex = visits.indexOf(visit);
     let currentTime = new Date(baseTime);
+    currentTime = addMinutes(currentTime, startDriveTime); // Add initial drive time from home
 
     for (let i = 0; i < visitIndex; i++) {
       const prevVisit = visits[i];
@@ -890,6 +805,177 @@ const ScheduleDisplay: React.FC = () => {
     return currentTime;
   };
 
+  const handleVisitDelete = async (date: string, visitId: string) => {
+    // Remove the visit without replacement
+    updateSchedule((prevSchedule) =>
+      prevSchedule.map((d) => {
+        if (d.date !== date) return d;
+
+        const updatedVisits = d.visits.filter((v) => v.pub !== visitId);
+
+        // Recalculate metrics
+        const metrics = recalculateMetrics(
+          updatedVisits,
+          homeAddress,
+          desiredEndTimes[date]
+        );
+
+        return {
+          ...d,
+          visits: updatedVisits,
+          ...metrics,
+        };
+      })
+    );
+  };
+
+  const handleVisitReplace = async (date: string, visitId: string) => {
+    // Find a replacement visit based on criteria
+    const day = schedule.find((d) => d.date === date);
+    if (!day) return;
+
+    const visitToReplace = day.visits.find((v) => v.pub === visitId);
+    if (!visitToReplace) return;
+
+    // Get potential replacement visits based on criteria
+    const replacementVisits = userFiles.pubs.filter((pub) => {
+      // Not already scheduled
+      const isNotScheduled = !schedule.some((d) =>
+        d.visits.some((v) => v.pub === pub.pub)
+      );
+
+      // Within search radius (using postcode matching)
+      const isNearby =
+        pub.zip.substring(0, 2) === visitToReplace.zip.substring(0, 2);
+
+      // Matches priority level
+      const hasSimilarPriority = pub.Priority === visitToReplace.Priority;
+
+      // Consider deadline if exists
+      const meetsDeadline =
+        !pub.deadline ||
+        (pub.deadline && new Date(pub.deadline) > new Date(date));
+
+      return isNotScheduled && isNearby && hasSimilarPriority && meetsDeadline;
+    });
+
+    // Sort by last visited date (prioritize ones not visited recently)
+    replacementVisits.sort((a, b) => {
+      const aDate = a.last_visited ? new Date(a.last_visited) : new Date(0);
+      const bDate = b.last_visited ? new Date(b.last_visited) : new Date(0);
+      return aDate.getTime() - bDate.getTime();
+    });
+
+    if (replacementVisits.length === 0) {
+      console.warn("No suitable replacement found");
+      return;
+    }
+
+    // Update schedule with replacement
+    updateSchedule((prevSchedule) =>
+      prevSchedule.map((d) => {
+        if (d.date !== date) return d;
+
+        const updatedVisits = [...d.visits];
+        const visitIndex = updatedVisits.findIndex((v) => v.pub === visitId);
+
+        if (visitIndex !== -1) {
+          updatedVisits[visitIndex] = {
+            ...replacementVisits[0],
+            scheduledTime: visitToReplace.scheduledTime, // Preserve the time slot
+            mileageToNext: 0,
+            driveTimeToNext: 30,
+          };
+        }
+
+        // Recalculate metrics
+        const metrics = recalculateMetrics(
+          updatedVisits,
+          homeAddress,
+          desiredEndTimes[date]
+        );
+
+        return {
+          ...d,
+          visits: updatedVisits,
+          ...metrics,
+        };
+      })
+    );
+  };
+
+  const handleDayRegenerate = async (date: string) => {
+    const day = schedule.find((d) => d.date === date);
+    if (!day) return;
+
+    // Get the postcode area for this day (from first visit)
+    const postcodeArea = day.visits[0]?.zip.substring(0, 2);
+    if (!postcodeArea) return;
+
+    // Find all potential visits in this postcode area
+    const potentialVisits = userFiles.pubs.filter((pub) => {
+      // Match postcode area
+      const isInArea = pub.zip.substring(0, 2) === postcodeArea;
+
+      // Not already scheduled
+      const isNotScheduled = !schedule.some((d) =>
+        d.visits.some((v) => v.pub === pub.pub)
+      );
+
+      // Consider deadline if exists
+      const meetsDeadline =
+        !pub.deadline ||
+        (pub.deadline && new Date(pub.deadline) > new Date(date));
+
+      return isInArea && isNotScheduled && meetsDeadline;
+    });
+
+    // Sort by priority and last visited date
+    potentialVisits.sort((a, b) => {
+      // First by priority
+      const priorityA = a.priorityLevel || 0;
+      const priorityB = b.priorityLevel || 0;
+      if (priorityA !== priorityB) return priorityB - priorityA;
+
+      // Then by last visited date
+      const aDate = a.last_visited ? new Date(a.last_visited) : new Date(0);
+      const bDate = b.last_visited ? new Date(b.last_visited) : new Date(0);
+      return aDate.getTime() - bDate.getTime();
+    });
+
+    // Take the top N visits based on visitsPerDay
+    const newVisits = potentialVisits.slice(0, visitsPerDay).map((visit) => ({
+      ...visit,
+      mileageToNext: 0,
+      driveTimeToNext: 30,
+    }));
+
+    if (newVisits.length === 0) {
+      console.warn("No suitable visits found for regeneration");
+      return;
+    }
+
+    // Update schedule with new visits
+    updateSchedule((prevSchedule) =>
+      prevSchedule.map((d) => {
+        if (d.date !== date) return d;
+
+        // Recalculate metrics
+        const metrics = recalculateMetrics(
+          newVisits,
+          homeAddress,
+          desiredEndTimes[date]
+        );
+
+        return {
+          ...d,
+          visits: newVisits,
+          ...metrics,
+        };
+      })
+    );
+  };
+
   const renderDaySchedule = (day: ScheduleDay, dayIndex: number) => {
     const isExpanded = expandedDays[day.date || ""];
     const visits = day.visits || [];
@@ -897,10 +983,6 @@ const ScheduleDisplay: React.FC = () => {
       visits.length < visitsPerDay ||
       (day.schedulingErrors?.length ?? 0) > 0 ||
       visits.some((v) => v.arrival && isOutsideBusinessHours(v.arrival));
-
-    // Convert drive times to numbers for DriveTimeBar
-    const startDriveTimeMinutes = parseInt(day.startDriveTime || "0", 10);
-    const endDriveTimeMinutes = parseInt(day.endDriveTime || "0", 10);
 
     return (
       <div
@@ -950,6 +1032,20 @@ const ScheduleDisplay: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-sm text-eggplant-100">
+              <Clock className="h-4 w-4" />
+              <span>End Time:</span>
+              <input
+                type="time"
+                value={desiredEndTimes[day.date || ""] || "17:00"}
+                onChange={(e) =>
+                  handleDesiredEndTimeChange(day.date || "", e.target.value)
+                }
+                className="bg-eggplant-800 text-white text-sm rounded px-2 py-1 border border-eggplant-700"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+
             {hasWarnings && (
               <Tooltip.Provider>
                 <Tooltip.Root>
@@ -991,6 +1087,19 @@ const ScheduleDisplay: React.FC = () => {
                 </Tooltip.Root>
               </Tooltip.Provider>
             )}
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDayRegenerate(day.date || "");
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm bg-eggplant-700 hover:bg-eggplant-600 text-white rounded-md transition-colors"
+              title="Regenerate schedule"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Regenerate
+            </button>
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -1001,6 +1110,7 @@ const ScheduleDisplay: React.FC = () => {
             >
               <Trash2 className="h-5 w-5" />
             </button>
+
             <button
               className={clsx(
                 "p-2 rounded-full transition-colors",
@@ -1026,8 +1136,8 @@ const ScheduleDisplay: React.FC = () => {
             <DriveTimeBar
               visits={visits}
               totalDriveTime={day.totalDriveTime || 0}
-              startDriveTime={startDriveTimeMinutes}
-              endDriveTime={endDriveTimeMinutes}
+              startDriveTime={day.startDriveTime || 0}
+              endDriveTime={day.endDriveTime || 0}
               targetVisitsPerDay={visitsPerDay}
               desiredEndTime={desiredEndTimes[day.date || ""]}
               onDesiredEndTimeChange={(time) =>
@@ -1061,23 +1171,31 @@ const ScheduleDisplay: React.FC = () => {
                 <tbody className="divide-y divide-eggplant-800/30">
                   {[...visits]
                     .sort((a, b) => {
-                      // Helper function to get effective time for a visit
-                      const getEffectiveTime = (visit: Visit): Date => {
+                      const getVisitTime = (visit: Visit): number => {
                         if (
                           visit.scheduledTime &&
                           visit.scheduledTime !== "Anytime"
                         ) {
-                          return parseTimeToDate(visit.scheduledTime);
+                          const [hours, minutes] = visit.scheduledTime
+                            .split(":")
+                            .map(Number);
+                          return hours * 60 + minutes;
                         }
-                        if (visit.arrival) {
-                          return visit.arrival;
-                        }
-                        return getOptimizedTime(visit, dayIndex, visits);
+                        // For unscheduled visits, calculate their optimized time
+                        const previousVisits = visits.slice(
+                          0,
+                          visits.indexOf(visit)
+                        );
+                        const totalPreviousTime = previousVisits.reduce(
+                          (total, prev) => {
+                            return total + (prev.driveTimeToNext || 30) + 45; // 45 min visit time
+                          },
+                          day.startDriveTime || 0
+                        ); // Use day.startDriveTime with fallback
+                        return 9 * 60 + totalPreviousTime; // Start at 9 AM
                       };
 
-                      const timeA = getEffectiveTime(a);
-                      const timeB = getEffectiveTime(b);
-                      return timeA.getTime() - timeB.getTime();
+                      return getVisitTime(a) - getVisitTime(b);
                     })
                     .map((visit, visitIndex) => (
                       <tr key={`${visit.pub}-${visitIndex}`}>
@@ -1085,10 +1203,11 @@ const ScheduleDisplay: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <div className="flex flex-col">
                               {visit.scheduledTime &&
-                                visit.scheduledTime !== "Anytime" && (
+                              visit.scheduledTime !== "Anytime" ? (
+                                <>
                                   <span
                                     className={clsx(
-                                      "text-xs",
+                                      "text-xs flex items-center gap-1",
                                       isOutsideBusinessHours(
                                         visit.scheduledTime
                                       )
@@ -1096,53 +1215,65 @@ const ScheduleDisplay: React.FC = () => {
                                         : "text-green-400"
                                     )}
                                   >
-                                    Scheduled: {visit.scheduledTime}
+                                    <Clock className="h-3 w-3" />
+                                    Scheduled
                                     {isOutsideBusinessHours(
                                       visit.scheduledTime
                                     ) && " ⚠️"}
                                   </span>
-                                )}
-                              {visit.scheduledTime === "Anytime" && (
-                                <span className="text-xs text-blue-400">
-                                  Flexible Time
-                                </span>
-                              )}
-                              <span
-                                className={clsx(
-                                  "text-eggplant-100",
-                                  visit.scheduledTime &&
-                                    !isOutsideBusinessHours(
-                                      visit.scheduledTime
-                                    ) &&
-                                    "text-green-200",
-                                  visit.scheduledTime &&
-                                    isOutsideBusinessHours(
-                                      visit.scheduledTime
-                                    ) &&
-                                    "text-red-200",
-                                  !visit.scheduledTime && "text-blue-200"
-                                )}
-                              >
-                                {visit.arrival
-                                  ? format(visit.arrival, "HH:mm")
-                                  : visit.scheduledTime &&
-                                    visit.scheduledTime !== "Anytime"
-                                  ? visit.scheduledTime
-                                  : format(
-                                      getOptimizedTime(visit, dayIndex, visits),
+                                  <span
+                                    className={clsx(
+                                      "text-lg",
+                                      isOutsideBusinessHours(
+                                        visit.scheduledTime
+                                      )
+                                        ? "text-red-200"
+                                        : "text-green-200"
+                                    )}
+                                  >
+                                    {visit.scheduledTime}
+                                  </span>
+                                </>
+                              ) : visit.scheduledTime === "Anytime" ? (
+                                <>
+                                  <span className="text-xs text-blue-400 flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    Flexible
+                                  </span>
+                                  <span className="text-lg text-neon-purple">
+                                    {format(
+                                      getOptimizedTime(
+                                        visit,
+                                        dayIndex,
+                                        visits,
+                                        day.startDriveTime || 0
+                                      ),
                                       "HH:mm"
                                     )}
-                              </span>
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="text-xs text-neon-purple flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    Optimized
+                                  </span>
+                                  <span className="text-lg text-neon-purple">
+                                    {format(
+                                      getOptimizedTime(
+                                        visit,
+                                        dayIndex,
+                                        visits,
+                                        day.startDriveTime || 0
+                                      ),
+                                      "HH:mm"
+                                    )}
+                                  </span>
+                                </>
+                              )}
                             </div>
                             <VisitScheduler
-                              visit={{
-                                ...visit,
-                                scheduledTime:
-                                  visit.scheduledTime ||
-                                  (visit.arrival
-                                    ? format(visit.arrival, "HH:mm")
-                                    : undefined),
-                              }}
+                              visit={visit}
                               date={day.date || ""}
                               onSchedule={handleVisitSchedule}
                             />
@@ -1172,23 +1303,26 @@ const ScheduleDisplay: React.FC = () => {
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <RemovePubDialog
-                              visit={visit}
-                              onConfirm={() =>
-                                handleRemovePubVisit(day.date || "", visit.pub)
-                              }
-                            />
-                            <RescheduleDialog
-                              day={day}
-                              visit={visit}
-                              onReschedule={(newSchedule) => {
-                                updateSchedule((prevSchedule) =>
-                                  prevSchedule.map((d) =>
-                                    d.date === day.date ? newSchedule : d
-                                  )
-                                );
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleVisitReplace(day.date || "", visit.pub);
                               }}
-                            />
+                              className="p-1 text-neon-purple hover:text-neon-purple/80 transition-colors"
+                              title="Replace visit"
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleVisitDelete(day.date || "", visit.pub);
+                              }}
+                              className="p-1 text-red-400 hover:text-red-300 transition-colors"
+                              title="Delete visit"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -1239,7 +1373,7 @@ const ScheduleDisplay: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {(schedule || []).map((day, index) => renderDaySchedule(day, index))}
+        {schedule.map((day, index) => renderDaySchedule(day, index))}
       </div>
 
       <div className="flex justify-end gap-2 mt-4">

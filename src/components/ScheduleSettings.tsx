@@ -116,7 +116,7 @@ const ScheduleSettings: React.FC<ScheduleSettingsProps> = ({
         <div>
           <label
             htmlFor="searchRadius"
-            className="block text-sm font-medium text-eggplant-100 mb-1"
+            className="block text-sm font-medium text-white mb-1"
           >
             Search Radius
           </label>
@@ -134,7 +134,7 @@ const ScheduleSettings: React.FC<ScheduleSettingsProps> = ({
               className="pl-10 block w-full accent-neon-purple"
               disabled={isDisabled || isGenerating}
             />
-            <div className="mt-1 flex justify-between text-xs text-eggplant-300">
+            <div className="mt-1 flex justify-between text-xs text-white/70">
               <span>Condensed (5)</span>
               <span className="text-neon-purple">
                 {searchRadius} mile radius

@@ -22,7 +22,7 @@ const About: React.FC = () => {
         </div>
 
         <div className="prose max-w-none">
-          <p className="text-lg mb-4 text-eggplant-100">
+          <p className="text-lg mb-4 text-white">
             Journey Planner is your intelligent field sales companion, born from
             real-world experience in territory management. Originally developed
             for beverage industry professionals, it's now helping field sales
@@ -32,16 +32,14 @@ const About: React.FC = () => {
           </p>
 
           <div className="animated-border bg-gradient-to-r from-eggplant-800/90 via-dark-800/95 to-eggplant-800/90 backdrop-blur-sm rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-3 text-eggplant-100">
+            <h2 className="text-xl font-semibold mb-3 text-white">
               Key Features
             </h2>
             <ul className="list-none pl-0 space-y-3 mb-6">
               <li className="flex items-start">
                 <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
-                <span className="text-eggplant-100">
-                  <strong className="text-eggplant-100">
-                    Smart Daily Planning:
-                  </strong>{" "}
+                <span className="text-white">
+                  <strong className="text-white">Smart Daily Planning:</strong>{" "}
                   Optimize up to 8 strategic customer visits per day, perfectly
                   balanced between high-priority prospects and key account
                   maintenance.
@@ -49,8 +47,8 @@ const About: React.FC = () => {
               </li>
               <li className="flex items-start">
                 <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
-                <span className="text-eggplant-100">
-                  <strong className="text-eggplant-100">
+                <span className="text-white">
+                  <strong className="text-white">
                     Intelligent Prioritization:
                   </strong>{" "}
                   Multiple customer lists (wishlist, unvisited, master file)
@@ -59,8 +57,8 @@ const About: React.FC = () => {
               </li>
               <li className="flex items-start">
                 <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
-                <span className="text-eggplant-100">
-                  <strong className="text-eggplant-100">
+                <span className="text-white">
+                  <strong className="text-white">
                     Location-Smart Routing:
                   </strong>{" "}
                   Group visits by proximity to maximize face time and minimize
@@ -69,8 +67,8 @@ const About: React.FC = () => {
               </li>
               <li className="flex items-start">
                 <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
-                <span className="text-eggplant-100">
-                  <strong className="text-eggplant-100">
+                <span className="text-white">
+                  <strong className="text-white">
                     Visit History Tracking:
                   </strong>{" "}
                   Never drop the ball on important accounts with smart visit
@@ -79,19 +77,15 @@ const About: React.FC = () => {
               </li>
               <li className="flex items-start">
                 <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
-                <span className="text-eggplant-100">
-                  <strong className="text-eggplant-100">
-                    Excel Integration:
-                  </strong>{" "}
+                <span className="text-white">
+                  <strong className="text-white">Excel Integration:</strong>{" "}
                   One-click export to Excel for easy reporting and team sharing.
                 </span>
               </li>
               <li className="flex items-start">
                 <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
-                <span className="text-eggplant-100">
-                  <strong className="text-eggplant-100">
-                    KPI Achievement:
-                  </strong>{" "}
+                <span className="text-white">
+                  <strong className="text-white">KPI Achievement:</strong>{" "}
                   Built-in deadline management ensures you're always hitting
                   your numbers.
                 </span>
@@ -100,10 +94,10 @@ const About: React.FC = () => {
           </div>
 
           <div className="animated-border bg-gradient-to-r from-eggplant-800/90 via-dark-800/95 to-eggplant-800/90 backdrop-blur-sm rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-3 text-eggplant-100">
+            <h2 className="text-xl font-semibold mb-3 text-white">
               How It Works
             </h2>
-            <p className="text-eggplant-100 mb-3">
+            <p className="text-white mb-3">
               Journey Planner uses cutting-edge algorithms to:
             </p>
             <ol className="list-none pl-0 space-y-3 mb-6">
@@ -119,17 +113,17 @@ const About: React.FC = () => {
                   <span className="inline-block min-w-[1.5rem] mr-2 text-neon-blue">
                     {index + 1}.
                   </span>
-                  <span className="text-eggplant-100">{item}</span>
+                  <span className="text-white">{item}</span>
                 </li>
               ))}
             </ol>
           </div>
 
           <div className="animated-border bg-gradient-to-r from-eggplant-800/90 via-dark-800/95 to-eggplant-800/90 backdrop-blur-sm rounded-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-3 text-eggplant-100">
+            <h2 className="text-xl font-semibold mb-3 text-white">
               Future Development
             </h2>
-            <p className="text-eggplant-100 mb-3">
+            <p className="text-white mb-3">
               We're constantly innovating to make your field sales life easier.
               Coming soon:
             </p>
@@ -137,9 +131,8 @@ const About: React.FC = () => {
               {features.map(([title, desc], index) => (
                 <li key={index} className="flex items-start">
                   <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
-                  <span className="text-eggplant-100">
-                    <strong className="text-eggplant-100">{title}</strong>{" "}
-                    {desc}
+                  <span className="text-white">
+                    <strong className="text-white">{title}</strong> {desc}
                   </span>
                 </li>
               ))}
@@ -147,17 +140,15 @@ const About: React.FC = () => {
           </div>
 
           <div className="animated-border bg-gradient-to-r from-eggplant-800/90 via-dark-800/95 to-eggplant-800/90 backdrop-blur-sm rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-3 text-eggplant-100">
-              Contact
-            </h2>
-            <p className="text-eggplant-100 mb-4">
+            <h2 className="text-xl font-semibold mb-3 text-white">Contact</h2>
+            <p className="text-white mb-4">
               Questions, feedback, or feature requests? Let's talk:
             </p>
             <div className="space-y-3">
               <SparkleWrapper>
                 <a
                   href="mailto:ritnourisrael@gmail.com"
-                  className="flex items-center text-eggplant-100 hover:text-neon-blue transition-colors"
+                  className="flex items-center text-white hover:text-neon-blue transition-colors"
                 >
                   <Mail className="h-5 w-5 mr-2" />
                   ritnourisrael@gmail.com
@@ -166,7 +157,7 @@ const About: React.FC = () => {
               <SparkleWrapper>
                 <a
                   href="https://github.com/israelcarnahan/visit_planner"
-                  className="flex items-center text-eggplant-100 hover:text-neon-pink transition-colors"
+                  className="flex items-center text-white hover:text-neon-pink transition-colors"
                 >
                   <Github className="h-5 w-5 mr-2" />
                   github.com/israelcarnahan/visit_planner

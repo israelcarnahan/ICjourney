@@ -12,6 +12,7 @@ import {
   Home,
   Beer,
   Navigation,
+  LucideIcon,
 } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as Popover from "@radix-ui/react-popover";
@@ -26,6 +27,8 @@ import {
   VehicleType,
   VehicleColor,
 } from "../context/PubDataContext";
+import clsx from "clsx";
+import { Visit } from "../types";
 
 // Custom icon for fairy
 const FairyIcon = () => (
@@ -47,7 +50,7 @@ const FairyIcon = () => (
   </svg>
 );
 
-const vehicleIcons = {
+const vehicleIcons: Record<VehicleType, LucideIcon | React.FC> = {
   car: Car,
   truck: Truck,
   bike: Bike,
@@ -56,32 +59,7 @@ const vehicleIcons = {
   plane: Plane,
   boat: Anchor,
   fairy: FairyIcon,
-} as const;
-
-interface Visit {
-  pub: string;
-  driveTimeToNext?: number;
-  zip: string;
-  scheduledTime?: string;
-  visitNotes?: string;
-  accountName?: string;
-  openingTime?: string;
-}
-
-interface DriveTimeBarProps {
-  visits: Visit[];
-  totalDriveTime?: number;
-  startDriveTime?: number;
-  endDriveTime?: number;
-  targetVisitsPerDay: number;
-  startTime?: string;
-  desiredEndTime?: string;
-  onDesiredEndTimeChange?: (time: string) => void;
-  onGenerateSchedule?: () => void;
-  onPrevStep?: () => void;
-  onNextStep?: () => void;
-  isGeneratingSchedule?: boolean;
-}
+};
 
 const vehicleColors: Record<VehicleColor, string> = {
   purple: "text-neon-purple",
@@ -91,6 +69,15 @@ const vehicleColors: Record<VehicleColor, string> = {
   orange: "text-orange-400",
   yellow: "text-yellow-400",
 };
+
+interface DriveTimeBarProps {
+  visits: Visit[];
+  totalDriveTime: number;
+  startDriveTime: number;
+  endDriveTime: number;
+  targetVisitsPerDay: number;
+  desiredEndTime?: string;
+}
 
 interface SegmentInfo {
   type: "start" | "visit" | "drive" | "end";
@@ -335,330 +322,207 @@ const getCurrentProgress = (
 
 const DriveTimeBar: React.FC<DriveTimeBarProps> = ({
   visits,
-  totalDriveTime = 0,
-  startDriveTime = 0,
-  endDriveTime = 0,
+  totalDriveTime,
+  startDriveTime,
+  endDriveTime,
   targetVisitsPerDay,
-  startTime = "09:00",
   desiredEndTime = "17:00",
-  onDesiredEndTimeChange,
-  onGenerateSchedule,
-  onPrevStep,
-  onNextStep,
-  isGeneratingSchedule = false,
 }) => {
   const { selectedVehicle, selectedVehicleColor } = usePubData();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Update current time every minute
   useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(now);
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 60000);
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
     return () => clearInterval(timer);
   }, []);
 
-  // Get optimized schedule
-  const { schedule } = getScheduleTimes(visits, startTime, desiredEndTime);
-
-  // Calculate total day duration based on start and desired end times
-  const getDayDuration = () => {
-    const [startHours, startMinutes] = startTime.split(":").map(Number);
-    const [endHours, endMinutes] = desiredEndTime.split(":").map(Number);
-    const startDate = new Date();
-    startDate.setHours(startHours, startMinutes, 0, 0);
-    const endDate = new Date();
-    endDate.setHours(endHours, endMinutes, 0, 0);
-    return differenceInMinutes(endDate, startDate);
+  const getVehicleIcon = () => {
+    const VehicleIcon = vehicleIcons[selectedVehicle];
+    return (
+      <div
+        className={clsx("animate-bounce", vehicleColors[selectedVehicleColor])}
+      >
+        <VehicleIcon className="h-6 w-6" />
+      </div>
+    );
   };
 
-  const totalDayDuration = getDayDuration();
+  const getCurrentTimePosition = () => {
+    const now = currentTime;
+    const startOfDay = new Date(now);
+    startOfDay.setHours(8, 0, 0, 0);
+    const endOfDay = new Date(now);
+    endOfDay.setHours(18, 0, 0, 0);
 
-  // Function to get width percentage for a time segment
-  const getSegmentWidth = (minutes: number) => {
-    return (minutes / totalDayDuration) * 100;
+    if (now < startOfDay) return 0;
+    if (now > endOfDay) return 100;
+
+    const totalMinutes = 10 * 60; // 10 hours (8 AM to 6 PM)
+    const currentMinutes = (now.getHours() - 8) * 60 + now.getMinutes();
+    return (currentMinutes / totalMinutes) * 100;
   };
 
-  // Function to get position percentage for a time
-  const getTimePosition = (time: Date) => {
-    const [startHours, startMinutes] = startTime.split(":").map(Number);
-    const startDate = new Date();
-    startDate.setHours(startHours, startMinutes, 0, 0);
-    const minutesFromStart = differenceInMinutes(time, startDate);
-    return getSegmentWidth(minutesFromStart);
+  const getTimeFromString = (timeStr: string): Date => {
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    const time = new Date();
+    time.setHours(hours, minutes, 0, 0);
+    return time;
   };
 
-  // Sort visits based on scheduled times
+  // Sort visits by scheduled time, keeping unscheduled visits in their original order
   const sortedVisits = [...visits].sort((a, b) => {
-    const aInfo = schedule.find((s) => s.pub === a.pub);
-    const bInfo = schedule.find((s) => s.pub === b.pub);
-    if (!aInfo || !bInfo) return 0;
-    return aInfo.arrival.getTime() - bInfo.arrival.getTime();
+    if (a.scheduledTime && b.scheduledTime) {
+      return (
+        getTimeFromString(a.scheduledTime).getTime() -
+        getTimeFromString(b.scheduledTime).getTime()
+      );
+    }
+    if (a.scheduledTime) return 1; // Scheduled visits go after unscheduled
+    if (b.scheduledTime) return -1; // Unscheduled visits go before scheduled
+    return 0; // Keep original order for unscheduled visits
   });
 
-  // Get current progress
-  const progress = getCurrentProgress(schedule, startTime, sortedVisits);
+  const getVisitTime = (visit: Visit): Date => {
+    // For scheduled visits, use their explicit time
+    if (visit.scheduledTime) {
+      return getTimeFromString(visit.scheduledTime);
+    }
 
-  // Check if schedule fits within desired time
-  const lastVisit = schedule[schedule.length - 1];
-  const estimatedEndTime = lastVisit
-    ? format(addMinutes(lastVisit.departure, endDriveTime), "HH:mm")
-    : desiredEndTime;
-  const isOverTime = estimatedEndTime > desiredEndTime;
+    // Find the previous and next scheduled visits
+    const visitIndex = sortedVisits.findIndex((v) => v.pub === visit.pub);
+    const prevScheduledVisit = sortedVisits
+      .slice(0, visitIndex)
+      .reverse()
+      .find((v) => v.scheduledTime);
+    const nextScheduledVisit = sortedVisits
+      .slice(visitIndex + 1)
+      .find((v) => v.scheduledTime);
+
+    // Calculate available time window
+    let startTime = 9 * 60 + 30; // Default start at 9:30 AM
+    let endTime = 17 * 60; // Default end at 5:00 PM
+
+    if (prevScheduledVisit?.scheduledTime) {
+      const prevTime = getTimeFromString(prevScheduledVisit.scheduledTime);
+      startTime = prevTime.getHours() * 60 + prevTime.getMinutes() + 75; // 45min visit + 30min drive
+    }
+
+    if (nextScheduledVisit?.scheduledTime) {
+      const nextTime = getTimeFromString(nextScheduledVisit.scheduledTime);
+      endTime = nextTime.getHours() * 60 + nextTime.getMinutes() - 75; // 45min visit + 30min drive
+    }
+
+    // Count unscheduled visits between prev and next scheduled visits
+    const unscheduledBetween = sortedVisits
+      .slice(
+        prevScheduledVisit ? visitIndex : 0,
+        nextScheduledVisit
+          ? sortedVisits.indexOf(nextScheduledVisit)
+          : undefined
+      )
+      .filter((v) => !v.scheduledTime).length;
+
+    // Distribute unscheduled visits evenly in the available time window
+    const availableTime = endTime - startTime;
+    const timePerVisit = availableTime / (unscheduledBetween || 1);
+    const visitPosition = sortedVisits
+      .slice(prevScheduledVisit ? visitIndex : 0, visitIndex)
+      .filter((v) => !v.scheduledTime).length;
+
+    const visitTime = startTime + visitPosition * timePerVisit;
+
+    const time = new Date();
+    time.setHours(Math.floor(visitTime / 60), Math.round(visitTime % 60), 0, 0);
+    return time;
+  };
+
+  const getVisitPosition = (visit: Visit): number => {
+    const visitTime = getVisitTime(visit);
+    const totalMinutes = 10 * 60; // 10 hours (8 AM to 6 PM)
+    const visitMinutes =
+      (visitTime.getHours() - 8) * 60 + visitTime.getMinutes();
+    return (visitMinutes / totalMinutes) * 100;
+  };
 
   return (
-    <div className="mt-2 space-y-2">
-      <div className="flex items-center justify-between text-xs text-eggplant-200">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span>Total drive time: {formatDriveTime(totalDriveTime)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>Total day duration: {formatDriveTime(totalDayDuration)}</span>
-          </div>
+    <div className="space-y-2">
+      <h3 className="text-lg font-medium text-eggplant-100">
+        Journey Timeline
+      </h3>
+      <div className="relative h-24 bg-eggplant-800/30 rounded-lg p-4">
+        {/* Time markers */}
+        <div className="absolute top-0 left-0 w-full flex justify-between px-4 text-xs text-eggplant-200">
+          <span>8:00</span>
+          <span>10:00</span>
+          <span>12:00</span>
+          <span>14:00</span>
+          <span>16:00</span>
+          <span>18:00</span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-eggplant-300">Desired return:</span>
-          <input
-            type="time"
-            id="desiredEndTime"
-            aria-label="Desired return time"
-            value={desiredEndTime}
-            onChange={(e) => onDesiredEndTimeChange?.(e.target.value)}
-            className={`bg-eggplant-800 border rounded px-2 py-0.5 text-eggplant-100 focus:outline-none w-20 ${
-              isOverTime
-                ? "border-amber-400 text-amber-400"
-                : "border-neon-purple text-neon-purple"
-            }`}
-          />
-          {isOverTime && (
-            <Tooltip.Provider>
-              <Tooltip.Root>
-                <Tooltip.Trigger asChild>
-                  <AlertTriangle className="h-4 w-4 text-amber-400" />
-                </Tooltip.Trigger>
-                <Tooltip.Portal>
-                  <Tooltip.Content
-                    className="bg-eggplant-800 text-amber-400 text-xs rounded-md p-2 shadow-lg"
-                    sideOffset={5}
+
+        {/* Timeline */}
+        <div className="relative w-full h-12 bg-eggplant-700/30 rounded mt-4">
+          {/* Visit slots */}
+          {sortedVisits.map((visit, index) => {
+            const position = getVisitPosition(visit);
+            const time = getVisitTime(visit);
+            const isScheduled = Boolean(visit.scheduledTime);
+
+            return (
+              <div
+                key={`${visit.pub}-${index}`}
+                className="absolute transform -translate-x-1/2"
+                style={{ left: `${position}%`, top: "-8px" }}
+              >
+                <div className="flex flex-col items-center">
+                  <div
+                    className={clsx(
+                      "w-20 h-20 rounded p-2 text-center text-xs",
+                      isScheduled
+                        ? "bg-eggplant-800/90 border-2 border-green-500/30"
+                        : "bg-eggplant-800/90 border border-neon-purple/30"
+                    )}
                   >
-                    Schedule extends beyond desired return time
-                    <Tooltip.Arrow className="fill-eggplant-800" />
-                  </Tooltip.Content>
-                </Tooltip.Portal>
-              </Tooltip.Root>
-            </Tooltip.Provider>
-          )}
-        </div>
-      </div>
-
-      {/* Timeline visualization */}
-      <div className="relative h-32 bg-eggplant-900/50 rounded-lg overflow-hidden">
-        {/* Vehicle position */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 z-50 transition-all duration-1000"
-          style={{ left: `${progress.position}%` }}
-        >
-          <Tooltip.Provider>
-            <Tooltip.Root>
-              <Tooltip.Trigger asChild>
-                <div>
-                  {React.createElement(vehicleIcons[selectedVehicle], {
-                    className: `h-6 w-6 ${
-                      vehicleColors[selectedVehicleColor]
-                    } ${
-                      progress.status === "driving" ||
-                      progress.status === "returning"
-                        ? "animate-bounce"
-                        : progress.status === "visiting"
-                        ? "animate-pulse"
-                        : ""
-                    }`,
-                    style: { color: `currentColor` },
-                  })}
-                </div>
-              </Tooltip.Trigger>
-              <Tooltip.Portal>
-                <Tooltip.Content
-                  className="bg-eggplant-800 text-eggplant-100 text-xs rounded-md p-2 shadow-lg"
-                  sideOffset={5}
-                >
-                  {progress.status === "not-started" && (
-                    <span>Journey not started</span>
-                  )}
-                  {progress.status === "driving" && (
-                    <div>
-                      <div>Driving to: {progress.destination}</div>
-                      <div>ETA: {progress.eta}</div>
+                    <div className="text-white truncate" title={visit.pub}>
+                      {visit.pub.split(" ").slice(0, 2).join(" ")}...
                     </div>
-                  )}
-                  {progress.status === "visiting" && (
-                    <div>
-                      <div>At: {progress.location}</div>
-                      <div>
-                        Time remaining: {progress.timeRemaining} minutes
-                      </div>
-                    </div>
-                  )}
-                  {progress.status === "returning" && (
-                    <div>
-                      <div>Returning home</div>
-                      <div>ETA: {progress.eta}</div>
-                    </div>
-                  )}
-                  {progress.status === "completed" && (
-                    <span>Journey completed</span>
-                  )}
-                  <Tooltip.Arrow className="fill-eggplant-800" />
-                </Tooltip.Content>
-              </Tooltip.Portal>
-            </Tooltip.Root>
-          </Tooltip.Provider>
-        </div>
-
-        {/* Start drive time */}
-        <div
-          className="absolute h-[60%] bottom-0 bg-neon-purple/20 border-r border-neon-purple/50"
-          style={{ width: `${getSegmentWidth(startDriveTime)}%` }}
-        >
-          <div className="absolute inset-0 flex items-center justify-center text-[10px] font-medium">
-            <div className="bg-eggplant-900/90 px-1.5 py-0.5 rounded text-neon-purple shadow-sm">
-              {formatDriveTime(startDriveTime)}
-            </div>
-          </div>
-          <div className="absolute -top-12 left-0 flex flex-col items-start gap-1">
-            <div className="bg-eggplant-900/90 px-2 py-1 rounded text-[10px] font-medium text-neon-purple shadow-sm whitespace-nowrap">
-              Leave Home
-            </div>
-            <div className="bg-eggplant-900/90 px-2 py-1 rounded text-[10px] font-medium text-neon-purple/90 shadow-sm whitespace-nowrap">
-              {startTime}
-            </div>
-          </div>
-        </div>
-
-        {/* Visit blocks with drive segments */}
-        {sortedVisits.map((visit, index) => {
-          const visitInfo = schedule.find((s) => s.pub === visit.pub);
-          if (!visitInfo) return null;
-
-          const startTime = format(visitInfo.arrival, "HH:mm");
-          const endTime = format(visitInfo.departure, "HH:mm");
-          const shortPubName = stripParentheses(visit.pub).trim();
-
-          // Generate flags for the visit
-          const flags = [];
-          if (visit.visitNotes) flags.push("📝 Notes");
-          if (visit.scheduledTime) flags.push("📅 Scheduled");
-          if (visit.accountName) flags.push("👤 Account");
-
-          return (
-            <React.Fragment key={`${visit.pub}-${index}`}>
-              {/* Visit block */}
-              <Tooltip.Provider>
-                <Tooltip.Root>
-                  <Tooltip.Trigger asChild>
                     <div
-                      className="absolute h-[60%] bottom-0 bg-neon-blue/20 border-r border-neon-blue/50"
-                      style={{
-                        left: `${getTimePosition(visitInfo.arrival)}%`,
-                        width: `${getSegmentWidth(
-                          differenceInMinutes(
-                            visitInfo.departure,
-                            visitInfo.arrival
-                          )
-                        )}%`,
-                      }}
+                      className={clsx(
+                        "flex items-center justify-center gap-1",
+                        isScheduled ? "text-green-400" : "text-neon-purple"
+                      )}
                     >
-                      <div className="absolute inset-0 flex items-center justify-center px-1">
-                        <div className="bg-eggplant-900/90 px-1.5 py-0.5 rounded text-[9px] leading-tight font-medium text-neon-blue shadow-sm w-full text-center break-words">
-                          {shortPubName}
-                        </div>
-                      </div>
-                      <div className="absolute -top-12 left-0 flex flex-col items-start gap-1">
-                        {flags.length > 0 && (
-                          <div className="bg-eggplant-900/90 px-2 py-1 rounded text-[10px] font-medium text-neon-purple shadow-sm whitespace-nowrap">
-                            {flags.join(" • ")}
-                          </div>
-                        )}
-                        <div className="bg-eggplant-900/90 px-2 py-1 rounded text-[10px] font-medium text-neon-blue/90 shadow-sm whitespace-nowrap">
-                          {startTime} • {endTime}
-                        </div>
-                      </div>
+                      <Clock className="h-3 w-3" />
+                      <span>{format(time, "HH:mm")}</span>
                     </div>
-                  </Tooltip.Trigger>
-                  <Tooltip.Portal>
-                    <Tooltip.Content
-                      className="bg-eggplant-800 text-eggplant-100 text-xs rounded-md p-2 shadow-lg"
-                      sideOffset={5}
+                    <div
+                      className={clsx(
+                        "text-xs mt-1",
+                        isScheduled ? "text-green-400" : "text-neon-purple"
+                      )}
                     >
-                      <div className="font-semibold text-neon-blue mb-1">
-                        {visit.pub}
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-3 w-3 text-neon-blue" />
-                          <span>Arrive: {startTime}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-3 w-3 text-neon-purple" />
-                          <span>Depart: {endTime}</span>
-                        </div>
-                      </div>
-                      <Tooltip.Arrow className="fill-eggplant-800" />
-                    </Tooltip.Content>
-                  </Tooltip.Portal>
-                </Tooltip.Root>
-              </Tooltip.Provider>
-
-              {/* Drive segments */}
-              {index < sortedVisits.length - 1 && (
-                <div
-                  className="absolute h-[60%] bottom-0 bg-neon-purple/20 border-r border-neon-purple/50"
-                  style={{
-                    left: `${getTimePosition(visitInfo.departure)}%`,
-                    width: `${getSegmentWidth(visit.driveTimeToNext || 30)}%`,
-                  }}
-                >
-                  <div className="absolute inset-0 flex items-center justify-center text-[10px] font-medium">
-                    <div className="bg-eggplant-900/90 px-1.5 py-0.5 rounded text-neon-purple shadow-sm">
-                      {formatDriveTime(visit.driveTimeToNext || 30)}
+                      {isScheduled ? "Scheduled" : "Optimized"}
                     </div>
                   </div>
                 </div>
-              )}
-            </React.Fragment>
-          );
-        })}
+              </div>
+            );
+          })}
 
-        {/* End drive time */}
-        {sortedVisits.length > 0 && (
+          {/* Current time marker with vehicle icon */}
           <div
-            className="absolute h-[60%] bottom-0 bg-neon-purple/20 border-r border-neon-purple/50"
-            style={{
-              left: `${getTimePosition(
-                schedule[schedule.length - 1].departure
-              )}%`,
-              width: `${getSegmentWidth(endDriveTime)}%`,
-            }}
+            className="absolute transform -translate-x-1/2"
+            style={{ left: `${getCurrentTimePosition()}%`, top: "-16px" }}
           >
-            <div className="absolute inset-0 flex items-center justify-center text-[10px] font-medium">
-              <div className="bg-eggplant-900/90 px-1.5 py-0.5 rounded text-neon-purple shadow-sm">
-                {formatDriveTime(endDriveTime)}
-              </div>
-            </div>
-            <div className="absolute -top-12 right-0 flex flex-col items-end gap-1">
-              <div className="bg-eggplant-900/90 px-2 py-1 rounded text-[10px] font-medium text-neon-purple shadow-sm whitespace-nowrap">
-                Return Home
-              </div>
-              <div className="bg-eggplant-900/90 px-2 py-1 rounded text-[10px] font-medium text-neon-purple/90 shadow-sm whitespace-nowrap">
-                {estimatedEndTime}
-              </div>
+            {getVehicleIcon()}
+            <div className="text-xs text-white mt-1">
+              {format(currentTime, "HH:mm")}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

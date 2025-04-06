@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Beer, Menu, X } from 'lucide-react';
-import SparkleWrapper from './Sparkles';
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Beer, Menu, X } from "lucide-react";
+import SparkleWrapper from "./Sparkles";
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,7 +20,10 @@ const Navbar: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-3 sm:py-4">
           <SparkleWrapper>
-            <Link to="/" className="flex items-center space-x-2 group relative z-10">
+            <Link
+              to="/"
+              className="flex items-center space-x-2 group relative z-10"
+            >
               <Beer className="h-8 w-8 sm:h-10 sm:w-10 text-neon-purple group-hover:text-neon-blue transition-colors duration-300" />
               <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-neon-purple via-neon-pink to-neon-blue bg-clip-text text-transparent">
                 Israel's Journey Planner
@@ -33,9 +36,9 @@ const Navbar: React.FC = () => {
               <Link
                 to="/"
                 className={`glass-button px-6 py-2 rounded-lg transition-all relative ${
-                  isActive('/') 
-                    ? 'bg-gradient-to-r from-eggplant-600 via-eggplant-500 to-eggplant-600 text-eggplant-50 shadow-neon-purple' 
-                    : 'hover:bg-dark-800/50 text-eggplant-100'
+                  isActive("/")
+                    ? "bg-gradient-to-r from-eggplant-600 via-eggplant-500 to-eggplant-600 text-white shadow-neon-purple"
+                    : "hover:bg-dark-800/50 text-white"
                 }`}
               >
                 Home
@@ -45,9 +48,9 @@ const Navbar: React.FC = () => {
               <Link
                 to="/planner"
                 className={`glass-button px-6 py-2 rounded-lg transition-all relative ${
-                  isActive('/planner')
-                    ? 'bg-gradient-to-r from-eggplant-600 via-eggplant-500 to-eggplant-600 text-eggplant-50 shadow-neon-purple'
-                    : 'hover:bg-dark-800/50 text-eggplant-100'
+                  isActive("/planner")
+                    ? "bg-gradient-to-r from-eggplant-600 via-eggplant-500 to-eggplant-600 text-white shadow-neon-purple"
+                    : "hover:bg-dark-800/50 text-white"
                 }`}
               >
                 Planner
@@ -57,9 +60,9 @@ const Navbar: React.FC = () => {
               <Link
                 to="/about"
                 className={`glass-button px-6 py-2 rounded-lg transition-all relative ${
-                  isActive('/about')
-                    ? 'bg-gradient-to-r from-eggplant-600 via-eggplant-500 to-eggplant-600 text-eggplant-50 shadow-neon-purple'
-                    : 'hover:bg-dark-800/50 text-eggplant-100'
+                  isActive("/about")
+                    ? "bg-gradient-to-r from-eggplant-600 via-eggplant-500 to-eggplant-600 text-white shadow-neon-purple"
+                    : "hover:bg-dark-800/50 text-white"
                 }`}
               >
                 About
@@ -74,7 +77,11 @@ const Navbar: React.FC = () => {
                 className="text-eggplant-100 p-2 focus:outline-none"
                 aria-label="Toggle menu"
               >
-                {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {isOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
               </button>
             </SparkleWrapper>
           </div>
@@ -87,9 +94,9 @@ const Navbar: React.FC = () => {
                 <Link
                   to="/"
                   className={`glass-button px-4 py-2 rounded-lg transition-colors ${
-                    isActive('/') 
-                      ? 'bg-gradient-to-r from-eggplant-600 via-eggplant-500 to-eggplant-600 text-eggplant-50' 
-                      : 'hover:bg-dark-800/50 text-eggplant-100'
+                    isActive("/")
+                      ? "bg-gradient-to-r from-eggplant-600 via-eggplant-500 to-eggplant-600 text-eggplant-50"
+                      : "hover:bg-dark-800/50 text-eggplant-100"
                   }`}
                   onClick={() => setIsOpen(false)}
                 >
@@ -100,9 +107,9 @@ const Navbar: React.FC = () => {
                 <Link
                   to="/planner"
                   className={`glass-button px-4 py-2 rounded-lg transition-colors ${
-                    isActive('/planner')
-                      ? 'bg-gradient-to-r from-eggplant-600 via-eggplant-500 to-eggplant-600 text-eggplant-50'
-                      : 'hover:bg-dark-800/50 text-eggplant-100'
+                    isActive("/planner")
+                      ? "bg-gradient-to-r from-eggplant-600 via-eggplant-500 to-eggplant-600 text-eggplant-50"
+                      : "hover:bg-dark-800/50 text-eggplant-100"
                   }`}
                   onClick={() => setIsOpen(false)}
                 >
@@ -113,9 +120,9 @@ const Navbar: React.FC = () => {
                 <Link
                   to="/about"
                   className={`glass-button px-4 py-2 rounded-lg transition-colors ${
-                    isActive('/about')
-                      ? 'bg-gradient-to-r from-eggplant-600 via-eggplant-500 to-eggplant-600 text-eggplant-50'
-                      : 'hover:bg-dark-800/50 text-eggplant-100'
+                    isActive("/about")
+                      ? "bg-gradient-to-r from-eggplant-600 via-eggplant-500 to-eggplant-600 text-eggplant-50"
+                      : "hover:bg-dark-800/50 text-eggplant-100"
                   }`}
                   onClick={() => setIsOpen(false)}
                 >

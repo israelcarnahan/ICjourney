@@ -4,7 +4,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import * as Switch from "@radix-ui/react-switch";
 import clsx from "clsx";
 import { useDropzone } from "react-dropzone";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import validatePostcode from "uk-postcode-validator";
 import { mapsService } from "../config/maps";
 
@@ -614,10 +614,10 @@ const EnhancementSelector: React.FC<EnhancementSelectorProps> = ({
                         <option.icon className="h-5 w-5" />
                       </div>
                       <div>
-                        <h3 className="font-medium text-eggplant-100">
+                        <h3 className="font-medium text-white">
                           {option.name}
                         </h3>
-                        <p className="text-sm text-eggplant-200">
+                        <p className="text-sm text-white/80">
                           {option.description}
                         </p>
                       </div>
