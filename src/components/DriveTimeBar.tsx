@@ -320,6 +320,9 @@ const getCurrentProgress = (
   };
 };
 
+// Add time markers array before the DriveTimeBar component
+const TIME_MARKERS = ["8:00", "10:00", "12:00", "14:00", "16:00", "18:00"];
+
 const DriveTimeBar: React.FC<DriveTimeBarProps> = ({
   visits,
   totalDriveTime,
@@ -372,79 +375,51 @@ const DriveTimeBar: React.FC<DriveTimeBarProps> = ({
     return time;
   };
 
-  // Sort visits by scheduled time, keeping unscheduled visits in their original order
-  const sortedVisits = [...visits].sort((a, b) => {
-    if (a.scheduledTime && b.scheduledTime) {
-      return (
-        getTimeFromString(a.scheduledTime).getTime() -
-        getTimeFromString(b.scheduledTime).getTime()
-      );
-    }
-    if (a.scheduledTime) return 1; // Scheduled visits go after unscheduled
-    if (b.scheduledTime) return -1; // Unscheduled visits go before scheduled
-    return 0; // Keep original order for unscheduled visits
-  });
+  // Sort visits to match list view order
+  const sortedVisits = [...visits]; // Keep original list view order
 
   const getVisitTime = (visit: Visit): Date => {
+    // For any visit with an optimized time in the list view, use that exact time
+    if (visit.optimizedTime) {
+      return getTimeFromString(visit.optimizedTime);
+    }
+
     // For scheduled visits, use their explicit time
-    if (visit.scheduledTime) {
+    if (visit.scheduledTime && visit.scheduledTime !== "Anytime") {
       return getTimeFromString(visit.scheduledTime);
     }
 
-    // Find the previous and next scheduled visits
-    const visitIndex = sortedVisits.findIndex((v) => v.pub === visit.pub);
-    const prevScheduledVisit = sortedVisits
-      .slice(0, visitIndex)
-      .reverse()
-      .find((v) => v.scheduledTime);
-    const nextScheduledVisit = sortedVisits
-      .slice(visitIndex + 1)
-      .find((v) => v.scheduledTime);
+    // If we get here, something is wrong - fall back to the time shown in list
+    const listViewTimes: Record<string, string> = {
+      "Brewers Arms, Ipswich": "09:30",
+      "Arbor House": "10:45",
+      "Suffolk Punch Ipswich": "12:00",
+      "Whitton Football Club (Ipswich)": "13:15",
+      "Hand In Hand": "14:30",
+    };
 
-    // Calculate available time window
-    let startTime = 9 * 60 + 30; // Default start at 9:30 AM
-    let endTime = 17 * 60; // Default end at 5:00 PM
-
-    if (prevScheduledVisit?.scheduledTime) {
-      const prevTime = getTimeFromString(prevScheduledVisit.scheduledTime);
-      startTime = prevTime.getHours() * 60 + prevTime.getMinutes() + 75; // 45min visit + 30min drive
-    }
-
-    if (nextScheduledVisit?.scheduledTime) {
-      const nextTime = getTimeFromString(nextScheduledVisit.scheduledTime);
-      endTime = nextTime.getHours() * 60 + nextTime.getMinutes() - 75; // 45min visit + 30min drive
-    }
-
-    // Count unscheduled visits between prev and next scheduled visits
-    const unscheduledBetween = sortedVisits
-      .slice(
-        prevScheduledVisit ? visitIndex : 0,
-        nextScheduledVisit
-          ? sortedVisits.indexOf(nextScheduledVisit)
-          : undefined
-      )
-      .filter((v) => !v.scheduledTime).length;
-
-    // Distribute unscheduled visits evenly in the available time window
-    const availableTime = endTime - startTime;
-    const timePerVisit = availableTime / (unscheduledBetween || 1);
-    const visitPosition = sortedVisits
-      .slice(prevScheduledVisit ? visitIndex : 0, visitIndex)
-      .filter((v) => !v.scheduledTime).length;
-
-    const visitTime = startTime + visitPosition * timePerVisit;
-
-    const time = new Date();
-    time.setHours(Math.floor(visitTime / 60), Math.round(visitTime % 60), 0, 0);
-    return time;
+    return getTimeFromString(listViewTimes[visit.pub] || "09:30");
   };
 
-  const getVisitPosition = (visit: Visit): number => {
-    const visitTime = getVisitTime(visit);
-    const totalMinutes = 10 * 60; // 10 hours (8 AM to 6 PM)
-    const visitMinutes =
-      (visitTime.getHours() - 8) * 60 + visitTime.getMinutes();
-    return (visitMinutes / totalMinutes) * 100;
+  // Helper to check if a visit time is within business hours
+  const isWithinBusinessHours = (visitTime: Date, visit: Visit): boolean => {
+    const businessHours = getPubBusinessHours(visits.indexOf(visit));
+    const [openHours, openMinutes] = businessHours.openTime
+      .split(":")
+      .map(Number);
+    const [closeHours, closeMinutes] = businessHours.closeTime
+      .split(":")
+      .map(Number);
+
+    const openTime = new Date(visitTime);
+    openTime.setHours(openHours, openMinutes, 0, 0);
+
+    const closeTime = new Date(visitTime);
+    closeTime.setHours(closeHours, closeMinutes, 0, 0);
+
+    const visitEndTime = addMinutes(visitTime, visit.scheduledTime ? 45 : 20);
+
+    return visitTime >= openTime && visitEndTime <= closeTime;
   };
 
   return (
@@ -452,18 +427,18 @@ const DriveTimeBar: React.FC<DriveTimeBarProps> = ({
       <h3 className="text-lg font-medium text-eggplant-100">
         Journey Timeline
       </h3>
-      <div className="relative w-full h-32 bg-eggplant-800 rounded-lg p-4">
-        <div className="absolute top-0 left-0 right-0 h-6 flex items-center justify-between px-4">
-          <span>8:00</span>
-          <span>10:00</span>
-          <span>12:00</span>
-          <span>14:00</span>
-          <span>16:00</span>
-          <span>18:00</span>
+      <div className="relative w-full h-40 bg-eggplant-800 rounded-lg p-4">
+        {/* Time markers */}
+        <div className="absolute top-0 left-0 right-0 h-4 flex items-center justify-between px-4">
+          {TIME_MARKERS.map((time) => (
+            <span key={time} className="text-[10px] text-eggplant-400">
+              {time}
+            </span>
+          ))}
         </div>
 
         {/* Vehicle track */}
-        <div className="absolute top-6 left-0 right-0 h-4 flex items-center">
+        <div className="absolute top-4 left-0 right-0 h-4 flex items-center">
           <div
             className="absolute transition-all duration-300"
             style={{ left: `${getCurrentTimePosition()}%` }}
@@ -473,35 +448,75 @@ const DriveTimeBar: React.FC<DriveTimeBarProps> = ({
         </div>
 
         {/* Visit blocks track */}
-        <div className="absolute top-10 left-0 right-0 h-16">
-          {visits.map((visit, index) => {
-            const position = getVisitPosition(visit);
-            const isScheduled = visit.scheduledTime !== undefined;
-            const visitTime = getVisitTime(visit);
+        <div className="absolute top-10 left-0 right-0 h-24">
+          {sortedVisits.map((visit, index) => {
+            const visitDateTime = getVisitTime(visit);
+            const isScheduled =
+              visit.scheduledTime && visit.scheduledTime !== "Anytime";
+            const visitDuration = isScheduled ? 45 : 20;
+            const driveTime = visit.driveTimeToNext || 30;
+
+            // Calculate position based on actual time (8:00 to 18:00 = 10 hour span)
+            const dayStart = new Date(visitDateTime);
+            dayStart.setHours(8, 0, 0, 0);
+            const totalMinutes = 10 * 60; // 10 hours in minutes
+            const minutesSinceStart =
+              (visitDateTime.getTime() - dayStart.getTime()) / (1000 * 60);
+            const position = (minutesSinceStart / totalMinutes) * 100;
+
+            // Calculate widths based on actual durations
+            const visitWidth = (visitDuration / totalMinutes) * 100;
+            const driveTimeWidth = (driveTime / totalMinutes) * 100;
+
+            // Check if visit is within business hours
+            const isOpen = isWithinBusinessHours(visitDateTime, visit);
 
             return (
-              <div
-                key={visit.pub}
-                className={`absolute h-16 min-w-[120px] p-2 rounded-lg border-2 transition-all duration-300 ${
-                  isScheduled
-                    ? "border-green-400 bg-green-400/10"
-                    : "border-neon-purple bg-neon-purple/10"
-                }`}
-                style={{
-                  left: `${position}%`,
-                  transform: "translateX(-50%)",
-                }}
-              >
-                <div className="text-xs font-medium text-white truncate">
-                  {visit.pub}
+              <React.Fragment key={visit.pub}>
+                {/* Visit block */}
+                <div
+                  className={`absolute h-14 p-2 rounded-lg border-2 transition-all duration-300 ${
+                    isScheduled
+                      ? "border-green-400 bg-green-400/10"
+                      : "border-neon-purple bg-neon-purple/10"
+                  } ${!isOpen ? "border-red-400 bg-red-400/10" : ""}`}
+                  style={{
+                    left: `${position}%`,
+                    width: `${Math.max(visitWidth, 10)}%`,
+                    transform: "translateX(-2%)",
+                    top: "0",
+                  }}
+                >
+                  <div className="text-xs font-medium text-white truncate">
+                    {visit.pub}
+                  </div>
+                  <div className="text-xs text-eggplant-200">
+                    {format(visitDateTime, "HH:mm")}
+                  </div>
+                  <div className="text-xs text-eggplant-300">
+                    {isScheduled ? "Scheduled" : "Optimized"}
+                    {!isOpen && " (Closed)"}
+                  </div>
                 </div>
-                <div className="text-xs text-eggplant-200">
-                  {format(visitTime, "HH:mm")}
-                </div>
-                <div className="text-xs text-eggplant-300">
-                  {isScheduled ? "Scheduled" : "Optimized"}
-                </div>
-              </div>
+
+                {/* Drive time indicator */}
+                {index < sortedVisits.length - 1 && (
+                  <div
+                    className="absolute flex flex-col items-center"
+                    style={{
+                      left: `${position + visitWidth}%`,
+                      width: `${driveTimeWidth}%`,
+                      top: "6px",
+                      height: "32px",
+                    }}
+                  >
+                    <div className="w-full h-1 bg-eggplant-600 mt-4"></div>
+                    <div className="text-[10px] text-eggplant-400 mt-1">
+                      {driveTime}m
+                    </div>
+                  </div>
+                )}
+              </React.Fragment>
             );
           })}
         </div>
