@@ -6,11 +6,14 @@ import { ExtendedPub } from "../context/PubDataContext";
 import { format } from "date-fns";
 import { getMockPlaceData } from "../utils/mockData";
 import { Star } from "lucide-react";
+import { Visit } from "../types";
 
-interface ScheduleVisit extends ExtendedPub {
-  Priority: string;
+interface ScheduleVisit extends Visit {
   mileageToNext: number;
   driveTimeToNext: number;
+  scheduledTime?: string;
+  arrival?: Date;
+  departure?: Date;
 }
 
 const StarRating: React.FC<{ rating: number }> = ({ rating }) => {

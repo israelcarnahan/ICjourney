@@ -18,12 +18,16 @@ import {
   FileMetadata,
   ExtendedPub,
   ListType,
+  ScheduleDay,
 } from "../context/PubDataContext";
+import { Visit } from "../types";
 
-interface ScheduleVisit extends ExtendedPub {
-  Priority: string;
+interface ScheduleVisit extends Visit {
   mileageToNext: number;
   driveTimeToNext: number;
+  scheduledTime?: string;
+  arrival?: Date;
+  departure?: Date;
 }
 
 const PlannerDashboard: React.FC = () => {
@@ -161,8 +165,33 @@ const PlannerDashboard: React.FC = () => {
     );
 
     console.log("Generated schedule:", newSchedule);
-    setSchedule(newSchedule);
-    return newSchedule;
+
+    // Convert DaySchedule[] to ScheduleDay[]
+    const convertedSchedule: ScheduleDay[] = newSchedule.map((day) => ({
+      pub: day.pub || "",
+      arrival: new Date(),
+      departure: new Date(),
+      businessHours: { openTime: "09:00", closeTime: "17:00" },
+      Priority: day.Priority || "Unvisited",
+      mileageToNext: 0,
+      driveTimeToNext: 0,
+      uuid: crypto.randomUUID(),
+      fileId: day.fileId || "",
+      fileName: day.fileName || "",
+      listType: day.listType || "unvisited",
+      date: day.date || "",
+      visits: day.visits || [],
+      totalMileage: day.totalMileage || 0,
+      totalDriveTime: day.totalDriveTime || 0,
+      startMileage: day.startMileage || 0,
+      endMileage: day.endMileage || 0,
+      startDriveTime: day.startDriveTime || 0,
+      endDriveTime: day.endDriveTime || 0,
+      schedulingErrors: day.schedulingErrors,
+    }));
+
+    setSchedule(convertedSchedule);
+    return convertedSchedule;
   };
 
   const generateSchedule = async () => {
@@ -186,7 +215,7 @@ const PlannerDashboard: React.FC = () => {
 
     // Validate pub data
     if (
-      schedule.some((day) => day.visits.some((visit) => visit.pub === pub.pub))
+      schedule.some((day) => day.visits?.some((visit) => visit.pub === pub.pub))
     ) {
       console.warn("Pub already scheduled:", pub.pub);
       return;
@@ -200,7 +229,7 @@ const PlannerDashboard: React.FC = () => {
     // Find the selected day or first day with available space
     const dayIndex = selectedDay
       ? schedule.findIndex((day) => day.date === selectedDay)
-      : schedule.findIndex((day) => day.visits.length < visitsPerDay);
+      : schedule.findIndex((day) => (day.visits?.length || 0) < visitsPerDay);
 
     if (dayIndex === -1) {
       console.warn("No days with available space");
@@ -211,7 +240,7 @@ const PlannerDashboard: React.FC = () => {
     const dayWithSpace = schedule[dayIndex];
 
     // Check if day is already at capacity
-    if (dayWithSpace.visits.length >= visitsPerDay) {
+    if ((dayWithSpace.visits?.length || 0) >= visitsPerDay) {
       console.warn("Day is at capacity:", dayWithSpace.date);
       setError(
         `Cannot add more visits to ${dayWithSpace.date} - day is at capacity`
@@ -219,7 +248,7 @@ const PlannerDashboard: React.FC = () => {
       return;
     }
 
-    const visits = [...dayWithSpace.visits];
+    const visits = [...(dayWithSpace.visits || [])];
     const lastVisit = visits[visits.length - 1];
     let totalMileage = dayWithSpace.totalMileage || 0;
     let totalDriveTime = dayWithSpace.totalDriveTime || 0;
@@ -239,34 +268,59 @@ const PlannerDashboard: React.FC = () => {
     const { mileage: mileageToHome, driveTime: driveTimeToHome } =
       calculateDistance(pub.zip, homeAddress);
 
-    const newVisit: ScheduleVisit = {
-      ...pub,
+    const newVisit: Visit = {
+      pub: pub.pub,
+      zip: pub.zip,
       Priority: pub.Priority || "Unvisited",
+      uuid: crypto.randomUUID(),
+      fileId: pub.fileId || "",
+      fileName: pub.fileName || "",
+      listType: pub.listType || "unvisited",
       mileageToNext: 0,
       driveTimeToNext: 0,
+      scheduledTime: "09:00",
+      arrival: new Date(),
+      departure: new Date(),
     };
 
-    visits.push(newVisit);
-    totalMileage += mileageToHome;
-    totalDriveTime += driveTimeToHome;
-
-    const updatedSchedule = schedule.map((day, index) => {
+    // Update the schedule with the new visit
+    const updatedSchedule: ScheduleDay[] = schedule.map((day, index) => {
       if (index !== dayIndex) return day;
-      return {
-        ...dayWithSpace,
-        visits,
+
+      const updatedVisits = [...visits, newVisit];
+      const startMileage = day.startMileage || 0;
+      const endMileage = startMileage + totalMileage;
+      const startDriveTime = day.startDriveTime || 0;
+      const endDriveTime = startDriveTime + totalDriveTime;
+
+      const updatedDay: ScheduleDay = {
+        pub: pub.pub || "",
+        arrival: new Date(),
+        departure: new Date(),
+        businessHours: { openTime: "09:00", closeTime: "17:00" },
+        Priority: pub.Priority || "Unvisited",
+        mileageToNext: 0,
+        driveTimeToNext: 0,
+        uuid: crypto.randomUUID(),
+        fileId: pub.fileId || "",
+        fileName: pub.fileName || "",
+        listType: pub.listType || "unvisited",
+        date: day.date || "",
+        visits: updatedVisits,
         totalMileage,
         totalDriveTime,
-        endMileage: mileageToHome,
-        endDriveTime: driveTimeToHome,
+        startMileage,
+        endMileage,
+        startDriveTime,
+        endDriveTime,
+        schedulingErrors: day.schedulingErrors,
       };
+
+      return updatedDay;
     });
 
-    setSelectedDay(dayWithSpace.date);
     setSchedule(updatedSchedule);
-
-    // Return true to indicate success
-    return true;
+    setError(null);
   };
 
   useEffect(() => {

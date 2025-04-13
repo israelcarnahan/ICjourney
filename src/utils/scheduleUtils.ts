@@ -1,6 +1,13 @@
 import { Pub, ScheduleDay } from "../context/PubDataContext";
-import { format, addBusinessDays } from "date-fns";
-import { Visit } from "../types";
+import {
+  format,
+  addBusinessDays,
+  parseISO,
+  isValid,
+  addMinutes,
+  differenceInMinutes,
+} from "date-fns";
+import { Visit, DriveTimeMetrics } from "../types/schedule";
 
 export const extractNumericPart = (postcode: string): [string, number] => {
   // Extract the first part of the postcode (letters + number)
@@ -369,4 +376,159 @@ const parseTimeString = (time: string): number => {
 
 const getTimeGapMinutes = (startTime: string, endTime: string): number => {
   return parseTimeString(endTime) - parseTimeString(startTime);
+};
+
+/**
+ * Formats a date string or Date object into a readable format
+ * @param dateStr - The date to format
+ * @returns Formatted date string or "Never" if invalid
+ */
+export const formatDate = (
+  dateStr: string | Date | null | undefined
+): string => {
+  if (!dateStr) return "Never";
+
+  try {
+    if (dateStr instanceof Date) {
+      return format(dateStr, "MMM d, yyyy");
+    }
+
+    if (!isNaN(Number(dateStr))) {
+      const excelDate = new Date((Number(dateStr) - 25569) * 86400 * 1000);
+      if (isValid(excelDate)) {
+        return format(excelDate, "MMM d, yyyy");
+      }
+    }
+
+    const isoDate = parseISO(dateStr);
+    if (isValid(isoDate)) {
+      return format(isoDate, "MMM d, yyyy");
+    }
+
+    return "Never";
+  } catch (error) {
+    console.warn("Date parsing error:", error);
+    return "Never";
+  }
+};
+
+/**
+ * Calculates drive time metrics for a list of visits
+ * @param visits - Array of visits
+ * @param homeAddress - Starting address
+ * @param desiredEndTime - Optional desired end time
+ * @returns Drive time metrics
+ */
+export const recalculateMetrics = (
+  visits: Visit[],
+  homeAddress: string,
+  desiredEndTime?: string
+): DriveTimeMetrics => {
+  let totalMileage = 0;
+  let totalDriveTime = 0;
+  let startDriveTime = 0;
+  let endDriveTime = 0;
+
+  try {
+    // Calculate drive times between visits
+    for (let i = 0; i < visits.length; i++) {
+      const visit = visits[i];
+      const nextVisit = visits[i + 1];
+
+      if (i === 0) {
+        // Calculate drive time from home to first visit
+        const { mileage, driveTime } = calculateDistance(
+          homeAddress,
+          visit.postcode
+        );
+        startDriveTime = driveTime;
+        totalMileage += mileage;
+        totalDriveTime += driveTime;
+      }
+
+      if (nextVisit) {
+        // Calculate drive time to next visit
+        const { mileage, driveTime } = calculateDistance(
+          visit.postcode,
+          nextVisit.postcode
+        );
+        totalMileage += mileage;
+        totalDriveTime += driveTime;
+      }
+
+      if (i === visits.length - 1) {
+        // Calculate drive time from last visit to home
+        const { mileage, driveTime } = calculateDistance(
+          visit.postcode,
+          homeAddress
+        );
+        endDriveTime = driveTime;
+        totalMileage += mileage;
+        totalDriveTime += driveTime;
+      }
+    }
+
+    return {
+      totalMileage,
+      totalDriveTime,
+      startDriveTime,
+      endDriveTime,
+    };
+  } catch (error) {
+    console.error("Error calculating metrics:", error);
+    throw new Error("Failed to calculate drive time metrics");
+  }
+};
+
+/**
+ * Parses a time string into a Date object
+ * @param timeStr - Time string to parse
+ * @returns Date object
+ */
+export const parseTimeToDate = (timeStr: string): Date => {
+  try {
+    return parseISO(timeStr);
+  } catch (error) {
+    console.error("Error parsing time:", error);
+    throw new Error("Invalid time format");
+  }
+};
+
+/**
+ * Calculates schedule times for visits
+ * @param visits - Array of visits
+ * @param startTime - Start time
+ * @param desiredEndTime - Optional desired end time
+ * @returns Array of scheduled visits with times
+ */
+export const getScheduleTimes = (
+  visits: Visit[],
+  startTime: string,
+  desiredEndTime?: string
+): Visit[] => {
+  try {
+    let currentTime = parseTimeToDate(startTime);
+    const scheduledVisits = visits.map((visit, index) => {
+      const visitWithTime = {
+        ...visit,
+        scheduledTime: currentTime,
+      };
+
+      if (index < visits.length - 1) {
+        const nextVisit = visits[index + 1];
+        const { driveTime } = calculateDistance(
+          visit.postcode,
+          nextVisit.postcode
+        );
+        currentTime = addMinutes(currentTime, visit.visitTime + driveTime);
+      }
+
+      return visitWithTime;
+    });
+
+    return scheduledVisits;
+  } catch (error) {
+    console.error("Error calculating schedule times:", error);
+    throw new Error("Failed to calculate schedule times");
+  }
 };

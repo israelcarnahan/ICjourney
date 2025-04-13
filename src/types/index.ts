@@ -19,6 +19,12 @@ export interface Visit {
   optimizedTime?: string;
   visitNotes?: string;
   uploadTime?: number;
+  arrival?: Date;
+  departure?: Date;
+  businessHours?: {
+    openTime: string;
+    closeTime: string;
+  };
 }
 
 export interface BusinessHours {
