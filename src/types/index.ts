@@ -28,8 +28,11 @@ export interface Visit {
 }
 
 export interface BusinessHours {
-  openTime: string;
-  closeTime: string;
+  [key: string]: {
+    isOpen: boolean;
+    open?: string;
+    close?: string;
+  };
 }
 
 export interface ScheduleDay {
@@ -68,4 +71,39 @@ export interface OpeningHoursMap {
     isOpen: boolean;
     error?: string;
   };
+}
+
+export interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
+export interface Route {
+  distance: number;
+  duration: number;
+  coordinates: Coordinates[];
+  trafficDelay: number;
+}
+
+export interface ContactInfo {
+  phone: string;
+  email: string;
+  website: string;
+  googleRating: number;
+  reviewCount: number;
+}
+
+export interface Address {
+  street: string;
+  city: string;
+  postcode: string;
+}
+
+export interface Pub {
+  id: string;
+  name: string;
+  coordinates: Coordinates;
+  businessHours: BusinessHours;
+  contactInfo: ContactInfo;
+  address: Address;
 }
