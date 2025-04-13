@@ -100,12 +100,22 @@ export interface Address {
 }
 
 export interface Pub {
-  id: string;
+  fsq_id: string;
   name: string;
-  coordinates: Coordinates;
-  businessHours: BusinessHours;
-  contactInfo: ContactInfo;
-  address: Address;
+  distance: number;
+  geocodes: {
+    main: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+  location: {
+    address: string;
+    postcode: string;
+    locality: string;
+    region: string;
+    country: string;
+  };
 }
 
 export interface LatLng {
@@ -233,16 +243,8 @@ export interface EnhancedBusinessDetails {
     }>;
     weekday_text: string[];
   };
-  rating: {
-    google: {
-      stars: number; // 1-5
-      count: number;
-    };
-    yelp?: {
-      stars: number;
-      count: number;
-    };
-  };
+  rating: number;
+  reviewCount: number;
   website?: string;
   photos?: string[];
   reviews?: Array<{

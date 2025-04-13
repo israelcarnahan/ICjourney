@@ -74,88 +74,93 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Mock API Implementation
 
-The application includes a comprehensive mock API implementation for testing and development purposes. This section explains how to use and configure the mock API.
+The application includes a comprehensive mock API layer that simulates real API responses for development and testing purposes. This allows for development without requiring actual API keys or making real API calls.
 
 ### Configuration
 
-To enable the mock API, set the following environment variable in your `.env` file:
+To enable the mock API, set the following environment variable:
 
-```env
+```bash
 VITE_USE_MOCK_API=true
 ```
-
-When enabled, the mock API will:
-
-- Simulate realistic API responses
-- Include random delays to mimic real network conditions
-- Generate realistic UK-based data
-- Provide detailed error handling and logging
 
 ### Available Mock Endpoints
 
 1. **Geocoding (`getCoordinatesFromQuery`)**
 
-   - Simulates Mapbox's geocoding API
-   - Returns location data in the exact format of Mapbox's API
-   - Supports both postcodes and place names
-   - Includes realistic UK coordinates
+   - Simulates Mapbox Geocoding API
+   - Returns location data in Mapbox format
+   - Includes realistic UK coordinates based on postcode patterns
+   - 10% chance of simulated service unavailability
 
 2. **Directions (`getOptimizedRoute`)**
 
-   - Simulates Mapbox's directions API
-   - Returns route data with:
-     - Distance in meters
-     - Duration in seconds
-     - Detailed geometry
-     - Step-by-step instructions
+   - Simulates Mapbox Directions API
+   - Returns route data with realistic distances and durations
+   - Includes waypoints and route geometry
+   - 10% chance of simulated service unavailability
 
-3. **Business Details (`getBusinessDetails`)**
-   - Returns comprehensive business information including:
+3. **Places Search (`getNearbyPubs`)**
+
+   - Simulates Foursquare/Google Places API
+   - Returns pub data with realistic locations and details
+   - Includes distance, geocodes, and location information
+   - 10% chance of simulated service unavailability
+
+4. **Business Details (`getBusinessDetails`)**
+   - Simulates enhanced business details API
+   - Returns comprehensive pub information including:
      - Contact details
      - Opening hours
-     - Ratings (Google and Yelp)
-     - Photos and reviews
+     - Ratings and reviews
+     - Photos
+   - 10% chance of simulated service unavailability
 
 ### Error Handling
 
-The mock API includes realistic error scenarios:
+The mock API includes realistic error handling:
 
-- 5% chance of service unavailability
-- 10% chance of missing business data
-- Proper error logging with emoji indicators
-- Detailed error messages
+- 10% chance of service unavailability for each endpoint
+- Proper error messages and logging
+- Consistent error response format
 
 ### Switching to Real APIs
 
 To switch from mock to real APIs:
 
-1. Set `VITE_USE_MOCK_API=false` in your `.env` file
-2. Implement the real API functions with the same signatures as the mock ones
-3. Update the API configuration in your application
+1. Set `VITE_USE_MOCK_API=false` in your environment
+2. Implement the real API endpoints with the same interface
+3. Add your API keys to the environment variables
 
-Example of switching implementations:
+Example real API implementation:
 
 ```typescript
-// In your API service file
-import { getCoordinatesFromQuery as mockGeocode } from "./mockApi";
-import { getCoordinatesFromQuery as realGeocode } from "./realApi";
+// src/api/realApi.ts
+export const getCoordinatesFromQuery = async (query: string) => {
+  if (import.meta.env.VITE_USE_MOCK_API === "true") {
+    return getMockCoordinatesFromQuery(query);
+  }
 
-export const getCoordinatesFromQuery = (query: string) => {
-  return USE_MOCK_API ? mockGeocode(query) : realGeocode(query);
+  const response = await fetch(
+    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+      query
+    )}.json?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`
+  );
+  return response.json();
 };
 ```
 
 ### Testing
 
-The mock API includes a comprehensive test suite. Run tests with:
+The mock API includes comprehensive test coverage:
+
+- Response structure validation
+- Error handling
+- API toggle functionality
+- Data format consistency
+
+To run the tests:
 
 ```bash
 npm test
 ```
-
-Tests verify:
-
-- Response formats match real API structures
-- Error handling works as expected
-- Data generation is realistic
-- Configuration toggles work correctly

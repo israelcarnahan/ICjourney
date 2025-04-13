@@ -3,190 +3,176 @@ import {
   getOptimizedRoute,
   getNearbyPubs,
   getBusinessDetails,
-  isMockApiEnabled,
   setMockApiEnabled,
-} from "./mockApi.mock";
+} from "../mockApi";
 
-beforeEach(() => {
-  setMockApiEnabled(true);
-});
-
-describe("Mock API Configuration", () => {
-  test("isMockApiEnabled returns true when mock API is enabled", () => {
+describe("Mock API Tests", () => {
+  beforeEach(() => {
     setMockApiEnabled(true);
-    expect(isMockApiEnabled()).toBe(true);
+    jest.spyOn(console, "log").mockImplementation(() => {});
+    jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
-  test("isMockApiEnabled returns false when mock API is disabled", () => {
-    setMockApiEnabled(false);
-    expect(isMockApiEnabled()).toBe(false);
-  });
-});
-
-describe("getCoordinatesFromQuery", () => {
-  test("returns valid geocoding response structure", async () => {
-    const result = await getCoordinatesFromQuery("Red Lion NR20 4NQ");
-
-    // Check response structure
-    expect(result).toHaveProperty("type", "FeatureCollection");
-    expect(result).toHaveProperty("query");
-    expect(result).toHaveProperty("features");
-    expect(Array.isArray(result.features)).toBe(true);
-
-    // Check feature structure
-    const feature = result.features[0];
-    expect(feature).toHaveProperty("id");
-    expect(feature).toHaveProperty("type", "Feature");
-    expect(feature).toHaveProperty("place_name");
-    expect(feature).toHaveProperty("center");
-    expect(feature).toHaveProperty("geometry");
-
-    // Check coordinate types
-    expect(typeof feature.center[0]).toBe("number"); // longitude
-    expect(typeof feature.center[1]).toBe("number"); // latitude
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
-  test("handles error cases", async () => {
-    // Mock random to force error
-    const originalRandom = Math.random;
-    Math.random = () => 0.01; // Force error (5% chance)
+  describe("getCoordinatesFromQuery", () => {
+    it("should return valid geocoding response for a postcode", async () => {
+      const response = await getCoordinatesFromQuery("SW1A 1AA");
+      expect(response).toMatchObject({
+        type: "FeatureCollection",
+        query: ["SW1A 1AA"],
+        features: expect.arrayContaining([
+          expect.objectContaining({
+            type: "Feature",
+            place_name: "SW1A 1AA",
+            geometry: {
+              type: "Point",
+              coordinates: expect.arrayContaining([
+                expect.any(Number),
+                expect.any(Number),
+              ]),
+            },
+          }),
+        ]),
+      });
+    });
 
-    await expect(getCoordinatesFromQuery("Invalid Location")).rejects.toThrow(
-      "Geocoding service unavailable"
-    );
-
-    Math.random = originalRandom;
-  });
-});
-
-describe("getOptimizedRoute", () => {
-  test("returns valid route response structure", async () => {
-    const coords = [
-      { lat: 52.75, lng: 0.94 },
-      { lat: 52.76, lng: 0.95 },
-    ];
-    const result = await getOptimizedRoute(coords);
-
-    // Check response structure
-    expect(result).toHaveProperty("routes");
-    expect(Array.isArray(result.routes)).toBe(true);
-
-    // Check route structure
-    const route = result.routes[0];
-    expect(route).toHaveProperty("distance");
-    expect(route).toHaveProperty("duration");
-    expect(route).toHaveProperty("geometry");
-    expect(route).toHaveProperty("legs");
-
-    // Check data types
-    expect(typeof route.distance).toBe("number");
-    expect(typeof route.duration).toBe("number");
-    expect(route.geometry).toHaveProperty("coordinates");
-    expect(Array.isArray(route.geometry.coordinates)).toBe(true);
+    it("should handle API failures", async () => {
+      jest.spyOn(Math, "random").mockReturnValue(0.05); // Force failure
+      await expect(getCoordinatesFromQuery("SW1A 1AA")).rejects.toThrow(
+        "Failed to geocode location"
+      );
+    });
   });
 
-  test("handles error cases", async () => {
-    const coords = [{ lat: 52.75, lng: 0.94 }];
+  describe("getOptimizedRoute", () => {
+    it("should return valid route response", async () => {
+      const waypoints = [
+        { lat: 51.5074, lng: -0.1278 },
+        { lat: 51.5136, lng: -0.1366 },
+      ];
+      const response = await getOptimizedRoute(waypoints);
 
-    // Mock random to force error
-    const originalRandom = Math.random;
-    Math.random = () => 0.01; // Force error (5% chance)
+      expect(response).toMatchObject({
+        routes: expect.arrayContaining([
+          expect.objectContaining({
+            geometry: {
+              type: "LineString",
+              coordinates: expect.arrayContaining([
+                expect.arrayContaining([
+                  expect.any(Number),
+                  expect.any(Number),
+                ]),
+              ]),
+            },
+            distance: expect.any(Number),
+            duration: expect.any(Number),
+          }),
+        ]),
+        waypoints: expect.arrayContaining([
+          expect.objectContaining({
+            name: expect.any(String),
+            location: expect.arrayContaining([
+              expect.any(Number),
+              expect.any(Number),
+            ]),
+          }),
+        ]),
+        code: "Ok",
+        uuid: expect.stringMatching(/^mock-\d+$/),
+      });
+    });
 
-    await expect(getOptimizedRoute(coords)).rejects.toThrow(
-      "Routing service unavailable"
-    );
-
-    Math.random = originalRandom;
-  });
-});
-
-describe("getNearbyPubs", () => {
-  test("returns valid pub array structure", async () => {
-    const result = await getNearbyPubs("NR20 4NQ");
-
-    // Check array structure
-    expect(Array.isArray(result)).toBe(true);
-    expect(result.length).toBeGreaterThan(0);
-
-    // Check pub structure
-    const pub = result[0];
-    expect(pub).toHaveProperty("id");
-    expect(pub).toHaveProperty("name");
-    expect(pub).toHaveProperty("coordinates");
-    expect(pub).toHaveProperty("businessHours");
-    expect(pub).toHaveProperty("contactInfo");
-    expect(pub).toHaveProperty("address");
-
-    // Check coordinate types
-    expect(typeof pub.coordinates.latitude).toBe("number");
-    expect(typeof pub.coordinates.longitude).toBe("number");
-  });
-
-  test("handles error cases", async () => {
-    // Mock random to force error
-    const originalRandom = Math.random;
-    Math.random = () => 0.01; // Force error (5% chance)
-
-    await expect(getNearbyPubs("Invalid Postcode")).rejects.toThrow(
-      "Pub search service unavailable"
-    );
-
-    Math.random = originalRandom;
-  });
-});
-
-describe("getBusinessDetails", () => {
-  test("returns valid business details structure", async () => {
-    // Mock random to avoid error cases
-    const originalRandom = Math.random;
-    Math.random = () => 0.5; // Avoid both error cases
-
-    const result = await getBusinessDetails("Red Lion", "NR20 4NQ");
-
-    // Check response structure
-    expect(result).toHaveProperty("phone");
-    expect(result).toHaveProperty("email");
-    expect(result).toHaveProperty("openingHours");
-    expect(result).toHaveProperty("rating");
-    expect(result).toHaveProperty("website");
-    expect(result).toHaveProperty("photos");
-    expect(result).toHaveProperty("reviews");
-
-    // Check rating structure
-    expect(result.rating).toHaveProperty("google");
-    expect(result.rating.google).toHaveProperty("stars");
-    expect(result.rating.google).toHaveProperty("count");
-
-    // Check data types
-    expect(typeof result.rating.google.stars).toBe("number");
-    expect(typeof result.rating.google.count).toBe("number");
-    expect(Array.isArray(result.photos)).toBe(true);
-    expect(Array.isArray(result.reviews)).toBe(true);
-
-    Math.random = originalRandom;
+    it("should handle API failures", async () => {
+      jest.spyOn(Math, "random").mockReturnValue(0.05); // Force failure
+      await expect(
+        getOptimizedRoute([{ lat: 51.5074, lng: -0.1278 }])
+      ).rejects.toThrow("Failed to calculate route");
+    });
   });
 
-  test("handles error cases", async () => {
-    // Mock random to force error
-    const originalRandom = Math.random;
-    Math.random = () => 0.01; // Force error (5% chance)
+  describe("getNearbyPubs", () => {
+    it("should return valid pub data", async () => {
+      const response = await getNearbyPubs("SW1A 1AA");
 
-    await expect(getBusinessDetails("Invalid Pub", "NR20 4NQ")).rejects.toThrow(
-      "Business details service unavailable"
-    );
+      expect(response).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            fsq_id: expect.stringMatching(/^mock-\d+$/),
+            name: expect.stringMatching(/^Mock Pub \d+$/),
+            distance: expect.any(Number),
+            geocodes: {
+              main: {
+                latitude: expect.any(Number),
+                longitude: expect.any(Number),
+              },
+            },
+            location: {
+              address: expect.stringMatching(/^\d+ Mock Street$/),
+              postcode: "SW1A 1AA",
+              locality: "Mock City",
+              region: "Mock County",
+              country: "United Kingdom",
+            },
+          }),
+        ])
+      );
+    });
 
-    Math.random = originalRandom;
+    it("should handle API failures", async () => {
+      jest.spyOn(Math, "random").mockReturnValue(0.05); // Force failure
+      await expect(getNearbyPubs("SW1A 1AA")).rejects.toThrow(
+        "Failed to find nearby pubs"
+      );
+    });
   });
 
-  test("handles business not found case", async () => {
-    // Mock random to force "not found" error
-    const originalRandom = Math.random;
-    Math.random = () => 0.08; // Force "not found" (10% chance)
+  describe("getBusinessDetails", () => {
+    it("should return valid business details", async () => {
+      const response = await getBusinessDetails("The Red Lion", "SW1A 1AA");
 
-    await expect(
-      getBusinessDetails("Non-existent Pub", "NR20 4NQ")
-    ).rejects.toThrow("Business not found");
+      expect(response).toMatchObject({
+        phone: expect.stringMatching(/^\+44 \d{4} \d{6}$/),
+        email: expect.stringMatching(/^pub\d{4}@example\.com$/),
+        website: expect.stringMatching(/^https:\/\/www\.pub\d{4}\.co\.uk$/),
+        openingHours: {
+          periods: expect.arrayContaining([
+            expect.objectContaining({
+              open: {
+                day: expect.any(Number),
+                time: expect.stringMatching(/^\d{2}:\d{2}$/),
+              },
+              close: {
+                day: expect.any(Number),
+                time: expect.stringMatching(/^\d{2}:\d{2}$/),
+              },
+            }),
+          ]),
+          weekday_text: expect.arrayContaining([expect.any(String)]),
+        },
+        rating: expect.any(Number),
+        reviewCount: expect.any(Number),
+        photos: expect.arrayContaining([
+          expect.stringMatching(/^https:\/\/example\.com\/photo\d+\.jpg$/),
+        ]),
+        reviews: expect.arrayContaining([
+          expect.objectContaining({
+            author: expect.stringMatching(/^User\d{4}$/),
+            rating: expect.any(Number),
+            text: "This is a mock review for testing purposes.",
+            time: expect.any(String),
+          }),
+        ]),
+      });
+    });
 
-    Math.random = originalRandom;
+    it("should handle API failures", async () => {
+      jest.spyOn(Math, "random").mockReturnValue(0.05); // Force failure
+      await expect(
+        getBusinessDetails("The Red Lion", "SW1A 1AA")
+      ).rejects.toThrow("Failed to get business details");
+    });
   });
 });

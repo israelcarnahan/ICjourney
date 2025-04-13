@@ -35,6 +35,27 @@ const getRandomFloat = (min: number, max: number, decimals = 2) =>
   Number((Math.random() * (max - min) + min).toFixed(decimals));
 
 /**
+ * Simulates network delay and potential API failures
+ * @param minDelay Minimum delay in milliseconds
+ * @param maxDelay Maximum delay in milliseconds
+ * @param failureChance Probability of failure (0-1)
+ * @returns Promise that resolves after delay or rejects with error
+ */
+const simulateApiCall = async (
+  minDelay: number,
+  maxDelay: number,
+  failureChance: number = 0.1
+) => {
+  await new Promise((resolve) =>
+    setTimeout(resolve, getRandomInt(minDelay, maxDelay))
+  );
+
+  if (Math.random() < failureChance) {
+    throw new Error("Service temporarily unavailable");
+  }
+};
+
+/**
  * Generates a mock business hours object in the format expected by the enhanced API
  */
 const generateEnhancedBusinessHours = () => {
@@ -51,18 +72,14 @@ const generateEnhancedBusinessHours = () => {
   const weekdayText = [];
 
   days.forEach((day, index) => {
-    // Special handling for Monday (more likely to be closed)
     if (day === "monday" && Math.random() < 0.3) {
       weekdayText.push(`${day}: Closed`);
       return;
     }
 
-    // Generate opening time (most open between 8am-12pm)
     const openHour = getRandomInt(8, 12);
     const openMinute = getRandomInt(0, 59);
-
-    // Generate closing time (most close between 5pm-2am)
-    const closeHour = getRandomInt(17, 26); // 26 represents 2am next day
+    const closeHour = getRandomInt(17, 26);
     const closeMinute = getRandomInt(0, 59);
 
     const openTime = `${openHour.toString().padStart(2, "0")}:${openMinute
@@ -83,45 +100,6 @@ const generateEnhancedBusinessHours = () => {
   return { periods, weekday_text: weekdayText };
 };
 
-// Mock coordinates generator (UK bounds)
-const generateMockCoordinates = (): Coordinates => ({
-  latitude: getRandomFloat(49.9, 58.7),
-  longitude: getRandomFloat(-8.6, 1.8),
-});
-
-// Mock contact info generator
-const generateMockContactInfo = () => ({
-  phone: `+44 ${getRandomInt(1000, 9999)} ${getRandomInt(100000, 999999)}`,
-  email: `pub${getRandomInt(1000, 9999)}@example.com`,
-  website: `https://www.pub${getRandomInt(1000, 9999)}.co.uk`,
-  googleRating: getRandomFloat(3.0, 5.0, 1),
-  reviewCount: getRandomInt(10, 500),
-});
-
-// Mock route generator
-const generateMockRoute = (start: Coordinates, end: Coordinates): Route => {
-  const distance = getRandomFloat(0.5, 50.0); // Distance in miles
-  const baseDuration = distance * 2; // Base duration in minutes
-  const trafficDelay = getRandomFloat(0, baseDuration * 0.3); // Up to 30% delay
-  const totalDuration = baseDuration + trafficDelay;
-
-  return {
-    distance,
-    duration: totalDuration,
-    coordinates: [
-      start,
-      {
-        latitude:
-          (start.latitude + end.latitude) / 2 + getRandomFloat(-0.01, 0.01),
-        longitude:
-          (start.longitude + end.longitude) / 2 + getRandomFloat(-0.01, 0.01),
-      },
-      end,
-    ],
-    trafficDelay,
-  };
-};
-
 /**
  * Mock implementation of Mapbox Geocoding API
  * Returns location data in the exact format of Mapbox's geocoding API
@@ -137,19 +115,12 @@ export const getCoordinatesFromQuery = async (
 
   try {
     console.log(`🔍 Mock API: Geocoding query "${query}"`);
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, getRandomInt(200, 600)));
+    await simulateApiCall(200, 500, 0.1);
 
-    // 5% chance of error to simulate API failures
-    if (Math.random() < 0.05) {
-      throw new Error("Geocoding service unavailable");
-    }
-
-    // Generate realistic UK coordinates based on postcode pattern
     const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2}$/i.test(query);
     const lat = isPostcode
-      ? getRandomFloat(51.3, 55.8) // More focused range for UK postcodes
-      : getRandomFloat(49.9, 58.7); // Full UK range for place names
+      ? getRandomFloat(51.3, 55.8)
+      : getRandomFloat(49.9, 58.7);
     const lng = getRandomFloat(-8.6, 1.8);
 
     return {
@@ -202,87 +173,55 @@ export const getOptimizedRoute = async (
     console.log(
       `🗺️ Mock API: Calculating route with ${coordsArray.length} waypoints`
     );
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, getRandomInt(300, 800)));
+    await simulateApiCall(300, 800, 0.1);
 
-    // 5% chance of error
-    if (Math.random() < 0.05) {
-      throw new Error("Routing service unavailable");
-    }
+    const routes = [];
+    const waypoints = coordsArray.map((coord, index) => ({
+      name: `Waypoint ${index + 1}`,
+      location: [coord.lng, coord.lat],
+    }));
 
-    // Calculate total distance and duration
-    let totalDistance = 0;
-    let totalDuration = 0;
-    const steps = [];
-    const coordinates = [];
+    // Generate route geometry
+    const coordinates = coordsArray.map((coord) => [coord.lng, coord.lat]);
+    const distance = getRandomFloat(1000, 50000);
+    const duration = distance * 0.06;
 
-    for (let i = 0; i < coordsArray.length - 1; i++) {
-      const legDistance = getRandomFloat(1000, 50000); // 1-50km in meters
-      const legDuration = legDistance * 0.06; // Roughly 60km/h average
-      totalDistance += legDistance;
-      totalDuration += legDuration;
-
-      // Generate intermediate points for the route
-      const start = coordsArray[i];
-      const end = coordsArray[i + 1];
-      const midPoint = {
-        lat: (start.lat + end.lat) / 2 + getRandomFloat(-0.01, 0.01),
-        lng: (start.lng + end.lng) / 2 + getRandomFloat(-0.01, 0.01),
-      };
-
-      coordinates.push([start.lng, start.lat]);
-      coordinates.push([midPoint.lng, midPoint.lat]);
-
-      steps.push({
-        distance: legDistance,
-        duration: legDuration,
-        geometry: {
-          coordinates: [
-            [start.lng, start.lat],
-            [midPoint.lng, midPoint.lat],
-            [end.lng, end.lat],
-          ],
-          type: "LineString",
-        },
-        maneuver: {
-          type: "turn",
-          instruction: `Continue onto Route ${i + 1}`,
-          bearing_after: getRandomInt(0, 359),
-          location: [end.lng, end.lat],
-        },
-      });
-    }
-
-    // Add the final coordinate
-    coordinates.push([
-      coordsArray[coordsArray.length - 1].lng,
-      coordsArray[coordsArray.length - 1].lat,
-    ]);
-
-    return {
-      routes: [
+    routes.push({
+      geometry: {
+        coordinates,
+        type: "LineString",
+      },
+      legs: [
         {
-          distance: totalDistance,
-          duration: totalDuration,
-          geometry: {
-            coordinates,
-            type: "LineString",
-          },
-          legs: [
+          distance,
+          duration,
+          summary: "Mock Route",
+          steps: [
             {
-              distance: totalDistance,
-              duration: totalDuration,
-              summary: "Main route",
-              steps,
+              distance,
+              duration,
+              geometry: {
+                coordinates,
+                type: "LineString",
+              },
+              maneuver: {
+                type: "depart",
+                instruction: "Start at origin",
+                bearing_after: 0,
+              },
             },
           ],
         },
       ],
-      waypoints: coordsArray.map((coord, index) => ({
-        distance: 0,
-        name: `Waypoint ${index + 1}`,
-        location: [coord.lng, coord.lat],
-      })),
+      distance,
+      duration,
+      weight_name: "routability",
+      weight: duration,
+    });
+
+    return {
+      routes,
+      waypoints,
       code: "Ok",
       uuid: `mock-${getRandomInt(1000000, 9999999)}`,
     };
@@ -293,9 +232,10 @@ export const getOptimizedRoute = async (
 };
 
 /**
- * Mock implementation of pub search by postcode
- * @param zipCode - UK postcode to search near
- * @returns Promise<Pub[]> - Array of nearby pubs
+ * Mock implementation of Places API
+ * Returns nearby pubs in the format expected by the application
+ * @param zipCode - Postcode to search around
+ * @returns Promise<Pub[]> - Array of mock pub data
  */
 export const getNearbyPubs = async (zipCode: string): Promise<Pub[]> => {
   if (!USE_MOCK_API) {
@@ -303,43 +243,49 @@ export const getNearbyPubs = async (zipCode: string): Promise<Pub[]> => {
   }
 
   try {
-    // Simulate API delay
-    await new Promise((resolve) =>
-      setTimeout(resolve, getRandomInt(400, 1000))
-    );
+    console.log(`🍺 Mock API: Finding pubs near ${zipCode}`);
+    await simulateApiCall(200, 500, 0.1);
 
-    // 5% chance of error
-    if (Math.random() < 0.05) {
-      throw new Error("Pub search service unavailable");
+    const numPubs = getRandomInt(5, 15);
+    const pubs: Pub[] = [];
+
+    for (let i = 0; i < numPubs; i++) {
+      const lat = getRandomFloat(51.3, 55.8);
+      const lng = getRandomFloat(-8.6, 1.8);
+      const distance = getRandomFloat(0.1, 5.0);
+
+      pubs.push({
+        fsq_id: `mock-${getRandomInt(1000000, 9999999)}`,
+        name: `Mock Pub ${i + 1}`,
+        distance,
+        geocodes: {
+          main: {
+            latitude: lat,
+            longitude: lng,
+          },
+        },
+        location: {
+          address: `${getRandomInt(1, 100)} Mock Street`,
+          postcode: zipCode,
+          locality: "Mock City",
+          region: "Mock County",
+          country: "United Kingdom",
+        },
+      });
     }
 
-    const count = getRandomInt(5, 20);
-    return Array.from({ length: count }, (_, i) => ({
-      id: `mock-pub-${i}`,
-      name: `Nearby Pub ${i + 1}`,
-      coordinates: {
-        latitude: getRandomFloat(51.3, 55.8),
-        longitude: getRandomFloat(-0.5, 0.5),
-      },
-      businessHours: generateEnhancedBusinessHours(),
-      contactInfo: generateMockContactInfo(),
-      address: {
-        street: `${getRandomInt(1, 100)} Nearby Street`,
-        city: "Mock City",
-        postcode: zipCode,
-      },
-    }));
+    return pubs;
   } catch (error) {
-    console.error("Mock pub search error:", error);
+    console.error("❌ Mock API Error (Nearby Pubs):", error);
     throw new Error("Failed to find nearby pubs");
   }
 };
 
 /**
- * Mock implementation of business details lookup
- * Returns enhanced business details including ratings and reviews
+ * Mock implementation of Business Details API
+ * Returns enhanced business details in the format expected by the application
  * @param name - Business name
- * @param postcode - UK postcode
+ * @param postcode - Business postcode
  * @returns Promise<EnhancedBusinessDetails> - Enhanced business details
  */
 export const getBusinessDetails = async (
@@ -351,56 +297,36 @@ export const getBusinessDetails = async (
   }
 
   try {
-    console.log(`🏪 Mock API: Fetching details for "${name}"`);
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, getRandomInt(300, 700)));
+    console.log(`ℹ️ Mock API: Getting details for ${name}`);
+    await simulateApiCall(200, 500, 0.1);
 
-    // 5% chance of error
-    if (Math.random() < 0.05) {
-      throw new Error("Business details service unavailable");
-    }
+    const contactInfo = {
+      phone: `+44 ${getRandomInt(1000, 9999)} ${getRandomInt(100000, 999999)}`,
+      email: `pub${getRandomInt(1000, 9999)}@example.com`,
+      website: `https://www.pub${getRandomInt(1000, 9999)}.co.uk`,
+    };
 
-    // 10% chance of not finding the business
-    if (Math.random() < 0.1) {
-      throw new Error("Business not found");
-    }
-
-    const rating = getRandomFloat(3.0, 5.0, 1);
-    const reviewCount = getRandomInt(10, 500);
+    const openingHours = generateEnhancedBusinessHours();
 
     return {
-      phone: `+44 ${getRandomInt(1000, 9999)} ${getRandomInt(100000, 999999)}`,
-      email: `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
-      openingHours: generateEnhancedBusinessHours(),
-      rating: {
-        google: {
-          stars: rating,
-          count: reviewCount,
-        },
-        yelp: {
-          stars: getRandomFloat(3.0, 5.0, 1),
-          count: getRandomInt(5, 200),
-        },
-      },
-      website: `https://www.${name.toLowerCase().replace(/\s+/g, "-")}.co.uk`,
-      photos: Array.from(
-        { length: getRandomInt(3, 10) },
-        (_, i) =>
-          `https://example.com/photos/${name
-            .toLowerCase()
-            .replace(/\s+/g, "-")}-${i + 1}.jpg`
-      ),
-      reviews: Array.from({ length: getRandomInt(3, 10) }, () => ({
-        author: `User${getRandomInt(1000, 9999)}`,
-        rating: getRandomFloat(3.0, 5.0, 1),
-        text: "Great place! Would visit again.",
-        time: new Date(
-          Date.now() - getRandomInt(0, 30) * 24 * 60 * 60 * 1000
-        ).toISOString(),
-      })),
+      ...contactInfo,
+      openingHours,
+      rating: getRandomFloat(3.0, 5.0, 1),
+      reviewCount: getRandomInt(10, 500),
+      photos: Array(getRandomInt(1, 5))
+        .fill(null)
+        .map(() => `https://example.com/photo${getRandomInt(1, 1000)}.jpg`),
+      reviews: Array(getRandomInt(3, 10))
+        .fill(null)
+        .map(() => ({
+          author: `User${getRandomInt(1000, 9999)}`,
+          rating: getRandomInt(1, 5),
+          text: "This is a mock review for testing purposes.",
+          time: new Date().toISOString(),
+        })),
     };
   } catch (error) {
     console.error("❌ Mock API Error (Business Details):", error);
-    throw new Error("Failed to fetch business details");
+    throw new Error("Failed to get business details");
   }
 };
