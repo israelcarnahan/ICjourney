@@ -4,6 +4,7 @@ import {
   getNearbyPubs,
   getBusinessDetails,
   setMockApiEnabled,
+  getRandomFloat,
 } from "../mockApi";
 
 describe("Mock API Tests", () => {
@@ -109,7 +110,13 @@ describe("Mock API Tests", () => {
 
     it("should handle edge cases (zero distance/duration)", async () => {
       const waypoints = [{ lat: 51.5074, lng: -0.1278 }];
-      jest.spyOn(Math, "random").mockReturnValue(0); // Force minimum values
+      // Mock Math.random to avoid API error
+      jest.spyOn(Math, "random").mockReturnValue(0.5); // Avoid error threshold
+      // Mock getRandomFloat to return minimum values
+      const mockGetRandomFloat = jest.fn().mockReturnValue(1000); // Minimum distance
+      jest
+        .spyOn(require("../mockApi"), "getRandomFloat")
+        .mockImplementation(mockGetRandomFloat);
 
       const response = await getOptimizedRoute(waypoints);
       const route = response.routes[0];
@@ -120,7 +127,13 @@ describe("Mock API Tests", () => {
 
     it("should handle edge cases (maximum distance/duration)", async () => {
       const waypoints = [{ lat: 51.5074, lng: -0.1278 }];
-      jest.spyOn(Math, "random").mockReturnValue(0.999); // Force maximum values
+      // Mock Math.random to avoid API error
+      jest.spyOn(Math, "random").mockReturnValue(0.5); // Avoid error threshold
+      // Mock getRandomFloat to return maximum values
+      const mockGetRandomFloat = jest.fn().mockReturnValue(50000); // Maximum distance
+      jest
+        .spyOn(require("../mockApi"), "getRandomFloat")
+        .mockImplementation(mockGetRandomFloat);
 
       const response = await getOptimizedRoute(waypoints);
       const route = response.routes[0];

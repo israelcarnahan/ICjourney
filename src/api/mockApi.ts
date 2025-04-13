@@ -27,11 +27,19 @@ if (USE_MOCK_API) {
   console.log("🔧 Mock API is active - Using simulated data");
 }
 
-// Helper functions for generating mock data
-const getRandomInt = (min: number, max: number) =>
-  Math.floor(Math.random() * (max - min + 1)) + min;
-const getRandomFloat = (min: number, max: number, decimals = 2) =>
-  Number((Math.random() * (max - min) + min).toFixed(decimals));
+// Helper functions
+export const getRandomFloat = (
+  min: number,
+  max: number,
+  decimals: number = 2
+): number => {
+  const str = (Math.random() * (max - min) + min).toFixed(decimals);
+  return parseFloat(str);
+};
+
+export const getRandomInt = (min: number, max: number): number => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};
 
 /**
  * Simulates network delay and potential API failures
