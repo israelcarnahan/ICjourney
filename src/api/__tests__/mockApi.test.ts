@@ -69,6 +69,8 @@ describe("Mock API Tests", () => {
             },
             distance: expect.any(Number),
             duration: expect.any(Number),
+            distance_miles: expect.any(Number),
+            duration_minutes: expect.any(Number),
           }),
         ]),
         waypoints: expect.arrayContaining([
@@ -83,6 +85,48 @@ describe("Mock API Tests", () => {
         code: "Ok",
         uuid: expect.stringMatching(/^mock-\d+$/),
       });
+    });
+
+    it("should correctly convert distance from meters to miles", async () => {
+      const waypoints = [{ lat: 51.5074, lng: -0.1278 }];
+      const response = await getOptimizedRoute(waypoints);
+      const route = response.routes[0];
+
+      // Verify the conversion (meters to miles)
+      const expectedMiles = Number((route.distance / 1609.34).toFixed(2));
+      expect(route.distance_miles).toBe(expectedMiles);
+    });
+
+    it("should correctly convert duration from seconds to minutes", async () => {
+      const waypoints = [{ lat: 51.5074, lng: -0.1278 }];
+      const response = await getOptimizedRoute(waypoints);
+      const route = response.routes[0];
+
+      // Verify the conversion (seconds to minutes)
+      const expectedMinutes = Number((route.duration / 60).toFixed(1));
+      expect(route.duration_minutes).toBe(expectedMinutes);
+    });
+
+    it("should handle edge cases (zero distance/duration)", async () => {
+      const waypoints = [{ lat: 51.5074, lng: -0.1278 }];
+      jest.spyOn(Math, "random").mockReturnValue(0); // Force minimum values
+
+      const response = await getOptimizedRoute(waypoints);
+      const route = response.routes[0];
+
+      expect(route.distance_miles).toBe(0.62); // 1000 meters = 0.62 miles
+      expect(route.duration_minutes).toBe(1.0); // 60 seconds = 1 minute
+    });
+
+    it("should handle edge cases (maximum distance/duration)", async () => {
+      const waypoints = [{ lat: 51.5074, lng: -0.1278 }];
+      jest.spyOn(Math, "random").mockReturnValue(0.999); // Force maximum values
+
+      const response = await getOptimizedRoute(waypoints);
+      const route = response.routes[0];
+
+      expect(route.distance_miles).toBe(31.07); // 50000 meters = 31.07 miles
+      expect(route.duration_minutes).toBe(50.0); // 3000 seconds = 50 minutes
     });
 
     it("should handle API failures", async () => {

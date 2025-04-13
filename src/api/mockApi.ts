@@ -163,6 +163,8 @@ export const getCoordinatesFromQuery = async (
  * Returns route data in the exact format of Mapbox's directions API
  * @param coordsArray - Array of coordinates to route through
  * @returns Promise<MapboxDirectionsResponse> - Mock directions response matching Mapbox format
+ * Note: Distance is converted from meters to miles (meters / 1609.34)
+ *       Duration is converted from seconds to minutes (seconds / 60)
  */
 export const getOptimizedRoute = async (
   coordsArray: LatLng[]
@@ -185,8 +187,12 @@ export const getOptimizedRoute = async (
 
     // Generate route geometry
     const coordinates = coordsArray.map((coord) => [coord.lng, coord.lat]);
-    const distance = getRandomFloat(1000, 50000);
-    const duration = distance * 0.06;
+    const distance = getRandomFloat(1000, 50000); // meters
+    const duration = distance * 0.06; // seconds
+
+    // Convert to user-friendly units
+    const distance_miles = Number((distance / 1609.34).toFixed(2)); // meters to miles
+    const duration_minutes = Number((duration / 60).toFixed(1)); // seconds to minutes
 
     routes.push({
       geometry: {
@@ -217,6 +223,8 @@ export const getOptimizedRoute = async (
       ],
       distance,
       duration,
+      distance_miles, // Add converted distance in miles
+      duration_minutes, // Add converted duration in minutes
       weight_name: "routability",
       weight: duration,
     });

@@ -185,6 +185,8 @@ export interface MapboxDirectionsResponse {
   routes: Array<{
     distance: number; // meters
     duration: number; // seconds
+    distance_miles: number; // converted from meters
+    duration_minutes: number; // converted from seconds
     geometry: {
       coordinates: Array<[number, number]>; // [lng, lat]
       type: "LineString";
