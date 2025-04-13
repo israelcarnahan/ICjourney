@@ -830,44 +830,88 @@ const ScheduleDisplay: React.FC = () => {
   };
 
   const handleVisitReplace = async (date: string, visitId: string) => {
-    // Find a replacement visit based on criteria
+    // First confirm with the user
+    if (
+      !window.confirm(
+        `Are you sure you want to replace this visit? This will remove the current visit and find a new one based on your settings.`
+      )
+    ) {
+      return;
+    }
+
+    // Find the current day and visit
     const day = schedule.find((d) => d.date === date);
     if (!day) return;
 
     const visitToReplace = day.visits.find((v) => v.pub === visitId);
     if (!visitToReplace) return;
 
+    // Get all previously deleted pubs for this day
+    const dayRemovedPubs = removedPubs[date] || new Set();
+
     // Get potential replacement visits based on criteria
-    const replacementVisits = userFiles.pubs.filter((pub) => {
-      // Not already scheduled
+    const replacementVisits = userFiles.pubs.filter((pub): pub is Visit => {
+      // Not already scheduled for any day
       const isNotScheduled = !schedule.some((d) =>
         d.visits.some((v) => v.pub === pub.pub)
       );
+
+      // Not previously deleted from this day
+      const notPreviouslyDeleted = !dayRemovedPubs.has(pub.pub);
 
       // Within search radius (using postcode matching)
       const isNearby =
         pub.zip.substring(0, 2) === visitToReplace.zip.substring(0, 2);
 
-      // Matches priority level
-      const hasSimilarPriority = pub.Priority === visitToReplace.Priority;
+      // Matches or higher priority level
+      const visitPriorityLevel = getPriorityOrder(visitToReplace);
+      const pubPriorityLevel = getPriorityOrder(pub);
+      const hasSuitablePriority = pubPriorityLevel <= visitPriorityLevel;
 
       // Consider deadline if exists
       const meetsDeadline =
         !pub.deadline ||
         (pub.deadline && new Date(pub.deadline) > new Date(date));
 
-      return isNotScheduled && isNearby && hasSimilarPriority && meetsDeadline;
+      // Ensure pub has required Visit properties
+      const hasRequiredProps =
+        typeof pub.pub === "string" &&
+        typeof pub.Priority === "string" &&
+        typeof pub.zip === "string";
+
+      // Ensure pub is completely unused (not in any schedule or removed list)
+      const isCompletelyUnused =
+        isNotScheduled &&
+        !Object.values(removedPubs).some((removedSet) =>
+          removedSet.has(pub.pub)
+        );
+
+      return (
+        isCompletelyUnused &&
+        notPreviouslyDeleted &&
+        isNearby &&
+        hasSuitablePriority &&
+        meetsDeadline &&
+        hasRequiredProps
+      );
     });
 
-    // Sort by last visited date (prioritize ones not visited recently)
+    // Sort by priority first, then by last visited date
     replacementVisits.sort((a, b) => {
+      // First by priority (lower number = higher priority)
+      const priorityDiff = getPriorityOrder(a) - getPriorityOrder(b);
+      if (priorityDiff !== 0) return priorityDiff;
+
+      // Then by last visited date (prefer less recently visited)
       const aDate = a.last_visited ? new Date(a.last_visited) : new Date(0);
       const bDate = b.last_visited ? new Date(b.last_visited) : new Date(0);
       return aDate.getTime() - bDate.getTime();
     });
 
     if (replacementVisits.length === 0) {
-      console.warn("No suitable replacement found");
+      alert(
+        "No suitable replacement found in this area. Try expanding your search criteria or adding more pubs to your list."
+      );
       return;
     }
 
@@ -880,12 +924,21 @@ const ScheduleDisplay: React.FC = () => {
         const visitIndex = updatedVisits.findIndex((v) => v.pub === visitId);
 
         if (visitIndex !== -1) {
-          updatedVisits[visitIndex] = {
+          // Keep the same time slot but update other properties
+          const oldVisitTime =
+            updatedVisits[visitIndex].scheduledTime ||
+            updatedVisits[visitIndex].optimizedTime;
+
+          const newVisit: Visit = {
             ...replacementVisits[0],
-            scheduledTime: visitToReplace.scheduledTime, // Preserve the time slot
+            scheduledTime: oldVisitTime, // Keep the same time slot
+            optimizedTime: oldVisitTime, // Keep the same time slot
             mileageToNext: 0,
             driveTimeToNext: 30,
+            Priority: replacementVisits[0].Priority || "Unvisited",
           };
+
+          updatedVisits[visitIndex] = newVisit;
         }
 
         // Recalculate metrics

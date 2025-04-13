@@ -76,7 +76,8 @@ interface DriveTimeBarProps {
   startDriveTime: number;
   endDriveTime: number;
   targetVisitsPerDay: number;
-  desiredEndTime?: string;
+  desiredEndTime: string;
+  onDesiredEndTimeChange: (time: string) => void;
 }
 
 interface SegmentInfo {
@@ -329,7 +330,8 @@ const DriveTimeBar: React.FC<DriveTimeBarProps> = ({
   startDriveTime,
   endDriveTime,
   targetVisitsPerDay,
-  desiredEndTime = "17:00",
+  desiredEndTime,
+  onDesiredEndTimeChange,
 }) => {
   const { selectedVehicle, selectedVehicleColor } = usePubData();
   const [currentTime, setCurrentTime] = useState(new Date());
