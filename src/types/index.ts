@@ -218,15 +218,6 @@ export interface MapboxDirectionsResponse {
   uuid: string;
 }
 
-export interface BusinessDetails {
-  phone: string;
-  email: string;
-  openingHours: BusinessHours;
-  googleRating: number;
-  reviewCount: number;
-  website?: string;
-}
-
 export interface EnhancedBusinessDetails {
   phone: string;
   email: string;

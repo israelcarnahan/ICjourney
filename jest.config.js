@@ -1,15 +1,7 @@
+/** @type {import('jest').Config} */
 export default {
   preset: "ts-jest",
-  testEnvironment: "node",
-  moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/src/$1",
-  },
-  testMatch: ["**/__tests__/**/*.test.ts"],
-  collectCoverage: true,
-  coverageDirectory: "coverage",
-  coverageReporters: ["text", "lcov"],
-  coveragePathIgnorePatterns: ["/node_modules/", "/__tests__/"],
-  setupFiles: ["<rootDir>/src/api/__tests__/setup.ts"],
+  testEnvironment: "jsdom",
   transform: {
     "^.+\\.tsx?$": [
       "ts-jest",
@@ -18,12 +10,18 @@ export default {
       },
     ],
   },
-  extensionsToTreatAsEsm: [".ts", ".tsx"],
+  moduleNameMapper: {
+    "^@/(.*)$": "<rootDir>/src/$1",
+  },
+  setupFiles: ["<rootDir>/src/api/__tests__/setup.ts"],
   globals: {
-    "import.meta": {
-      env: {
-        VITE_USE_MOCK_API: "true",
-      },
+    "ts-jest": {
+      tsconfig: "tsconfig.json",
+      useESM: true,
     },
   },
+  testEnvironmentOptions: {
+    customExportConditions: ["node", "node-addons"],
+  },
+  extensionsToTreatAsEsm: [".ts", ".tsx"],
 };

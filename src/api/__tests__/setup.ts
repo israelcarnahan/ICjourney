@@ -1,16 +1,10 @@
 import "./mockApi.config";
 
-// Mock import.meta.env
-global.import = {
-  meta: {
-    env: {
-      VITE_USE_MOCK_API: "true",
-    },
-  },
-};
+// Mock environment variables
+process.env.VITE_USE_MOCK_API = "true";
 
 // Mock console methods
-const mockConsole = {
+global.console = {
   ...console,
   // Override console methods to prevent test output noise
   log: jest.fn(),
@@ -20,5 +14,5 @@ const mockConsole = {
   debug: jest.fn(),
 };
 
-// @ts-ignore
-global.console = mockConsole;
+// Mock Math.random for consistent test results
+jest.spyOn(Math, "random").mockReturnValue(0.5);

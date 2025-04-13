@@ -12,8 +12,7 @@ import { getConfig, setConfig } from "../config";
 
 // Configuration
 let USE_MOCK_API =
-  process.env.NODE_ENV === "test" ||
-  import.meta?.env?.VITE_USE_MOCK_API === "true";
+  process.env.NODE_ENV === "test" || process.env.VITE_USE_MOCK_API === "true";
 
 // For testing purposes
 export const setMockApiEnabled = (enabled: boolean) => {
@@ -68,8 +67,11 @@ const generateEnhancedBusinessHours = () => {
     "saturday",
     "sunday",
   ];
-  const periods = [];
-  const weekdayText = [];
+  const periods: Array<{
+    open: { day: number; time: string };
+    close: { day: number; time: string };
+  }> = [];
+  const weekdayText: string[] = [];
 
   days.forEach((day, index) => {
     if (day === "monday" && Math.random() < 0.3) {
