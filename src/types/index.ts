@@ -107,3 +107,38 @@ export interface Pub {
   contactInfo: ContactInfo;
   address: Address;
 }
+
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
+export interface GeocodingResponse {
+  lat: number;
+  lng: number;
+  place_name: string;
+  context: Array<{
+    id: string;
+    text: string;
+  }>;
+}
+
+export interface DirectionsResponse {
+  distance: number; // in meters
+  duration: number; // in seconds
+  polyline: string;
+  legs: Array<{
+    distance: number;
+    duration: number;
+    summary: string;
+  }>;
+}
+
+export interface BusinessDetails {
+  phone: string;
+  email: string;
+  openingHours: BusinessHours;
+  googleRating: number;
+  reviewCount: number;
+  website?: string;
+}

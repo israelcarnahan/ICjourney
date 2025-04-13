@@ -1,4 +1,13 @@
-import { Pub, BusinessHours, Coordinates, Route } from "../types";
+import {
+  Pub,
+  BusinessHours,
+  Coordinates,
+  Route,
+  LatLng,
+  GeocodingResponse,
+  DirectionsResponse,
+  BusinessDetails,
+} from "../types";
 
 // Configuration
 const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === "true";
@@ -95,102 +104,187 @@ const generateMockRoute = (start: Coordinates, end: Coordinates): Route => {
   };
 };
 
-// Mock API functions
-export const mockApi = {
-  // Get business hours with fallback
-  getBusinessHours: async (pubId: string): Promise<BusinessHours> => {
-    if (!USE_MOCK_API) {
-      throw new Error("Mock API is disabled");
-    }
+/**
+ * Mock implementation of Mapbox Geocoding API
+ * @param query - Location query string (e.g., "London, UK" or "SW1A 1AA")
+ * @returns Promise<GeocodingResponse> - Mock geocoding response matching Mapbox format
+ */
+export const getCoordinatesFromQuery = async (
+  query: string
+): Promise<GeocodingResponse> => {
+  if (!USE_MOCK_API) {
+    throw new Error("Mock API is disabled");
+  }
 
+  try {
     // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, getRandomInt(100, 500)));
+    await new Promise((resolve) => setTimeout(resolve, getRandomInt(200, 600)));
 
-    // 10% chance of missing data
-    if (Math.random() < 0.1) {
-      throw new Error("Business hours not available");
-    }
-
-    return generateMockBusinessHours();
-  },
-
-  // Get route with traffic simulation
-  getRoute: async (start: Coordinates, end: Coordinates): Promise<Route> => {
-    if (!USE_MOCK_API) {
-      throw new Error("Mock API is disabled");
-    }
-
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, getRandomInt(200, 800)));
-
-    return generateMockRoute(start, end);
-  },
-
-  // Get pub details with contact info
-  getPubDetails: async (pubId: string): Promise<Pub> => {
-    if (!USE_MOCK_API) {
-      throw new Error("Mock API is disabled");
-    }
-
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, getRandomInt(150, 600)));
-
-    // 5% chance of missing data
+    // 5% chance of error to simulate API failures
     if (Math.random() < 0.05) {
-      throw new Error("Pub details not available");
+      throw new Error("Geocoding service unavailable");
     }
+
+    // Generate realistic UK coordinates based on postcode pattern
+    const isPostcode = /^[A-Z]{1,2}\d{1,2}[A-Z]?\s*\d[A-Z]{2}$/i.test(query);
+    const lat = isPostcode
+      ? getRandomFloat(51.3, 55.8) // More focused range for UK postcodes
+      : getRandomFloat(49.9, 58.7); // Full UK range for place names
+    const lng = getRandomFloat(-8.6, 1.8);
 
     return {
-      id: pubId,
-      name: `Mock Pub ${getRandomInt(1, 1000)}`,
-      coordinates: generateMockCoordinates(),
-      businessHours: generateMockBusinessHours(),
-      contactInfo: generateMockContactInfo(),
-      address: {
-        street: `${getRandomInt(1, 100)} Mock Street`,
-        city: "Mock City",
-        postcode: `M${getRandomInt(10, 99)} ${getRandomInt(1, 9)}${getRandomInt(
-          10,
-          99
-        )}`,
-      },
+      lat,
+      lng,
+      place_name: query,
+      context: [
+        { id: "place.123", text: query.split(",")[0] },
+        { id: "country.456", text: "United Kingdom" },
+      ],
     };
-  },
+  } catch (error) {
+    console.error("Mock geocoding error:", error);
+    throw new Error("Failed to geocode location");
+  }
+};
 
-  // Get nearby pubs
-  getNearbyPubs: async (
-    location: Coordinates,
-    radius: number
-  ): Promise<Pub[]> => {
-    if (!USE_MOCK_API) {
-      throw new Error("Mock API is disabled");
+/**
+ * Mock implementation of Mapbox Directions API
+ * @param coordsArray - Array of coordinates to route through
+ * @returns Promise<DirectionsResponse> - Mock directions response matching Mapbox format
+ */
+export const getOptimizedRoute = async (
+  coordsArray: LatLng[]
+): Promise<DirectionsResponse> => {
+  if (!USE_MOCK_API) {
+    throw new Error("Mock API is disabled");
+  }
+
+  try {
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, getRandomInt(300, 800)));
+
+    // 5% chance of error
+    if (Math.random() < 0.05) {
+      throw new Error("Routing service unavailable");
     }
 
+    // Calculate total distance and duration
+    let totalDistance = 0;
+    let totalDuration = 0;
+    const legs = [];
+
+    for (let i = 0; i < coordsArray.length - 1; i++) {
+      const legDistance = getRandomFloat(1000, 50000); // 1-50km
+      const legDuration = legDistance * 0.06; // Roughly 60km/h average
+      totalDistance += legDistance;
+      totalDuration += legDuration;
+      legs.push({
+        distance: legDistance,
+        duration: legDuration,
+        summary: `Leg ${i + 1}`,
+      });
+    }
+
+    // Generate a mock polyline (simplified)
+    const polyline = coordsArray
+      .map((coord) => `${coord.lat.toFixed(6)},${coord.lng.toFixed(6)}`)
+      .join(";");
+
+    return {
+      distance: totalDistance,
+      duration: totalDuration,
+      polyline,
+      legs,
+    };
+  } catch (error) {
+    console.error("Mock routing error:", error);
+    throw new Error("Failed to calculate route");
+  }
+};
+
+/**
+ * Mock implementation of pub search by postcode
+ * @param zipCode - UK postcode to search near
+ * @returns Promise<Pub[]> - Array of nearby pubs
+ */
+export const getNearbyPubs = async (zipCode: string): Promise<Pub[]> => {
+  if (!USE_MOCK_API) {
+    throw new Error("Mock API is disabled");
+  }
+
+  try {
     // Simulate API delay
     await new Promise((resolve) =>
-      setTimeout(resolve, getRandomInt(300, 1000))
+      setTimeout(resolve, getRandomInt(400, 1000))
     );
+
+    // 5% chance of error
+    if (Math.random() < 0.05) {
+      throw new Error("Pub search service unavailable");
+    }
 
     const count = getRandomInt(5, 20);
     return Array.from({ length: count }, (_, i) => ({
       id: `mock-pub-${i}`,
       name: `Nearby Pub ${i + 1}`,
       coordinates: {
-        latitude: location.latitude + getRandomFloat(-0.1, 0.1),
-        longitude: location.longitude + getRandomFloat(-0.1, 0.1),
+        latitude: getRandomFloat(51.3, 55.8),
+        longitude: getRandomFloat(-0.5, 0.5),
       },
       businessHours: generateMockBusinessHours(),
       contactInfo: generateMockContactInfo(),
       address: {
         street: `${getRandomInt(1, 100)} Nearby Street`,
         city: "Mock City",
-        postcode: `M${getRandomInt(10, 99)} ${getRandomInt(1, 9)}${getRandomInt(
-          10,
-          99
-        )}`,
+        postcode: zipCode,
       },
     }));
-  },
+  } catch (error) {
+    console.error("Mock pub search error:", error);
+    throw new Error("Failed to find nearby pubs");
+  }
+};
+
+/**
+ * Mock implementation of business details lookup
+ * @param name - Business name
+ * @param postcode - UK postcode
+ * @returns Promise<BusinessDetails> - Business details including contact info and hours
+ */
+export const getBusinessDetails = async (
+  name: string,
+  postcode: string
+): Promise<BusinessDetails> => {
+  if (!USE_MOCK_API) {
+    throw new Error("Mock API is disabled");
+  }
+
+  try {
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, getRandomInt(300, 700)));
+
+    // 5% chance of error
+    if (Math.random() < 0.05) {
+      throw new Error("Business details service unavailable");
+    }
+
+    // 10% chance of not finding the business
+    if (Math.random() < 0.1) {
+      throw new Error("Business not found");
+    }
+
+    return {
+      phone: `+44 ${getRandomInt(1000, 9999)} ${getRandomInt(100000, 999999)}`,
+      email: `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
+      openingHours: generateMockBusinessHours(),
+      googleRating: getRandomFloat(3.0, 5.0, 1),
+      reviewCount: getRandomInt(10, 500),
+      website: `https://www.${name.toLowerCase().replace(/\s+/g, "-")}.co.uk`,
+    };
+  } catch (error) {
+    console.error("Mock business details error:", error);
+    throw new Error("Failed to fetch business details");
+  }
 };
 
 // Export configuration
