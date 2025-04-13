@@ -142,3 +142,113 @@ export interface BusinessDetails {
   reviewCount: number;
   website?: string;
 }
+
+export interface MapboxGeocodingResponse {
+  type: "FeatureCollection";
+  query: string[];
+  features: Array<{
+    id: string;
+    type: "Feature";
+    place_name: string;
+    relevance: number;
+    properties: {
+      accuracy: string;
+    };
+    text: string;
+    place_type: string[];
+    center: [number, number]; // [lng, lat]
+    geometry: {
+      type: "Point";
+      coordinates: [number, number]; // [lng, lat]
+    };
+    context: Array<{
+      id: string;
+      text: string;
+      wikidata?: string;
+      short_code?: string;
+    }>;
+  }>;
+  attribution: string;
+}
+
+export interface MapboxDirectionsResponse {
+  routes: Array<{
+    distance: number; // meters
+    duration: number; // seconds
+    geometry: {
+      coordinates: Array<[number, number]>; // [lng, lat]
+      type: "LineString";
+    };
+    legs: Array<{
+      distance: number;
+      duration: number;
+      summary: string;
+      steps: Array<{
+        distance: number;
+        duration: number;
+        geometry: {
+          coordinates: Array<[number, number]>;
+          type: "LineString";
+        };
+        maneuver: {
+          type: string;
+          instruction: string;
+          bearing_after: number;
+          location: [number, number];
+        };
+      }>;
+    }>;
+  }>;
+  waypoints: Array<{
+    distance: number;
+    name: string;
+    location: [number, number];
+  }>;
+  code: string;
+  uuid: string;
+}
+
+export interface BusinessDetails {
+  phone: string;
+  email: string;
+  openingHours: BusinessHours;
+  googleRating: number;
+  reviewCount: number;
+  website?: string;
+}
+
+export interface EnhancedBusinessDetails {
+  phone: string;
+  email: string;
+  openingHours: {
+    periods: Array<{
+      open: {
+        day: number;
+        time: string;
+      };
+      close: {
+        day: number;
+        time: string;
+      };
+    }>;
+    weekday_text: string[];
+  };
+  rating: {
+    google: {
+      stars: number; // 1-5
+      count: number;
+    };
+    yelp?: {
+      stars: number;
+      count: number;
+    };
+  };
+  website?: string;
+  photos?: string[];
+  reviews?: Array<{
+    author: string;
+    rating: number;
+    text: string;
+    time: string;
+  }>;
+}

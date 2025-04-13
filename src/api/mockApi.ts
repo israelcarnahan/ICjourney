@@ -4,13 +4,24 @@ import {
   Coordinates,
   Route,
   LatLng,
-  GeocodingResponse,
-  DirectionsResponse,
-  BusinessDetails,
+  MapboxGeocodingResponse,
+  MapboxDirectionsResponse,
+  EnhancedBusinessDetails,
 } from "../types";
+import { getConfig, setConfig } from "../config";
 
 // Configuration
-const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === "true";
+let USE_MOCK_API =
+  process.env.NODE_ENV === "test" ||
+  import.meta?.env?.VITE_USE_MOCK_API === "true";
+
+// For testing purposes
+export const setMockApiEnabled = (enabled: boolean) => {
+  USE_MOCK_API = enabled;
+};
+
+// Export configuration check
+export const isMockApiEnabled = () => USE_MOCK_API;
 
 // Log mock API status
 if (USE_MOCK_API) {
@@ -23,8 +34,10 @@ const getRandomInt = (min: number, max: number) =>
 const getRandomFloat = (min: number, max: number, decimals = 2) =>
   Number((Math.random() * (max - min) + min).toFixed(decimals));
 
-// Mock business hours generator
-const generateMockBusinessHours = (): BusinessHours => {
+/**
+ * Generates a mock business hours object in the format expected by the enhanced API
+ */
+const generateEnhancedBusinessHours = () => {
   const days = [
     "monday",
     "tuesday",
@@ -34,12 +47,13 @@ const generateMockBusinessHours = (): BusinessHours => {
     "saturday",
     "sunday",
   ];
-  const hours: BusinessHours = {};
+  const periods = [];
+  const weekdayText = [];
 
-  days.forEach((day) => {
+  days.forEach((day, index) => {
     // Special handling for Monday (more likely to be closed)
     if (day === "monday" && Math.random() < 0.3) {
-      hours[day] = { isOpen: false };
+      weekdayText.push(`${day}: Closed`);
       return;
     }
 
@@ -51,18 +65,22 @@ const generateMockBusinessHours = (): BusinessHours => {
     const closeHour = getRandomInt(17, 26); // 26 represents 2am next day
     const closeMinute = getRandomInt(0, 59);
 
-    hours[day] = {
-      isOpen: true,
-      open: `${openHour.toString().padStart(2, "0")}:${openMinute
-        .toString()
-        .padStart(2, "0")}`,
-      close: `${closeHour.toString().padStart(2, "0")}:${closeMinute
-        .toString()
-        .padStart(2, "0")}`,
-    };
+    const openTime = `${openHour.toString().padStart(2, "0")}:${openMinute
+      .toString()
+      .padStart(2, "0")}`;
+    const closeTime = `${closeHour.toString().padStart(2, "0")}:${closeMinute
+      .toString()
+      .padStart(2, "0")}`;
+
+    periods.push({
+      open: { day: index, time: openTime },
+      close: { day: index, time: closeTime },
+    });
+
+    weekdayText.push(`${day}: ${openTime} - ${closeTime}`);
   });
 
-  return hours;
+  return { periods, weekday_text: weekdayText };
 };
 
 // Mock coordinates generator (UK bounds)
@@ -106,17 +124,19 @@ const generateMockRoute = (start: Coordinates, end: Coordinates): Route => {
 
 /**
  * Mock implementation of Mapbox Geocoding API
+ * Returns location data in the exact format of Mapbox's geocoding API
  * @param query - Location query string (e.g., "London, UK" or "SW1A 1AA")
- * @returns Promise<GeocodingResponse> - Mock geocoding response matching Mapbox format
+ * @returns Promise<MapboxGeocodingResponse> - Mock geocoding response matching Mapbox format
  */
 export const getCoordinatesFromQuery = async (
   query: string
-): Promise<GeocodingResponse> => {
+): Promise<MapboxGeocodingResponse> => {
   if (!USE_MOCK_API) {
     throw new Error("Mock API is disabled");
   }
 
   try {
+    console.log(`🔍 Mock API: Geocoding query "${query}"`);
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, getRandomInt(200, 600)));
 
@@ -133,33 +153,55 @@ export const getCoordinatesFromQuery = async (
     const lng = getRandomFloat(-8.6, 1.8);
 
     return {
-      lat,
-      lng,
-      place_name: query,
-      context: [
-        { id: "place.123", text: query.split(",")[0] },
-        { id: "country.456", text: "United Kingdom" },
+      type: "FeatureCollection",
+      query: [query],
+      features: [
+        {
+          id: `place.${getRandomInt(1000000, 9999999)}`,
+          type: "Feature",
+          place_name: query,
+          relevance: getRandomFloat(0.7, 1.0),
+          properties: {
+            accuracy: "point",
+          },
+          text: query.split(",")[0],
+          place_type: ["place"],
+          center: [lng, lat],
+          geometry: {
+            type: "Point",
+            coordinates: [lng, lat],
+          },
+          context: [
+            { id: "place.123", text: query.split(",")[0] },
+            { id: "country.456", text: "United Kingdom", short_code: "gb" },
+          ],
+        },
       ],
+      attribution: "© 2024 Mapbox, © OpenStreetMap",
     };
   } catch (error) {
-    console.error("Mock geocoding error:", error);
+    console.error("❌ Mock API Error (Geocoding):", error);
     throw new Error("Failed to geocode location");
   }
 };
 
 /**
  * Mock implementation of Mapbox Directions API
+ * Returns route data in the exact format of Mapbox's directions API
  * @param coordsArray - Array of coordinates to route through
- * @returns Promise<DirectionsResponse> - Mock directions response matching Mapbox format
+ * @returns Promise<MapboxDirectionsResponse> - Mock directions response matching Mapbox format
  */
 export const getOptimizedRoute = async (
   coordsArray: LatLng[]
-): Promise<DirectionsResponse> => {
+): Promise<MapboxDirectionsResponse> => {
   if (!USE_MOCK_API) {
     throw new Error("Mock API is disabled");
   }
 
   try {
+    console.log(
+      `🗺️ Mock API: Calculating route with ${coordsArray.length} waypoints`
+    );
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, getRandomInt(300, 800)));
 
@@ -171,33 +213,81 @@ export const getOptimizedRoute = async (
     // Calculate total distance and duration
     let totalDistance = 0;
     let totalDuration = 0;
-    const legs = [];
+    const steps = [];
+    const coordinates = [];
 
     for (let i = 0; i < coordsArray.length - 1; i++) {
-      const legDistance = getRandomFloat(1000, 50000); // 1-50km
+      const legDistance = getRandomFloat(1000, 50000); // 1-50km in meters
       const legDuration = legDistance * 0.06; // Roughly 60km/h average
       totalDistance += legDistance;
       totalDuration += legDuration;
-      legs.push({
+
+      // Generate intermediate points for the route
+      const start = coordsArray[i];
+      const end = coordsArray[i + 1];
+      const midPoint = {
+        lat: (start.lat + end.lat) / 2 + getRandomFloat(-0.01, 0.01),
+        lng: (start.lng + end.lng) / 2 + getRandomFloat(-0.01, 0.01),
+      };
+
+      coordinates.push([start.lng, start.lat]);
+      coordinates.push([midPoint.lng, midPoint.lat]);
+
+      steps.push({
         distance: legDistance,
         duration: legDuration,
-        summary: `Leg ${i + 1}`,
+        geometry: {
+          coordinates: [
+            [start.lng, start.lat],
+            [midPoint.lng, midPoint.lat],
+            [end.lng, end.lat],
+          ],
+          type: "LineString",
+        },
+        maneuver: {
+          type: "turn",
+          instruction: `Continue onto Route ${i + 1}`,
+          bearing_after: getRandomInt(0, 359),
+          location: [end.lng, end.lat],
+        },
       });
     }
 
-    // Generate a mock polyline (simplified)
-    const polyline = coordsArray
-      .map((coord) => `${coord.lat.toFixed(6)},${coord.lng.toFixed(6)}`)
-      .join(";");
+    // Add the final coordinate
+    coordinates.push([
+      coordsArray[coordsArray.length - 1].lng,
+      coordsArray[coordsArray.length - 1].lat,
+    ]);
 
     return {
-      distance: totalDistance,
-      duration: totalDuration,
-      polyline,
-      legs,
+      routes: [
+        {
+          distance: totalDistance,
+          duration: totalDuration,
+          geometry: {
+            coordinates,
+            type: "LineString",
+          },
+          legs: [
+            {
+              distance: totalDistance,
+              duration: totalDuration,
+              summary: "Main route",
+              steps,
+            },
+          ],
+        },
+      ],
+      waypoints: coordsArray.map((coord, index) => ({
+        distance: 0,
+        name: `Waypoint ${index + 1}`,
+        location: [coord.lng, coord.lat],
+      })),
+      code: "Ok",
+      uuid: `mock-${getRandomInt(1000000, 9999999)}`,
     };
   } catch (error) {
-    console.error("Mock routing error:", error);
+    console.error("❌ Mock API Error (Routing):", error);
     throw new Error("Failed to calculate route");
   }
 };
@@ -231,7 +321,7 @@ export const getNearbyPubs = async (zipCode: string): Promise<Pub[]> => {
         latitude: getRandomFloat(51.3, 55.8),
         longitude: getRandomFloat(-0.5, 0.5),
       },
-      businessHours: generateMockBusinessHours(),
+      businessHours: generateEnhancedBusinessHours(),
       contactInfo: generateMockContactInfo(),
       address: {
         street: `${getRandomInt(1, 100)} Nearby Street`,
@@ -247,19 +337,21 @@ export const getNearbyPubs = async (zipCode: string): Promise<Pub[]> => {
 
 /**
  * Mock implementation of business details lookup
+ * Returns enhanced business details including ratings and reviews
  * @param name - Business name
  * @param postcode - UK postcode
- * @returns Promise<BusinessDetails> - Business details including contact info and hours
+ * @returns Promise<EnhancedBusinessDetails> - Enhanced business details
  */
 export const getBusinessDetails = async (
   name: string,
   postcode: string
-): Promise<BusinessDetails> => {
+): Promise<EnhancedBusinessDetails> => {
   if (!USE_MOCK_API) {
     throw new Error("Mock API is disabled");
   }
 
   try {
+    console.log(`🏪 Mock API: Fetching details for "${name}"`);
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, getRandomInt(300, 700)));
 
@@ -273,19 +365,42 @@ export const getBusinessDetails = async (
       throw new Error("Business not found");
     }
 
+    const rating = getRandomFloat(3.0, 5.0, 1);
+    const reviewCount = getRandomInt(10, 500);
+
     return {
       phone: `+44 ${getRandomInt(1000, 9999)} ${getRandomInt(100000, 999999)}`,
       email: `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
-      openingHours: generateMockBusinessHours(),
-      googleRating: getRandomFloat(3.0, 5.0, 1),
-      reviewCount: getRandomInt(10, 500),
+      openingHours: generateEnhancedBusinessHours(),
+      rating: {
+        google: {
+          stars: rating,
+          count: reviewCount,
+        },
+        yelp: {
+          stars: getRandomFloat(3.0, 5.0, 1),
+          count: getRandomInt(5, 200),
+        },
+      },
       website: `https://www.${name.toLowerCase().replace(/\s+/g, "-")}.co.uk`,
+      photos: Array.from(
+        { length: getRandomInt(3, 10) },
+        (_, i) =>
+          `https://example.com/photos/${name
+            .toLowerCase()
+            .replace(/\s+/g, "-")}-${i + 1}.jpg`
+      ),
+      reviews: Array.from({ length: getRandomInt(3, 10) }, () => ({
+        author: `User${getRandomInt(1000, 9999)}`,
+        rating: getRandomFloat(3.0, 5.0, 1),
+        text: "Great place! Would visit again.",
+        time: new Date(
+          Date.now() - getRandomInt(0, 30) * 24 * 60 * 60 * 1000
+        ).toISOString(),
+      })),
     };
   } catch (error) {
-    console.error("Mock business details error:", error);
+    console.error("❌ Mock API Error (Business Details):", error);
     throw new Error("Failed to fetch business details");
   }
 };
-
-// Export configuration
-export const isMockApiEnabled = () => USE_MOCK_API;

@@ -1,10 +1,24 @@
-// Mock environment variables
-process.env.VITE_USE_MOCK_API = "true";
+import "./mockApi.config";
 
-// Mock console.error to keep test output clean
-const originalConsoleError = console.error;
-console.error = (...args) => {
-  if (!args[0].includes("Mock API")) {
-    originalConsoleError(...args);
-  }
+// Mock import.meta.env
+global.import = {
+  meta: {
+    env: {
+      VITE_USE_MOCK_API: "true",
+    },
+  },
 };
+
+// Mock console methods
+const mockConsole = {
+  ...console,
+  // Override console methods to prevent test output noise
+  log: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+};
+
+// @ts-ignore
+global.console = mockConsole;

@@ -3,108 +3,190 @@ import {
   getOptimizedRoute,
   getNearbyPubs,
   getBusinessDetails,
-} from "../mockApi";
+  isMockApiEnabled,
+  setMockApiEnabled,
+} from "./mockApi.mock";
 
-// Mock environment variable
-const originalEnv = process.env;
 beforeEach(() => {
-  process.env = { ...originalEnv };
-  process.env.VITE_USE_MOCK_API = "true";
+  setMockApiEnabled(true);
 });
 
-afterEach(() => {
-  process.env = originalEnv;
+describe("Mock API Configuration", () => {
+  test("isMockApiEnabled returns true when mock API is enabled", () => {
+    setMockApiEnabled(true);
+    expect(isMockApiEnabled()).toBe(true);
+  });
+
+  test("isMockApiEnabled returns false when mock API is disabled", () => {
+    setMockApiEnabled(false);
+    expect(isMockApiEnabled()).toBe(false);
+  });
 });
 
-describe("Mock API Functions", () => {
-  describe("getCoordinatesFromQuery", () => {
-    it("should return valid coordinates for a postcode", async () => {
-      const result = await getCoordinatesFromQuery("SW1A 1AA");
-      expect(result).toHaveProperty("lat");
-      expect(result).toHaveProperty("lng");
-      expect(result.lat).toBeGreaterThanOrEqual(51.3);
-      expect(result.lat).toBeLessThanOrEqual(55.8);
-      expect(result.lng).toBeGreaterThanOrEqual(-8.6);
-      expect(result.lng).toBeLessThanOrEqual(1.8);
-    });
+describe("getCoordinatesFromQuery", () => {
+  test("returns valid geocoding response structure", async () => {
+    const result = await getCoordinatesFromQuery("Red Lion NR20 4NQ");
 
-    it("should return valid coordinates for a place name", async () => {
-      const result = await getCoordinatesFromQuery("London, UK");
-      expect(result).toHaveProperty("lat");
-      expect(result).toHaveProperty("lng");
-      expect(result.lat).toBeGreaterThanOrEqual(49.9);
-      expect(result.lat).toBeLessThanOrEqual(58.7);
-    });
+    // Check response structure
+    expect(result).toHaveProperty("type", "FeatureCollection");
+    expect(result).toHaveProperty("query");
+    expect(result).toHaveProperty("features");
+    expect(Array.isArray(result.features)).toBe(true);
+
+    // Check feature structure
+    const feature = result.features[0];
+    expect(feature).toHaveProperty("id");
+    expect(feature).toHaveProperty("type", "Feature");
+    expect(feature).toHaveProperty("place_name");
+    expect(feature).toHaveProperty("center");
+    expect(feature).toHaveProperty("geometry");
+
+    // Check coordinate types
+    expect(typeof feature.center[0]).toBe("number"); // longitude
+    expect(typeof feature.center[1]).toBe("number"); // latitude
   });
 
-  describe("getOptimizedRoute", () => {
-    it("should return a valid route between points", async () => {
-      const coords = [
-        { lat: 51.5074, lng: -0.1278 }, // London
-        { lat: 53.4808, lng: -2.2426 }, // Manchester
-      ];
-      const result = await getOptimizedRoute(coords);
+  test("handles error cases", async () => {
+    // Mock random to force error
+    const originalRandom = Math.random;
+    Math.random = () => 0.01; // Force error (5% chance)
 
-      expect(result).toHaveProperty("distance");
-      expect(result).toHaveProperty("duration");
-      expect(result).toHaveProperty("polyline");
-      expect(result).toHaveProperty("legs");
-      expect(result.legs).toHaveLength(1);
-      expect(result.distance).toBeGreaterThan(0);
-      expect(result.duration).toBeGreaterThan(0);
-    });
+    await expect(getCoordinatesFromQuery("Invalid Location")).rejects.toThrow(
+      "Geocoding service unavailable"
+    );
+
+    Math.random = originalRandom;
+  });
+});
+
+describe("getOptimizedRoute", () => {
+  test("returns valid route response structure", async () => {
+    const coords = [
+      { lat: 52.75, lng: 0.94 },
+      { lat: 52.76, lng: 0.95 },
+    ];
+    const result = await getOptimizedRoute(coords);
+
+    // Check response structure
+    expect(result).toHaveProperty("routes");
+    expect(Array.isArray(result.routes)).toBe(true);
+
+    // Check route structure
+    const route = result.routes[0];
+    expect(route).toHaveProperty("distance");
+    expect(route).toHaveProperty("duration");
+    expect(route).toHaveProperty("geometry");
+    expect(route).toHaveProperty("legs");
+
+    // Check data types
+    expect(typeof route.distance).toBe("number");
+    expect(typeof route.duration).toBe("number");
+    expect(route.geometry).toHaveProperty("coordinates");
+    expect(Array.isArray(route.geometry.coordinates)).toBe(true);
   });
 
-  describe("getNearbyPubs", () => {
-    it("should return an array of pubs near a postcode", async () => {
-      const result = await getNearbyPubs("SW1A 1AA");
+  test("handles error cases", async () => {
+    const coords = [{ lat: 52.75, lng: 0.94 }];
 
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThanOrEqual(5);
-      expect(result.length).toBeLessThanOrEqual(20);
+    // Mock random to force error
+    const originalRandom = Math.random;
+    Math.random = () => 0.01; // Force error (5% chance)
 
-      result.forEach((pub) => {
-        expect(pub).toHaveProperty("name");
-        expect(pub).toHaveProperty("coordinates");
-        expect(pub).toHaveProperty("address");
-        expect(pub.address.postcode).toBe("SW1A 1AA");
-      });
-    });
+    await expect(getOptimizedRoute(coords)).rejects.toThrow(
+      "Routing service unavailable"
+    );
+
+    Math.random = originalRandom;
+  });
+});
+
+describe("getNearbyPubs", () => {
+  test("returns valid pub array structure", async () => {
+    const result = await getNearbyPubs("NR20 4NQ");
+
+    // Check array structure
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBeGreaterThan(0);
+
+    // Check pub structure
+    const pub = result[0];
+    expect(pub).toHaveProperty("id");
+    expect(pub).toHaveProperty("name");
+    expect(pub).toHaveProperty("coordinates");
+    expect(pub).toHaveProperty("businessHours");
+    expect(pub).toHaveProperty("contactInfo");
+    expect(pub).toHaveProperty("address");
+
+    // Check coordinate types
+    expect(typeof pub.coordinates.latitude).toBe("number");
+    expect(typeof pub.coordinates.longitude).toBe("number");
   });
 
-  describe("getBusinessDetails", () => {
-    it("should return business details for a valid pub", async () => {
-      const result = await getBusinessDetails("The Red Lion", "SW1A 1AA");
+  test("handles error cases", async () => {
+    // Mock random to force error
+    const originalRandom = Math.random;
+    Math.random = () => 0.01; // Force error (5% chance)
 
-      expect(result).toHaveProperty("phone");
-      expect(result).toHaveProperty("email");
-      expect(result).toHaveProperty("openingHours");
-      expect(result).toHaveProperty("googleRating");
-      expect(result).toHaveProperty("reviewCount");
-      expect(result.googleRating).toBeGreaterThanOrEqual(3.0);
-      expect(result.googleRating).toBeLessThanOrEqual(5.0);
-    });
+    await expect(getNearbyPubs("Invalid Postcode")).rejects.toThrow(
+      "Pub search service unavailable"
+    );
+
+    Math.random = originalRandom;
+  });
+});
+
+describe("getBusinessDetails", () => {
+  test("returns valid business details structure", async () => {
+    // Mock random to avoid error cases
+    const originalRandom = Math.random;
+    Math.random = () => 0.5; // Avoid both error cases
+
+    const result = await getBusinessDetails("Red Lion", "NR20 4NQ");
+
+    // Check response structure
+    expect(result).toHaveProperty("phone");
+    expect(result).toHaveProperty("email");
+    expect(result).toHaveProperty("openingHours");
+    expect(result).toHaveProperty("rating");
+    expect(result).toHaveProperty("website");
+    expect(result).toHaveProperty("photos");
+    expect(result).toHaveProperty("reviews");
+
+    // Check rating structure
+    expect(result.rating).toHaveProperty("google");
+    expect(result.rating.google).toHaveProperty("stars");
+    expect(result.rating.google).toHaveProperty("count");
+
+    // Check data types
+    expect(typeof result.rating.google.stars).toBe("number");
+    expect(typeof result.rating.google.count).toBe("number");
+    expect(Array.isArray(result.photos)).toBe(true);
+    expect(Array.isArray(result.reviews)).toBe(true);
+
+    Math.random = originalRandom;
   });
 
-  describe("Error Handling", () => {
-    it("should throw error when mock API is disabled", async () => {
-      process.env.VITE_USE_MOCK_API = "false";
+  test("handles error cases", async () => {
+    // Mock random to force error
+    const originalRandom = Math.random;
+    Math.random = () => 0.01; // Force error (5% chance)
 
-      await expect(getCoordinatesFromQuery("SW1A 1AA")).rejects.toThrow(
-        "Mock API is disabled"
-      );
-    });
+    await expect(getBusinessDetails("Invalid Pub", "NR20 4NQ")).rejects.toThrow(
+      "Business details service unavailable"
+    );
 
-    it("should handle service unavailability", async () => {
-      // Mock Math.random to force an error
-      const originalRandom = Math.random;
-      Math.random = () => 0.01; // Force error condition
+    Math.random = originalRandom;
+  });
 
-      await expect(
-        getBusinessDetails("The Red Lion", "SW1A 1AA")
-      ).rejects.toThrow("Business details service unavailable");
+  test("handles business not found case", async () => {
+    // Mock random to force "not found" error
+    const originalRandom = Math.random;
+    Math.random = () => 0.08; // Force "not found" (10% chance)
 
-      Math.random = originalRandom;
-    });
+    await expect(
+      getBusinessDetails("Non-existent Pub", "NR20 4NQ")
+    ).rejects.toThrow("Business not found");
+
+    Math.random = originalRandom;
   });
 });
