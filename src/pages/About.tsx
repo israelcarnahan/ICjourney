@@ -1,14 +1,20 @@
 import React from "react";
-import { Beer, Github, Mail, Calendar } from "lucide-react";
+import { Beer, Github, Mail } from "lucide-react";
 import SparkleWrapper from "../components/Sparkles";
 
 const About: React.FC = () => {
-  const features = [
-    ["Interactive Planning", "for efficient visit scheduling"],
-    ["Route Optimization", "for optimal travel paths"],
-    ["Schedule Management", "for organized visits"],
-    ["Export Options", "for various formats"],
-    ["Real-time Updates", "for current status"],
+  const upcomingFeatures = [
+    [
+      "Interactive Planning",
+      "refined visit logic with drag-and-drop scheduling",
+    ],
+    [
+      "Mock & Live API Support",
+      "seamless switching between test data and real-world accounts",
+    ],
+    ["Schedule Visualization", "enhanced daily & weekly journey timelines"],
+    ["Smart Regeneration", "with filters, rules, and user guidance"],
+    ["Expanded Export Tools", "including CSV, PDF, and future mobile sync"],
   ];
 
   return (
@@ -17,79 +23,57 @@ const About: React.FC = () => {
         <div className="flex items-center mb-6">
           <Beer className="h-8 w-8 text-neon-blue animate-pulse mr-3" />
           <h1 className="text-3xl font-bold bg-gradient-to-r from-neon-purple via-neon-pink to-neon-blue bg-clip-text text-transparent animate-gradient-x">
-            About Israel's Journey Planner
+            About IC Journey Planner
           </h1>
         </div>
 
         <div className="prose max-w-none">
           <p className="text-lg mb-4 text-white">
-            Journey Planner is your intelligent field sales companion, born from
-            real-world experience in territory management. Originally developed
-            for beverage industry professionals, it's now helping field sales
-            representatives across industries optimize their customer visits,
-            maximize their impact, and exceed their targets - all while
-            maintaining that crucial work-life balance.
+            <strong>Built by a field rep, for field reps.</strong> IC Journey
+            Planner helps sales professionals optimize their day, boost
+            territory performance, and preserve their personal time. Originally
+            crafted for the beverage industry, it’s now a powerful tool for any
+            rep managing a route or portfolio of accounts.
           </p>
 
           <div className="animated-border bg-gradient-to-r from-eggplant-800/90 via-dark-800/95 to-eggplant-800/90 backdrop-blur-sm rounded-lg p-6 mb-6">
             <h2 className="text-xl font-semibold mb-3 text-white">
-              Key Features
+              What You Can Do
             </h2>
             <ul className="list-none pl-0 space-y-3 mb-6">
-              <li className="flex items-start">
-                <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
-                <span className="text-white">
-                  <strong className="text-white">Smart Daily Planning:</strong>{" "}
-                  Optimize up to 8 strategic customer visits per day, perfectly
-                  balanced between high-priority prospects and key account
-                  maintenance.
-                </span>
-              </li>
-              <li className="flex items-start">
-                <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
-                <span className="text-white">
-                  <strong className="text-white">
-                    Intelligent Prioritization:
-                  </strong>{" "}
-                  Multiple customer lists (wishlist, unvisited, master file)
-                  with smart prioritization that matches your business goals.
-                </span>
-              </li>
-              <li className="flex items-start">
-                <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
-                <span className="text-white">
-                  <strong className="text-white">
-                    Location-Smart Routing:
-                  </strong>{" "}
-                  Group visits by proximity to maximize face time and minimize
-                  windshield time.
-                </span>
-              </li>
-              <li className="flex items-start">
-                <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
-                <span className="text-white">
-                  <strong className="text-white">
-                    Visit History Tracking:
-                  </strong>{" "}
-                  Never drop the ball on important accounts with smart visit
-                  frequency management.
-                </span>
-              </li>
-              <li className="flex items-start">
-                <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
-                <span className="text-white">
-                  <strong className="text-white">Excel Integration:</strong>{" "}
-                  One-click export to Excel for easy reporting and team sharing.
-                </span>
-              </li>
-              <li className="flex items-start">
-                <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
-                <span className="text-white">
-                  <strong className="text-white">KPI Achievement:</strong>{" "}
-                  Built-in deadline management ensures you're always hitting
-                  your numbers.
-                </span>
-              </li>
+              {[
+                [
+                  "Smart Daily Planning",
+                  "Balance 6–8 high-impact visits with location logic and KPIs in mind.",
+                ],
+                [
+                  "Priority-Driven Lists",
+                  "Wishlist, unvisited, and master accounts all prioritized dynamically.",
+                ],
+                [
+                  "Location-Smart Routing",
+                  "Reduce windshield time and increase face time with optimized routes.",
+                ],
+                [
+                  "Visit History Tracking",
+                  "Auto-manage visit frequency and flag overdue accounts.",
+                ],
+                [
+                  "One-Click Excel Export",
+                  "Easily share and report your schedules with teammates or managers.",
+                ],
+                [
+                  "Performance Focus",
+                  "Deadlines and visit goals built in to keep you on target.",
+                ],
+              ].map(([title, desc], i) => (
+                <li key={i} className="flex items-start">
+                  <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue" />
+                  <span className="text-white">
+                    <strong className="text-white">{title}</strong> {desc}
+                  </span>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -97,23 +81,19 @@ const About: React.FC = () => {
             <h2 className="text-xl font-semibold mb-3 text-white">
               How It Works
             </h2>
-            <p className="text-white mb-3">
-              Journey Planner uses cutting-edge algorithms to:
-            </p>
             <ol className="list-none pl-0 space-y-3 mb-6">
               {[
-                "Process your account lists and prioritize based on your strategic goals",
-                "Group accounts by location to minimize travel time",
-                "Balance visit frequency with account priority",
-                "Ensure high-value opportunities get the attention they deserve",
-                "Calculate optimal routes between locations",
-                "Generate a schedule that maximizes your impact while minimizing stress",
-              ].map((item, index) => (
-                <li key={index} className="flex items-start">
+                "Import or generate customer lists (wishlist, master, unvisited)",
+                "Set your goal: new prospects, key account coverage, or both",
+                "Let the planner balance proximity, value, and visit frequency",
+                "Preview your optimized route, regenerate or fine-tune as needed",
+                "Track visits and performance — automatically",
+              ].map((step, i) => (
+                <li key={i} className="flex items-start">
                   <span className="inline-block min-w-[1.5rem] mr-2 text-neon-blue">
-                    {index + 1}.
+                    {i + 1}.
                   </span>
-                  <span className="text-white">{item}</span>
+                  <span className="text-white">{step}</span>
                 </li>
               ))}
             </ol>
@@ -121,16 +101,15 @@ const About: React.FC = () => {
 
           <div className="animated-border bg-gradient-to-r from-eggplant-800/90 via-dark-800/95 to-eggplant-800/90 backdrop-blur-sm rounded-lg p-6 mb-6">
             <h2 className="text-xl font-semibold mb-3 text-white">
-              Future Development
+              On the Roadmap
             </h2>
             <p className="text-white mb-3">
-              We're constantly innovating to make your field sales life easier.
-              Coming soon:
+              This planner is evolving fast. Here’s what’s coming:
             </p>
             <ul className="list-none pl-0 space-y-3 mb-6">
-              {features.map(([title, desc], index) => (
+              {upcomingFeatures.map(([title, desc], index) => (
                 <li key={index} className="flex items-start">
-                  <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue"></span>
+                  <span className="inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue" />
                   <span className="text-white">
                     <strong className="text-white">{title}</strong> {desc}
                   </span>
@@ -140,9 +119,11 @@ const About: React.FC = () => {
           </div>
 
           <div className="animated-border bg-gradient-to-r from-eggplant-800/90 via-dark-800/95 to-eggplant-800/90 backdrop-blur-sm rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-3 text-white">Contact</h2>
+            <h2 className="text-xl font-semibold mb-3 text-white">
+              Let’s Talk
+            </h2>
             <p className="text-white mb-4">
-              Questions, feedback, or feature requests? Let's talk:
+              Feedback or collaboration ideas? Drop a line:
             </p>
             <div className="space-y-3">
               <SparkleWrapper>
@@ -156,11 +137,11 @@ const About: React.FC = () => {
               </SparkleWrapper>
               <SparkleWrapper>
                 <a
-                  href="https://github.com/israelcarnahan/visit_planner"
+                  href="https://github.com/israelcarnahan/ICjourney"
                   className="flex items-center text-white hover:text-neon-pink transition-colors"
                 >
                   <Github className="h-5 w-5 mr-2" />
-                  github.com/israelcarnahan/visit_planner
+                  github.com/israelcarnahan/ICjourney
                 </a>
               </SparkleWrapper>
             </div>
