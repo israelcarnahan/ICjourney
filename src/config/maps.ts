@@ -1,6 +1,7 @@
 // Placeholder Maps Service
 class MapsService {
   private static instance: MapsService;
+  private initialized = false;
 
   private constructor() {}
 
@@ -11,9 +12,24 @@ class MapsService {
     return MapsService.instance;
   }
 
+  isInitialized(): boolean {
+    return this.initialized;
+  }
+
   async initialize(): Promise<void> {
     console.log("Maps service initialization placeholder");
+    this.initialized = true;
     return Promise.resolve();
+  }
+
+  getGeocoder(): any {
+    // Return a mock geocoder for now
+    return {
+      geocode: (request: any, callback: (results: any, status: string) => void) => {
+        // Mock successful geocoding
+        callback([], "OK");
+      }
+    };
   }
 
   getPlaceDetails(query: string) {

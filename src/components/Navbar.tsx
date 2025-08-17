@@ -2,10 +2,14 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Beer, Menu, X } from "lucide-react";
 import SparkleWrapper from "./Sparkles";
+import { usePubData } from "../context/PubDataContext";
+import { useAuth } from "../context/AuthContext";
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { clearAllData, signOutAndReset } = usePubData();
+  const { signOut } = useAuth();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -68,6 +72,29 @@ const Navbar: React.FC = () => {
                 About
               </Link>
             </SparkleWrapper>
+            {import.meta.env.DEV && (
+              <>
+                <button
+                  data-testid="dev-clear"
+                  onClick={clearAllData}
+                  className="glass-button px-3 py-2 rounded-lg transition-all relative text-xs text-red-300 hover:text-red-100 hover:bg-red-900/20"
+                  title="Clear local data (dev only)"
+                >
+                  Clear Data
+                </button>
+                <button
+                  data-testid="dev-signout"
+                  onClick={() => {
+                    signOutAndReset();
+                    signOut();
+                  }}
+                  className="glass-button px-3 py-2 rounded-lg transition-all relative text-xs text-orange-300 hover:text-orange-100 hover:bg-orange-900/20"
+                  title="Sign out and rotate guest ID (dev only)"
+                >
+                  Sign Out
+                </button>
+              </>
+            )}
           </div>
 
           <div className="md:hidden relative z-10">

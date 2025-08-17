@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { mapsService } from "../config/maps";
 import { planVisits, calculateDistance } from "../utils/scheduleUtils";
@@ -19,6 +19,7 @@ import {
   ExtendedPub,
   ListType,
 } from "../context/PubDataContext";
+import { devLog } from "../utils/devLog";
 
 interface ScheduleVisit extends ExtendedPub {
   Priority: string;
@@ -44,7 +45,7 @@ const PlannerDashboard: React.FC = () => {
 
   // Clear schedule before generating new one
   const clearSchedule = () => {
-    console.log("Clearing previous schedule");
+    devLog("Clearing previous schedule");
     setSchedule([]);
     setUnscheduledPubs([]);
     setSelectedPub(null);
@@ -81,6 +82,24 @@ const PlannerDashboard: React.FC = () => {
   const repslyDeadline = userFiles.files?.find(
     (f) => f.type === "wins"
   )?.deadline;
+
+  // Compute which priorities are already taken
+  const getLevel = (f: any) =>
+    typeof f.priority === 'number' ? f.priority : undefined;
+
+  const usedPriorities = useMemo(() => Array.from(new Set(
+    userFiles.files
+      .filter(f => f.type === 'hitlist' || f.type === 'wins')
+      .map(getLevel)
+      .filter((n: any): n is 1|2|3 => n === 1 || n === 2 || n === 3)
+  )), [userFiles.files]);
+
+  // Log used priorities in useEffect to prevent spam
+  useEffect(() => {
+    devLog('[Used priorities]', usedPriorities, userFiles.files.map(f => ({
+      name: f.fileName, type: f.type, priority: f.priority
+    })));
+  }, [usedPriorities, userFiles.files]);
 
   const generateOptimalSchedule = async () => {
     // Get all wins files and check if any are missing follow-up days
@@ -143,7 +162,7 @@ const PlannerDashboard: React.FC = () => {
       throw new Error("No pubs available");
     }
 
-    console.log("Generating new schedule with:", {
+    devLog("Generating new schedule with:", {
       pubs: allPubs.length,
       days: businessDays,
       home: homeAddress,
@@ -160,7 +179,7 @@ const PlannerDashboard: React.FC = () => {
       searchRadius
     );
 
-    console.log("Generated schedule:", newSchedule);
+    devLog("Generated schedule:", newSchedule);
     setSchedule(newSchedule);
     return newSchedule;
   };
@@ -293,7 +312,7 @@ const PlannerDashboard: React.FC = () => {
   useEffect(() => {
     if (!userFiles?.pubs?.length) return;
 
-    console.log("Updating uploaded files with:", {
+    devLog("Updating uploaded files with:", {
       masterfile: masterfilePubs.map((p) => ({
         id: p.fileId,
         name: p.fileName,
@@ -322,7 +341,7 @@ const PlannerDashboard: React.FC = () => {
         groups.set(pub.fileId, [...group, pub]);
       });
 
-      console.log(`Grouped ${type} pubs:`, {
+      devLog(`Grouped ${type} pubs:`, {
         totalPubs: pubs.length,
         groups: groups.size,
       });
@@ -419,7 +438,7 @@ const PlannerDashboard: React.FC = () => {
       return (a.priority || 4) - (b.priority || 4);
     });
 
-    console.log("Setting uploaded files:", sortedFiles);
+    devLog("Setting uploaded files:", sortedFiles);
     setUploadedFiles(sortedFiles);
 
     // Update the files array in userFiles
@@ -433,7 +452,7 @@ const PlannerDashboard: React.FC = () => {
   useEffect(() => {
     if (!uploadedFiles.length) return;
 
-    console.log("Current uploaded files:", {
+    devLog("Current uploaded files:", {
       files: uploadedFiles.map((f) => ({
         name: f.name,
         type: f.type,
@@ -547,7 +566,7 @@ const PlannerDashboard: React.FC = () => {
       return;
     }
 
-    console.log("Deleting file:", file);
+    devLog("Deleting file:", file);
 
     switch (file.type) {
       case "masterhouse":
@@ -684,13 +703,10 @@ const PlannerDashboard: React.FC = () => {
                     {activeStep === 1 ? (
                       <>
                         <FileUploader
-                          fileType="masterfile"
+                          fileType="masterhouse"
                           isLoaded={masterfilePubs.length > 0}
-                          description="Upload your complete territory list"
                           isRequired={true}
-                          isDisabled={
-                            activeStep !== 1 && masterfilePubs.length > 0
-                          }
+                          isDisabled={activeStep !== 1}
                         />
                         {masterfilePubs.length > 0 ? (
                           <div className="flex items-center justify-between">
@@ -758,7 +774,7 @@ const PlannerDashboard: React.FC = () => {
 
                     {activeStep === 2 ? (
                       <>
-                        <EnhancementSelector
+                        {/* <EnhancementSelector
                           onFileLoaded={(type, pubs) => {
                             switch (type) {
                               case "wins":
@@ -776,6 +792,14 @@ const PlannerDashboard: React.FC = () => {
                           }
                           maxFiles={5}
                           currentFiles={uploadedFiles}
+                        /> */}
+                        
+                        <FileUploader
+                          fileType="wins"  // any non-"masterhouse" value; you'll pick the real list type in the dialog
+                          isLoaded={false}
+                          isRequired={false}
+                          isDisabled={!masterfilePubs.length || activeStep !== 2}
+                          usedPriorities={usedPriorities}
                         />
 
                         <div className="mt-3 p-1.5 rounded-lg bg-eggplant-800/30 border border-eggplant-700/30">
