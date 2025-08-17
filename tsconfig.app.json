@@ -1,10 +1,12 @@
 {
   "compilerOptions": {
+    "composite": true,
+    "tsBuildInfoFile": "./node_modules/.tsbuildinfo.app",
+
     "target": "ES2020",
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "skipLibCheck": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -14,11 +16,19 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* Types */
+    "types": ["vite/client"],
+
     /* Linting */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Perf */
+    "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "build"]
 }
+

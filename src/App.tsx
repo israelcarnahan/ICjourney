@@ -8,6 +8,8 @@ import {
 import { Beer } from "lucide-react";
 import Navbar from "./components/Navbar";
 import { PubDataProvider, usePubData } from "./context/PubDataContext";
+import { AuthProvider } from "./context/AuthContext";
+import { LoginGate } from "./context/LoginGate";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 // Lazy load route components
@@ -111,9 +113,13 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
-      <PubDataProvider>
-        <AppContent />
-      </PubDataProvider>
+      <AuthProvider>
+        <LoginGate>
+          <PubDataProvider>
+            <AppContent />
+          </PubDataProvider>
+        </LoginGate>
+      </AuthProvider>
     </ErrorBoundary>
   );
 };

@@ -4,9 +4,13 @@ import React, {
   useContext,
   ReactNode,
   useEffect,
+  useRef,
 } from "react";
 import { useCallback } from "react";
 import { AlertTriangle } from "lucide-react";
+import { loadAppState, saveAppState, clearAppState } from "../services/persistence";
+import { devLog } from "../utils/devLog";
+import { useAuth } from "./AuthContext";
 
 // Ensure process.env is available
 declare global {
@@ -134,6 +138,8 @@ export interface PubDataContextType {
   setSelectedVehicleColor: (color: VehicleColor) => void;
   setSelectedDate: (date: Date) => void;
   resetAllData: () => void;
+  clearAllData: () => void;
+  signOutAndReset: () => void;
   isInitialized: boolean;
   initializationError: string | null;
 }
@@ -188,6 +194,8 @@ const defaultContext: PubDataContextType = {
   setSelectedVehicleColor: () => {},
   setSelectedDate: () => {},
   resetAllData: () => {},
+  clearAllData: () => {},
+  signOutAndReset: () => {},
   isInitialized: false,
   initializationError: null,
 };
@@ -202,15 +210,23 @@ export const usePubData = (): PubDataContextType => {
   return context;
 };
 
+
+
 const INITIALIZATION_TIMEOUT = 2000; // 2 seconds timeout for initialization
 
 export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  const { userId } = useAuth();
+  
+  // Initial state constant
+  const initialState: UserFiles = { files: [], pubs: [] };
+  
+  // Track which userId we've loaded data for
+  const rehydratedFor = useRef<string>('');
+  
   // Initialize state with persisted values
-  const [userFiles, setUserFiles] = useState<UserFiles>(() =>
-    loadFromStorage(STORAGE_KEYS.USER_FILES, { pubs: [], files: [] })
-  );
+  const [userFiles, setUserFiles] = useState<UserFiles>(initialState);
   const [schedule, setSchedule] = useState<ScheduleDay[]>(() =>
     loadFromStorage(STORAGE_KEYS.SCHEDULE, [])
   );
@@ -240,6 +256,22 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
   const [initializationError, setInitializationError] = useState<string | null>(
     null
   );
+
+  // Re-hydrate when userId changes
+  useEffect(() => {
+    if (rehydratedFor.current !== userId) {
+      try {
+        const hydrated = loadAppState(userId);
+        devLog('[PubDataContext] Hydrated state for userId:', userId, hydrated);
+        setUserFiles(hydrated);
+        rehydratedFor.current = userId;
+      } catch (error) {
+        devLog('[PubDataContext] Failed to hydrate for userId:', userId, error);
+        setUserFiles(initialState);
+        rehydratedFor.current = userId;
+      }
+    }
+  }, [userId, initialState]);
 
   // Initialize context
   useEffect(() => {
@@ -296,10 +328,11 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
 
   // Persist state changes
   useEffect(() => {
-    if (isInitialized) {
-      saveToStorage(STORAGE_KEYS.USER_FILES, userFiles);
+    if (isInitialized && rehydratedFor.current === userId) {
+      saveAppState(userFiles, userId);
+      devLog('[PubDataContext] Saved state:', userFiles);
     }
-  }, [userFiles, isInitialized]);
+  }, [userFiles, isInitialized, userId]);
 
   useEffect(() => {
     if (isInitialized) {
@@ -372,6 +405,26 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, []);
 
+  const resetForUser = useCallback((targetUserId: string) => {
+    setUserFiles(initialState);
+    rehydratedFor.current = targetUserId;
+    saveAppState(initialState, targetUserId);
+    devLog('[PubDataContext] Reset for user:', targetUserId);
+  }, [initialState]);
+
+  const clearAllData = useCallback(() => {
+    clearAppState(userId);
+    clearMappings(userId);
+    setUserFiles(initialState);
+    devLog('[PubDataContext] Cleared all data for user:', userId);
+  }, [userId, initialState]);
+
+  const signOutAndReset = useCallback(() => {
+    clearAllData();
+    // Note: AuthContext.signOut() will be called separately to rotate userId
+    devLog('[PubDataContext] Sign out and reset completed');
+  }, [clearAllData]);
+
   const value: PubDataContextType = {
     userFiles,
     schedule,
@@ -392,6 +445,8 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
     setSelectedVehicleColor,
     setSelectedDate,
     resetAllData,
+    clearAllData,
+    signOutAndReset,
     isInitialized,
     initializationError,
   };
