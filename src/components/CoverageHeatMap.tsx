@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { MapPin } from 'lucide-react';
 import { Pub, ScheduleDay } from '../context/PubDataContext';
 import { extractNumericPart } from '../utils/scheduleUtils';
+import { toArray } from '../utils/typeGuards';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
 interface CoverageHeatMapProps {
@@ -35,7 +36,7 @@ const CoverageHeatMap: React.FC<CoverageHeatMapProps> = ({ schedule, allPubs }) 
 
     // Process scheduled pubs
     schedule.forEach(day => {
-      day.visits.forEach(visit => {
+      toArray(day.visits).forEach(visit => {
         if (!visit.zip) return;
         const [prefix] = extractNumericPart(visit.zip);
         if (areas.has(prefix)) {

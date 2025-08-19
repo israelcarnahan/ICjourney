@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronDown, Info, CheckCircle } from 'lucide-react';
-import clsx from 'clsx';
 import type { ColumnMapping, CanonicalField } from '../types/import';
 import { CANONICAL_ORDER, REQUIRED_FIELDS, autoGuessMapping } from '../utils/columnSynonyms';
 
@@ -9,7 +7,6 @@ const NONE = "__none__"; // sentinel to represent "Not present"
 
 type Props = {
   headers: string[];            // lowercased, trimmed
-  initialListName?: string;     // for header pill
   storedMapping?: ColumnMapping | null;
   onCancel: () => void;
   onConfirm: (mapping: ColumnMapping) => void;
@@ -30,7 +27,6 @@ const FIELD_LABELS: Record<CanonicalField, string> = {
 
 const ColumnMappingWizard: React.FC<Props> = ({
   headers,
-  initialListName,
   storedMapping,
   onCancel,
   onConfirm,
@@ -49,8 +45,6 @@ const ColumnMappingWizard: React.FC<Props> = ({
     return initial;
   });
 
-  const [showHint, setShowHint] = useState(false);
-  const [dragOverTarget, setDragOverTarget] = useState<CanonicalField | null>(null);
   const [showErrors, setShowErrors] = useState(false);
 
   // Clean and dedupe headers
@@ -71,7 +65,6 @@ const ColumnMappingWizard: React.FC<Props> = ({
 
   // Auto-guessed fields
   const autoGuessed = useMemo(() => autoGuessMapping(cleanedHeaders), [cleanedHeaders]);
-  const autoGuessedFields = new Set(Object.keys(autoGuessed));
 
   // Initialize mapping with auto-guesses if no stored mapping
   useEffect(() => {
@@ -96,34 +89,6 @@ const ColumnMappingWizard: React.FC<Props> = ({
       ...prev,
       [field]: value,
     }));
-  };
-
-  const handleDragStart = (e: React.DragEvent, header: string) => {
-    e.dataTransfer.setData('text/plain', header);
-  };
-
-  const handleDragOver = (e: React.DragEvent, field: CanonicalField) => {
-    e.preventDefault();
-    setDragOverTarget(field);
-  };
-
-  const handleDragLeave = () => {
-    setDragOverTarget(null);
-  };
-
-  const handleDrop = (e: React.DragEvent, field: CanonicalField) => {
-    e.preventDefault();
-    const header = e.dataTransfer.getData('text/plain');
-    if (header && availableHeaders.includes(header)) {
-      handleSelect(field, header);
-    }
-    setDragOverTarget(null);
-  };
-
-  const handleConfirm = () => {
-    if (canConfirm) {
-      onConfirm(mapping);
-    }
   };
 
   return createPortal(

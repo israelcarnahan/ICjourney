@@ -16,25 +16,25 @@ const ScheduleReport: React.FC = () => {
   const stats = {
     RepslyWin: {
       total: userFiles.pubs.filter(pub => pub.listType === 'wins').length,
-      scheduled: scheduledPubs.filter(pub => pub.Priority === 'RepslyWin').length,
+      scheduled: scheduledPubs.filter(pub => pub?.Priority === 'RepslyWin').length,
       get remaining() { return this.total - this.scheduled },
       get isExhausted() { return this.remaining === 0 && this.total > 0 }
     },
     Wishlist: {
       total: userFiles.pubs.filter(pub => pub.listType === 'hitlist').length,
-      scheduled: scheduledPubs.filter(pub => pub.Priority === 'Wishlist').length,
+      scheduled: scheduledPubs.filter(pub => pub?.Priority === 'Wishlist').length,
       get remaining() { return this.total - this.scheduled },
       get isExhausted() { return this.remaining === 0 && this.total > 0 }
     },
     Unvisited: {
       total: userFiles.pubs.filter(pub => pub.listType === 'unvisited').length,
-      scheduled: scheduledPubs.filter(pub => pub.Priority === 'Unvisited').length,
+      scheduled: scheduledPubs.filter(pub => pub?.Priority === 'Unvisited').length,
       get remaining() { return this.total - this.scheduled },
       get isExhausted() { return this.remaining === 0 && this.total > 0 }
     },
     Masterfile: {
       total: userFiles.pubs.filter(pub => pub.listType === 'masterhouse').length,
-      scheduled: scheduledPubs.filter(pub => pub.Priority === 'Masterfile').length,
+      scheduled: scheduledPubs.filter(pub => pub?.Priority === 'Masterfile').length,
       get remaining() { return this.total - this.scheduled },
       get isExhausted() { return this.remaining === 0 && this.total > 0 }
     }

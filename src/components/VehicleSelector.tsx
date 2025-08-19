@@ -2,15 +2,8 @@ import React from "react";
 import { Car, Anchor, Plane, Train, Bus, Bike, Truck } from "lucide-react";
 import {
   usePubData,
-  VehicleType,
   VehicleColor,
 } from "../context/PubDataContext";
-import {
-  BootIcon,
-  TopHatIcon,
-  ThimbleIcon,
-  WheelbarrowIcon,
-} from "./icons/MonopolyIcons";
 
 // Custom icon for fairy
 const FairyIcon = () => (
@@ -33,25 +26,25 @@ const FairyIcon = () => (
 );
 
 // Custom icon for horse
-const HorseIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M4 16v4h4v-4" />
-    <path d="M4 20h16" />
-    <path d="M16 16v4h4v-4" />
-    <path d="M10 12c0-2.8 2.2-5 5-5s5 2.2 5 5" />
-    <path d="M7 12c0-4.4 3.6-8 8-8s8 3.6 8 8" />
-  </svg>
-);
+// const HorseIcon = () => (
+//   <svg
+//     xmlns="http://www.w3.org/2000/svg"
+//     width="24"
+//     height="24"
+//     viewBox="0 0 24 24"
+//     fill="none"
+//     stroke="currentColor"
+//     strokeWidth="2"
+//     strokeLinecap="round"
+//     strokeLinejoin="round"
+//   >
+//     <path d="M4 16v4h4v-4" />
+//     <path d="M4 20h16" />
+//     <path d="M16 16v4h4v-4" />
+//     <path d="M10 12c0-2.8 2.2-5 5-5s5 2.2 5 5" />
+//     <path d="M7 12c0-4.4 3.6-8 8-8s8 3.6 8 8" />
+//   </svg>
+// );
 
 const vehicleIcons = {
   car: Car,

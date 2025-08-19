@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { AlertTriangle, X, Calendar, Star, Clock, Target, ChevronDown, ChevronUp } from "lucide-react";
+import { AlertTriangle, X, ChevronDown, ChevronUp } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as RadioGroup from "@radix-ui/react-radio-group";
 import clsx from "clsx";
