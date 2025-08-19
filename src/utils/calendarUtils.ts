@@ -1,40 +1,40 @@
 import { ScheduleDay } from '../context/PubDataContext';
 import { createEvents } from 'ics';
 import { parseISO, addHours, format } from 'date-fns';
+import { toArray } from './typeGuards';
+
+// helper to satisfy ics DateTime tuple typing
+type DateTuple = [number, number, number, number, number];
+const toDateTuple = (d: Date): DateTuple => [
+  d.getFullYear(),
+  d.getMonth() + 1,
+  d.getDate(),
+  d.getHours(),
+  d.getMinutes(),
+];
 
 export const generateICSFile = (schedule: ScheduleDay[]): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const events = schedule.flatMap(day => {
-      return day.visits.map((visit, index) => {
-        const startDate = parseISO(day.date);
+    const events = toArray(schedule).flatMap(day => {
+      const startDate = parseISO(String(day?.date ?? ''));
+      return toArray(day?.visits).map((visit: any, index: number) => {
         // Start at 9 AM and each visit is 1 hour
         const visitStartTime = addHours(startDate, 9 + index);
         const visitEndTime = addHours(visitStartTime, 1);
 
-        const driveInfo = index === day.visits.length - 1
-          ? `\nDrive home: ${day.endMileage?.toFixed(1)} mi / ${day.endDriveTime} mins`
-          : visit.mileageToNext
+        const isLast = index === toArray(day?.visits).length - 1;
+        const driveInfo = isLast
+          ? `\nDrive home: ${day?.endMileage?.toFixed(1) ?? '0'} mi / ${day?.endDriveTime ?? 0} mins`
+          : visit?.mileageToNext
             ? `\nDrive to next: ${visit.mileageToNext.toFixed(1)} mi / ${visit.driveTimeToNext} mins`
             : '';
 
         return {
-          start: [
-            visitStartTime.getFullYear(),
-            visitStartTime.getMonth() + 1,
-            visitStartTime.getDate(),
-            visitStartTime.getHours(),
-            visitStartTime.getMinutes()
-          ],
-          end: [
-            visitEndTime.getFullYear(),
-            visitEndTime.getMonth() + 1,
-            visitEndTime.getDate(),
-            visitEndTime.getHours(),
-            visitEndTime.getMinutes()
-          ],
-          title: `Visit: ${visit.pub}`,
-          description: `Priority: ${visit.Priority}\nPostcode: ${visit.zip}${driveInfo}`,
-          location: visit.zip
+          start: toDateTuple(visitStartTime),
+          end: toDateTuple(visitEndTime),
+          title: `Visit: ${visit?.pub ?? 'Unknown'}`,
+          description: `Priority: ${visit?.Priority ?? 'Unknown'}\nPostcode: ${visit?.zip ?? ''}${driveInfo}`,
+          location: visit?.zip ?? ''
         };
       });
     });

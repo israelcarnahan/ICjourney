@@ -1,11 +1,11 @@
 import React from 'react';
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import { X, AlertTriangle } from 'lucide-react';
-import { ScheduleVisit } from '../context/PubDataContext';
+import { Visit } from '../types';
 import clsx from 'clsx';
 
 interface RemovePubDialogProps {
-  visit: ScheduleVisit;
+  visit: Visit;
   onConfirm: () => void;
 }
 

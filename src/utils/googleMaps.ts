@@ -65,7 +65,7 @@ class MapsService {
   private handleError(error: unknown): Error {
     const message = error instanceof Error ? error.message : 'Unknown error';
     
-    if (!MAPS_CONFIG.apiKey) {
+    if (!((MAPS_CONFIG as any)?.apiKey)) {
       return new Error('Maps JavaScript API key not configured');
     }
     

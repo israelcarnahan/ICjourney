@@ -35,12 +35,12 @@ export const checkPubOpeningHours = async (pubName: string): Promise<{
 
     const placeDetails = await mapsService.getPlaceDetails(searchQuery);
 
-    if (placeDetails.error) {
-      console.debug('Place details error:', placeDetails.error);
+    if ((placeDetails as any).error) {
+      console.debug('Place details error:', (placeDetails as any).error);
       return {
         isOpen: false,
         hours: 'Hours not available',
-        error: placeDetails.error
+        error: (placeDetails as any).error
       };
     }
 
@@ -48,7 +48,7 @@ export const checkPubOpeningHours = async (pubName: string): Promise<{
 
     // Use current period if available
     if (placeDetails.currentPeriod) {
-      const now = new Date();
+      // const now = new Date(); // TODO: Use for time-based checks
       const openHour = parseInt(placeDetails.currentPeriod.open.split(':')[0]);
       
       // Check if pub opens too late for scheduling

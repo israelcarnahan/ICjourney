@@ -37,7 +37,7 @@ const SparkleWrapper: React.FC<SparkleWrapperProps> = ({ children, className = '
       };
     });
 
-    setSparkles(prev => [...prev, ...newSparkles]);
+    setSparkles(prev => [...prev, ...newSparkles] as typeof prev);
 
     // Trigger animation in the next frame
     requestAnimationFrame(() => {

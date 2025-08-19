@@ -12,8 +12,6 @@ import {
 import {
   format,
   addMinutes,
-  differenceInMinutes,
-  isWithinInterval,
 } from "date-fns";
 import {
   usePubData,
@@ -67,13 +65,7 @@ interface DriveTimeBarProps {
   visits: Visit[];
 }
 
-interface ScheduleEntry {
-  pub: string;
-  arrival: Date;
-  departure: Date;
-  driveTime: number;
-  isScheduled: boolean;
-}
+
 
 // Add business hours types
 interface BusinessHours {
@@ -182,9 +174,7 @@ const getPubBusinessHours = (_pubIndex: number): BusinessHours => {
 //   return { schedule };
 // };
 
-const stripParentheses = (str: string): string => {
-  return str.replace(/\s*\([^)]*\)/g, "");
-};
+
 
 // Helper to parse time string to Date
 // const parseTimeToDate = (timeStr: string) => {

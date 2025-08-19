@@ -4,8 +4,6 @@ import {
   Beer,
   Calendar,
   MapPin,
-  Clock,
-  TrendingUp,
   ChevronLeft,
   ChevronRight,
   Target,
