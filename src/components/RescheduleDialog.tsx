@@ -12,12 +12,12 @@ import {
 import { format, parseISO, isValid } from "date-fns";
 import {
   ScheduleDay,
-  ScheduleVisit,
   usePubData,
 } from "../context/PubDataContext";
 import { planVisits } from "../utils/scheduleUtils";
 import validatePostcode from "uk-postcode-validator";
 import clsx from "clsx";
+import { toArray } from "../utils/typeGuards";
 
 interface RescheduleDialogProps {
   day: ScheduleDay;
@@ -40,7 +40,7 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
 
   const { userFiles, visitsPerDay } = usePubData();
 
-  const MAX_VISITS_PER_DAY = 8;
+  // const MAX_VISITS_PER_DAY = 8;
 
   const validatePostcodeInput = (code: string) => {
     if (!code) {
@@ -152,7 +152,7 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
       }
 
       // Filter out pubs that are already scheduled for this day
-      const scheduledPubNames = new Set(day.visits.map((visit) => visit.pub));
+      const scheduledPubNames = new Set(toArray(day.visits).map((visit) => visit.pub));
       let availablePubs = allPubs.filter(
         (pub) => !scheduledPubNames.has(pub.pub)
       );
@@ -215,7 +215,7 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
       const scheduleResult = await Promise.race([
         planVisits(
           limitedPubs,
-          parseISO(day.date),
+          parseISO(day.date ?? ''),
           1,
           formattedPostcode,
           visitsPerDay
@@ -223,14 +223,14 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
         timeoutPromise,
       ]);
 
-      if (!scheduleResult || scheduleResult.length === 0) {
+      if (!scheduleResult || !Array.isArray(scheduleResult) || scheduleResult.length === 0) {
         throw new Error("Failed to generate schedule for the selected pubs");
       }
 
       const newDaySchedule = {
         ...scheduleResult[0],
         date: day.date,
-        visits: scheduleResult[0].visits.map((visit) => ({
+        visits: toArray(scheduleResult[0].visits).map((visit: any) => ({
           ...visit,
           scheduledTime: visit.scheduledTime || undefined,
           visitNotes: visit.visitNotes || undefined,
@@ -251,7 +251,7 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
         error instanceof Error ? error.message : "Failed to generate schedule";
       setError(message);
       setPostcodeError(message);
-      if (!error.message.includes("expand the search radius")) {
+      if (error instanceof Error && !error.message.includes("expand the search radius")) {
         setShowConfirmation(false);
       }
     } finally {
@@ -261,13 +261,13 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
   }, [postcode, userFiles, expandedSearch, day.date, day.visits, visitsPerDay]);
 
   // Debounce the reschedule handler
-  const debouncedReschedule = useCallback((fn: () => void) => {
-    let timeoutId: NodeJS.Timeout;
-    return () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(fn, 300);
-    };
-  }, []);
+  // const debouncedReschedule = useCallback((fn: () => void) => {
+  //   let timeoutId: NodeJS.Timeout;
+  //   return () => {
+  //     clearTimeout(timeoutId);
+  //     timeoutId = setTimeout(fn, 300);
+  //   };
+  // }, []);
 
   const handleExpandSearch = useCallback(
     (expand: boolean) => {
@@ -313,7 +313,7 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
     };
   }, [isOpen, handleDialogClose, isLoading]);
 
-  const isPastDate = new Date(day.date) < new Date();
+  const isPastDate = new Date(day.date ?? '') < new Date();
 
   const getRandomSideQuestText = () => {
     const texts = [
@@ -381,10 +381,10 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
         >
           <div className="flex justify-between items-center mb-6">
             <Dialog.Title className="text-xl font-bold text-eggplant-100">
-              {getRandomSideQuestText()}: {formatDateSafely(day.date)}
+              {getRandomSideQuestText()}: {formatDateSafely(day.date ?? '')}
             </Dialog.Title>
             <div id="reschedule-dialog-description" className="sr-only">
-              Reschedule visits for {formatDateSafely(day.date)}. Select a new
+              Reschedule visits for {formatDateSafely(day.date ?? '')}. Select a new
               area and configure visit settings.
             </div>
             {error && (
@@ -496,7 +496,7 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
                     </p>
                     <p className="text-sm text-eggplant-200 mt-1">
                       This will generate a new schedule for{" "}
-                      {formatDateSafely(day.date)} using pubs near {postcode}.
+                      {formatDateSafely(day.date ?? '')} using pubs near {postcode}.
                       The existing schedule will be replaced.
                     </p>
                   </div>
@@ -552,8 +552,8 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-eggplant-800/30">
-                      {newSchedule.visits.map(
-                        (visit: ScheduleVisit, index: number) => (
+                      {toArray(newSchedule.visits).map(
+                        (visit: any, index: number) => (
                           <tr key={index} className="hover:bg-eggplant-800/20">
                             <td className="px-4 py-2 text-eggplant-100">
                               {visit.pub}

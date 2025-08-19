@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import {
   usePubData,
-  ExtendedPub,
   VehicleType,
   VehicleColor,
   Pub,
@@ -31,46 +30,29 @@ import {
   format,
   parseISO,
   isValid,
-  differenceInBusinessDays,
-  addBusinessDays,
   addMinutes,
   differenceInMinutes,
   formatDuration,
   Duration,
 } from "date-fns";
-import SparkleWrapper from "./Sparkles";
-import ScheduleReport from "./ScheduleReport";
-import RescheduleDialog from "./RescheduleDialog";
 import { downloadICSFile } from "../utils/calendarUtils";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { checkPubOpeningHours } from "../utils/openingHours";
-import OpeningHoursIndicator from "./OpeningHoursIndicator";
 import clsx from "clsx";
-import RemovePubDialog from "./RemovePubDialog";
+import { toArray } from "../utils/typeGuards";
 import {
   calculateDistance,
   findNearestPubs,
   getPriorityOrder,
 } from "../utils/scheduleUtils";
 import RouteMap from "./RouteMap";
-import UnscheduledPubsPanel from "./UnscheduledPubsPanel";
 import VisitScheduler from "./VisitScheduler";
 import DriveTimeBar from "./DriveTimeBar";
-import * as Popover from "@radix-ui/react-popover";
-import {
-  BootIcon,
-  TopHatIcon,
-  ThimbleIcon,
-  WheelbarrowIcon,
-} from "./icons/MonopolyIcons";
 import {
   Visit,
-  EnhancedScheduleDay,
   ScheduleDay,
   OpeningHoursMap,
   ScheduleEntry,
 } from "../types";
-import { optimizeRoute } from "../utils/routeOptimization";
 
 // Custom icon for fairy
 const FairyIcon = () => (
@@ -113,25 +95,25 @@ const HorseIcon = () => (
   </svg>
 );
 
-const vehicleIcons: Record<VehicleType, LucideIcon | React.FC<any>> = {
-  car: Car,
-  truck: Truck,
-  bike: Bike,
-  bus: Bus,
-  train: Train,
-  plane: Plane,
-  boat: Anchor,
-  fairy: FairyIcon,
-};
+// const vehicleIcons: Record<VehicleType, LucideIcon | React.FC<any>> = {
+//   car: Car,
+//   truck: Truck,
+//   bike: Bike,
+//   bus: Bus,
+//   train: Train,
+//   plane: Plane,
+//   boat: Anchor,
+//   fairy: FairyIcon,
+// };
 
-const vehicleColors: Record<VehicleColor, string> = {
-  purple: "text-neon-purple",
-  blue: "text-neon-blue",
-  pink: "text-neon-pink",
-  green: "text-emerald-400",
-  orange: "text-orange-400",
-  yellow: "text-yellow-400",
-};
+// const vehicleColors: Record<VehicleColor, string> = {
+//   purple: "text-neon-purple",
+//   blue: "text-neon-blue",
+//   pink: "text-neon-pink",
+//   green: "text-emerald-400",
+//   orange: "text-orange-400",
+//   yellow: "text-yellow-400",
+// };
 
 const getPriorityStyles = (priority: string): string => {
   switch (priority) {
@@ -176,7 +158,7 @@ const formatDate = (dateStr: string | Date | null | undefined): string => {
 const recalculateMetrics = (
   visits: Visit[],
   homeAddress: string,
-  desiredEndTime?: string
+  // desiredEndTime?: string
 ) => {
   let totalMileage = 0;
   let totalDriveTime = 0;
@@ -231,155 +213,155 @@ const parseTimeToDate = (timeStr: string) => {
   return date;
 };
 
-const getScheduleTimes = (
-  visits: Visit[],
-  startTime: string,
-  desiredEndTime?: string
-) => {
-  // Default business hours
-  const defaultStartTime = "09:00";
-  const defaultEndTime = "17:00";
+// const getScheduleTimes = (
+//   visits: Visit[],
+//   startTime: string,
+//   desiredEndTime?: string
+// ) => {
+//   // Default business hours
+//   const defaultStartTime = "09:00";
+//   const defaultEndTime = "17:00";
 
-  // Use provided start time or default to 9 AM
-  const [startHours, startMinutes] = (startTime || defaultStartTime)
-    .split(":")
-    .map(Number);
-  const dayStart = new Date();
-  dayStart.setHours(startHours, startMinutes, 0, 0);
+//   // Use provided start time or default to 9 AM
+//   const [startHours, startMinutes] = (startTime || defaultStartTime)
+//     .split(":")
+//     .map(Number);
+//   const dayStart = new Date();
+//   dayStart.setHours(startHours, startMinutes, 0, 0);
 
-  // Use provided end time or default to 5 PM
-  let desiredEnd: Date = new Date(dayStart);
-  if (desiredEndTime) {
-    const [endHours, endMinutes] = desiredEndTime.split(":").map(Number);
-    desiredEnd.setHours(endHours, endMinutes, 0, 0);
-  } else {
-    const [defaultEndHours, defaultEndMinutes] = defaultEndTime
-      .split(":")
-      .map(Number);
-    desiredEnd.setHours(defaultEndHours, defaultEndMinutes, 0, 0);
-  }
+//   // Use provided end time or default to 5 PM
+//   let desiredEnd: Date = new Date(dayStart);
+//   if (desiredEndTime) {
+//     const [endHours, endMinutes] = desiredEndTime.split(":").map(Number);
+//     desiredEnd.setHours(endHours, endMinutes, 0, 0);
+//   } else {
+//     const [defaultEndHours, defaultEndMinutes] = defaultEndTime
+//       .split(":")
+//       .map(Number);
+//     desiredEnd.setHours(defaultEndHours, defaultEndMinutes, 0, 0);
+//   }
 
-  const averageVisitTime = 45; // minutes
-  const minDriveTime = 30; // minimum minutes between visits
+//   const averageVisitTime = 45; // minutes
+//   const minDriveTime = 30; // minimum minutes between visits
 
-  // First: Sort visits by their scheduled times
-  const sortedVisits = [...visits].sort((a, b) => {
-    if (!a.scheduledTime || a.scheduledTime === "Anytime") return 1;
-    if (!b.scheduledTime || b.scheduledTime === "Anytime") return -1;
+//   // First: Sort visits by their scheduled times
+//   const sortedVisits = [...visits].sort((a, b) => {
+//     if (!a.scheduledTime || a.scheduledTime === "Anytime") return 1;
+//     if (!b.scheduledTime || b.scheduledTime === "Anytime") return -1;
 
-    const [aHours, aMinutes] = a.scheduledTime.split(":").map(Number);
-    const [bHours, bMinutes] = b.scheduledTime.split(":").map(Number);
-    return aHours * 60 + aMinutes - (bHours * 60 + bMinutes);
-  });
+//     const [aHours, aMinutes] = a.scheduledTime.split(":").map(Number);
+//     const [bHours, bMinutes] = b.scheduledTime.split(":").map(Number);
+//     return aHours * 60 + aMinutes - (bHours * 60 + bMinutes);
+//   });
 
-  // Initialize schedule array with all visits
-  const schedule: ScheduleEntry[] = sortedVisits.map((visit) => ({
-    pub: visit.pub,
-    arrival: dayStart,
-    departure: addMinutes(dayStart, averageVisitTime),
-    driveTime: visit.driveTimeToNext || minDriveTime,
-    isScheduled:
-      Boolean(visit.scheduledTime) && visit.scheduledTime !== "Anytime",
-  }));
+//   // Initialize schedule array with all visits
+//   const schedule: ScheduleEntry[] = sortedVisits.map((visit) => ({
+//     pub: visit.pub,
+//     arrival: dayStart,
+//     departure: addMinutes(dayStart, averageVisitTime),
+//     driveTime: visit.driveTimeToNext || minDriveTime,
+//     isScheduled:
+//       Boolean(visit.scheduledTime) && visit.scheduledTime !== "Anytime",
+//   }));
 
-  // First pass: Schedule fixed appointments
-  const scheduledVisits = sortedVisits.filter(
-    (v): v is Visit & Required<Pick<Visit, "scheduledTime">> =>
-      Boolean(v.scheduledTime) && v.scheduledTime !== "Anytime"
-  );
+//   // First pass: Schedule fixed appointments
+//   const scheduledVisits = sortedVisits.filter(
+//     (v): v is Visit & Required<Pick<Visit, "scheduledTime">> =>
+//       Boolean(v.scheduledTime) && v.scheduledTime !== "Anytime"
+//   );
 
-  for (const visit of scheduledVisits) {
-    const index = sortedVisits.findIndex((v) => v.pub === visit.pub);
-    if (index === -1) continue;
+//   for (const visit of scheduledVisits) {
+//     const index = sortedVisits.findIndex((v) => v.pub === visit.pub);
+//     if (index === -1) continue;
 
-    const appointmentTime = parseTimeToDate(visit.scheduledTime);
-    schedule[index] = {
-      pub: visit.pub,
-      arrival: appointmentTime,
-      departure: addMinutes(appointmentTime, averageVisitTime),
-      driveTime: visit.driveTimeToNext || minDriveTime,
-      isScheduled: true,
-    };
-  }
+//     const appointmentTime = parseTimeToDate(visit.scheduledTime);
+//     schedule[index] = {
+//       pub: visit.pub,
+//       arrival: appointmentTime,
+//       departure: addMinutes(appointmentTime, averageVisitTime),
+//       driveTime: visit.driveTimeToNext || minDriveTime,
+//       isScheduled: true,
+//     };
+//   }
 
-  // Second pass: Schedule unscheduled and flexible visits in available time slots
-  let currentTime = dayStart;
-  for (let i = 0; i < schedule.length; i++) {
-    if (schedule[i].isScheduled) {
-      // For scheduled visits, update currentTime to after this visit
-      currentTime = addMinutes(
-        schedule[i].departure,
-        schedule[i].driveTime || minDriveTime
-      );
-      continue;
-    }
+//   // Second pass: Schedule unscheduled and flexible visits in available time slots
+//   let currentTime = dayStart;
+//   for (let i = 0; i < schedule.length; i++) {
+//     if (schedule[i].isScheduled) {
+//       // For scheduled visits, update currentTime to after this visit
+//       currentTime = addMinutes(
+//         schedule[i].departure,
+//         schedule[i].driveTime || minDriveTime
+//       );
+//       continue;
+//     }
 
-    // Find the next scheduled visit (if any)
-    const nextScheduledIndex = schedule.findIndex(
-      (s, idx) => idx > i && s.isScheduled
-    );
-    const nextScheduledTime =
-      nextScheduledIndex !== -1
-        ? schedule[nextScheduledIndex].arrival
-        : desiredEnd;
+//     // Find the next scheduled visit (if any)
+//     const nextScheduledIndex = schedule.findIndex(
+//       (s, idx) => idx > i && s.isScheduled
+//     );
+//     const nextScheduledTime =
+//       nextScheduledIndex !== -1
+//         ? schedule[nextScheduledIndex].arrival
+//         : desiredEnd;
 
-    // Calculate available time window
-    const availableMinutes = differenceInMinutes(
-      nextScheduledTime,
-      currentTime
-    );
-    const neededMinutes =
-      averageVisitTime + (schedule[i].driveTime || minDriveTime);
+//     // Calculate available time window
+//     const availableMinutes = differenceInMinutes(
+//       nextScheduledTime,
+//       currentTime
+//     );
+//     const neededMinutes =
+//       averageVisitTime + (schedule[i].driveTime || minDriveTime);
 
-    if (availableMinutes >= neededMinutes) {
-      // Schedule visit in the available window
-      schedule[i].arrival = currentTime;
-      schedule[i].departure = addMinutes(currentTime, averageVisitTime);
-      currentTime = addMinutes(currentTime, neededMinutes);
-    } else {
-      // Not enough time before next scheduled visit, try after it
-      if (nextScheduledIndex !== -1) {
-        currentTime = addMinutes(
-          schedule[nextScheduledIndex].departure,
-          schedule[nextScheduledIndex].driveTime || minDriveTime
-        );
-        i--; // Retry scheduling this visit in the next available slot
-      }
-    }
+//     if (availableMinutes >= neededMinutes) {
+//       // Schedule visit in the available window
+//       schedule[i].arrival = currentTime;
+//       schedule[i].departure = addMinutes(currentTime, averageVisitTime);
+//       currentTime = addMinutes(currentTime, neededMinutes);
+//     } else {
+//       // Not enough time before next scheduled visit, try after it
+//       if (nextScheduledIndex !== -1) {
+//         currentTime = addMinutes(
+//           schedule[nextScheduledIndex].departure,
+//           schedule[nextScheduledIndex].driveTime || minDriveTime
+//         );
+//         i--; // Retry scheduling this visit in the next available slot
+//         }
+//       }
 
-    // If we can't schedule within business hours, show warning
-    if (currentTime > desiredEnd) {
-      console.warn(
-        `Warning: Visit to ${schedule[i].pub} may be scheduled outside business hours`
-      );
-    }
-  }
+//       // If we can't schedule within business hours, show warning
+//       if (currentTime > desiredEnd) {
+//         console.warn(
+//           `Warning: Visit to ${schedule[i].pub} may be scheduled outside business hours`
+//         );
+//       }
+//     }
 
-  // Final pass: Ensure all visits have calculated times
-  for (let i = 0; i < schedule.length; i++) {
-    if (!schedule[i].arrival || !schedule[i].departure) {
-      const prevVisit = schedule[i - 1];
-      const startTime = prevVisit
-        ? addMinutes(prevVisit.departure, prevVisit.driveTime || minDriveTime)
-        : dayStart;
+//     // Final pass: Ensure all visits have calculated times
+//     for (let i = 0; i < schedule.length; i++) {
+//       if (!schedule[i].arrival || !schedule[i].departure) {
+//         const prevVisit = schedule[i - 1];
+//         const startTime = prevVisit
+//           ? addMinutes(prevVisit.departure, prevVisit.driveTime || minDriveTime)
+//           : dayStart;
 
-      schedule[i].arrival = startTime;
-      schedule[i].departure = addMinutes(startTime, averageVisitTime);
-    }
-  }
+//         schedule[i].arrival = startTime;
+//         schedule[i].departure = addMinutes(startTime, averageVisitTime);
+//       }
+//     }
 
-  console.log(
-    "Calculated schedule:",
-    schedule.map((s) => ({
-      pub: s.pub,
-      arrival: format(s.arrival, "HH:mm"),
-      isScheduled: s.isScheduled,
-      scheduledTime: sortedVisits.find((v) => v.pub === s.pub)?.scheduledTime,
-    }))
-  );
+//     console.log(
+//       "Calculated schedule:",
+//       schedule.map((s) => ({
+//         pub: s.pub,
+//         arrival: format(s.arrival, "HH:mm"),
+//         isScheduled: s.isScheduled,
+//         scheduledTime: sortedVisits.find((v) => v.pub === s.pub)?.scheduledTime,
+//       }))
+//     );
 
-  return { schedule };
-};
+//     // return { schedule };
+// };
 
 const isOutsideBusinessHours = (time: Date | string): boolean => {
   try {
@@ -401,15 +383,15 @@ const isOutsideBusinessHours = (time: Date | string): boolean => {
   }
 };
 
-interface DriveTimeBarProps {
-  visits: Pub[];
-  totalDriveTime: number;
-  startDriveTime: number;
-  endDriveTime: number;
-  targetVisitsPerDay: number;
-  desiredEndTime?: string;
-  onDesiredEndTimeChange: (time: string) => void;
-}
+// interface DriveTimeBarProps {
+//   visits: Pub[];
+//   totalDriveTime: number;
+//   startDriveTime: number;
+//   endDriveTime: number;
+//   targetVisitsPerDay: number;
+//   desiredEndTime?: string;
+//   onDesiredEndTimeChange: (time: string) => void;
+// }
 
 const ScheduleDisplay: React.FC = () => {
   const {
@@ -418,21 +400,21 @@ const ScheduleDisplay: React.FC = () => {
     userFiles,
     homeAddress,
     visitsPerDay,
-    selectedVehicle,
-    selectedVehicleColor,
-    setSelectedVehicle,
-    setSelectedVehicleColor,
+    // selectedVehicle,
+    // selectedVehicleColor,
+    // setSelectedVehicle,
+    // setSelectedVehicleColor,
     selectedDate,
   } = usePubData();
 
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
-  const [hoveredDay, setHoveredDay] = useState<string | null>(null);
+  // const [hoveredDay, setHoveredDay] = useState<string | null>(null);
   const [openingHours, setOpeningHours] = useState<OpeningHoursMap>({});
   const [removedPubs, setRemovedPubs] = useState<Record<string, Set<string>>>(
     {}
   );
-  const [selectedPub, setSelectedPub] = useState<Visit | null>(null);
-  const [isCustomizing, setIsCustomizing] = useState(false);
+  // const [selectedPub, setSelectedPub] = useState<Visit | null>(null);
+  // const [isCustomizing, setIsCustomizing] = useState(false);
   const [desiredEndTimes, setDesiredEndTimes] = useState<
     Record<string, string>
   >({});
@@ -441,7 +423,7 @@ const ScheduleDisplay: React.FC = () => {
   // Convert context schedule to our local type
   const schedule = contextSchedule.map((day) => ({
     date: day.date || "",
-    visits: (day.visits || []).map((visit) => ({
+    visits: toArray(day.visits).map((visit) => ({
       ...visit,
       Priority: visit.Priority || "Unscheduled",
     })),
@@ -453,7 +435,7 @@ const ScheduleDisplay: React.FC = () => {
     schedulingErrors: day.schedulingErrors,
   }));
 
-  const updateSchedule = (updater: (prev: ScheduleDay[]) => ScheduleDay[]) => {
+  const updateSchedule = (updater: (prev: any[]) => any[]) => {
     const updatedSchedule = updater(schedule);
     // Convert back to context schedule type when updating
     setContextSchedule(
@@ -587,46 +569,46 @@ const ScheduleDisplay: React.FC = () => {
     })[0];
   };
 
-  const handleRemovePubVisit = (dayDate: string, pubToRemove: string) => {
-    setRemovedPubs((prev) => ({
-      ...prev,
-      [dayDate]: new Set([...(prev[dayDate]?.values() || []), pubToRemove]),
-    }));
+  // const handleRemovePubVisit = (dayDate: string, pubToRemove: string) => {
+  //   setRemovedPubs((prev) => ({
+  //     ...prev,
+  //     [dayDate]: new Set([...(prev[dayDate]?.values() || []), pubToRemove]),
+  //   }));
 
-    updateSchedule((prevSchedule) =>
-      prevSchedule.map((day) => {
-        if (day.date !== dayDate) return day;
+  //   updateSchedule((prevSchedule) =>
+  //     prevSchedule.map((day) => {
+  //       if (day.date !== dayDate) return day;
 
-        const pubIndex = day.visits.findIndex(
-          (visit) => visit.pub === pubToRemove
-        );
-        if (pubIndex === -1) return day;
+  //       const pubIndex = day.visits.findIndex(
+  //         (visit) => visit.pub === pubToRemove
+  //       );
+  //       if (pubIndex === -1) return day;
 
-        const removedPub = day.visits[pubIndex];
-        const replacementPub = findReplacementPub(dayDate, removedPub);
+  //       const removedPub = day.visits[pubIndex];
+  //       const replacementPub = findReplacementPub(dayDate, removedPub);
 
-        let updatedVisits = [...day.visits];
-        if (replacementPub) {
-          updatedVisits[pubIndex] = replacementPub;
-        } else {
-          updatedVisits = updatedVisits.filter(
-            (visit) => visit.pub !== pubToRemove
-          );
-        }
+  //       let updatedVisits = [...day.visits];
+  //       if (replacementPub) {
+  //         updatedVisits[pubIndex] = replacementPub;
+  //       } else {
+  //         updatedVisits = updatedVisits.filter(
+  //           (visit) => visit.pub !== pubToRemove
+  //       );
+  //       }
 
-        const metrics = recalculateMetrics(updatedVisits, homeAddress);
+  //       const metrics = recalculateMetrics(updatedVisits, homeAddress);
 
-        return {
-          ...day,
-          ...metrics,
-        };
-      })
-    );
-  };
+  //       return {
+  //         ...day,
+  //         ...metrics,
+  //       };
+  //     })
+  //   );
+  // };
 
-  const handlePubSelect = useCallback((pub: any) => {
-    setSelectedPub(pub);
-  }, []);
+  // const handlePubSelect = useCallback((pub: any) => {
+  //   setSelectedPub(pub);
+  // }, []);
 
   const exportToExcel = () => {
     const flatSchedule = schedule.flatMap((day) =>
@@ -1140,9 +1122,9 @@ const ScheduleDisplay: React.FC = () => {
               endDriveTime={day.endDriveTime || 0}
               targetVisitsPerDay={visitsPerDay}
               desiredEndTime={desiredEndTimes[day.date || ""]}
-              onDesiredEndTimeChange={(time) =>
-                handleDesiredEndTimeChange(day.date || "", time)
-              }
+              // onDesiredEndTimeChange={(time) =>
+              //   handleDesiredEndTimeChange(day.date || "", time)
+              // }
             />
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-eggplant-800/30">
@@ -1273,7 +1255,7 @@ const ScheduleDisplay: React.FC = () => {
                               )}
                             </div>
                             <VisitScheduler
-                              visit={visit}
+                              visit={visit as any}
                               date={day.date || ""}
                               onSchedule={handleVisitSchedule}
                             />
@@ -1332,7 +1314,7 @@ const ScheduleDisplay: React.FC = () => {
             </div>
             <div className="mt-4">
               <RouteMap
-                day={day}
+                day={day as any}
                 homeAddress={homeAddress}
                 className="h-[400px] rounded-lg animated-border"
               />
@@ -1378,7 +1360,7 @@ const ScheduleDisplay: React.FC = () => {
 
       <div className="flex justify-end gap-2 mt-4">
         <button
-          onClick={() => downloadICSFile(schedule)}
+          onClick={() => downloadICSFile(schedule as any)}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-white text-purple-900 hover:bg-white/90 transition-colors"
         >
           <Calendar className="h-4 w-4" />

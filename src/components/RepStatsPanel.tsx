@@ -7,13 +7,12 @@ import {
   Clock,
   AlertTriangle,
   CheckCircle2,
-  Info,
   AlertCircle,
 } from "lucide-react";
-import { differenceInBusinessDays, format, addBusinessDays } from "date-fns";
-import { checkPubOpeningHours } from "../utils/openingHours";
+import { differenceInBusinessDays, format } from "date-fns";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { Pub } from "../context/PubDataContext";
+import { toArray } from "../utils/typeGuards";
 
 interface StatInfo {
   total: number;
@@ -37,7 +36,7 @@ const RepStatsPanel: React.FC = () => {
   if (
     !schedule ||
     schedule.length === 0 ||
-    !schedule.some((day) => day.visits?.length > 0)
+    !schedule.some((day) => toArray(day.visits).length > 0)
   ) {
     return (
       <div className="animated-border bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 backdrop-blur-sm rounded-lg p-4">
@@ -103,7 +102,7 @@ const RepStatsPanel: React.FC = () => {
       let lastScheduledDate = null;
       for (let i = schedule.length - 1; i >= 0; i--) {
         const day = schedule[i];
-        if (day.visits.some((v) => v.fileId === fileId)) {
+        if (toArray(day.visits).some((v) => v.fileId === fileId)) {
           lastScheduledDate = day.date;
           break;
         }
@@ -111,7 +110,7 @@ const RepStatsPanel: React.FC = () => {
 
       const scheduledCount = schedule.reduce(
         (acc, day) =>
-          acc + day.visits.filter((v) => v.fileId === fileId).length,
+          acc + toArray(day.visits).filter((v) => v.fileId === fileId).length,
         0
       );
 
@@ -236,7 +235,7 @@ const RepStatsPanel: React.FC = () => {
               Total Scheduled
             </div>
             <div className="text-xl font-bold text-eggplant-100">
-              {schedule.reduce((acc, day) => acc + day.visits.length, 0)} visits
+              {schedule.reduce((acc, day) => acc + toArray(day.visits).length, 0)} visits
             </div>
             <div className="text-xs text-eggplant-300 mt-1">
               {schedule.length}{" "}
@@ -251,7 +250,7 @@ const RepStatsPanel: React.FC = () => {
             <div className="text-xl font-bold text-eggplant-100">
               {schedule.length > 0
                 ? (
-                    schedule.reduce((acc, day) => acc + day.visits.length, 0) /
+                    schedule.reduce((acc, day) => acc + toArray(day.visits).length, 0) /
                     schedule.length
                   ).toFixed(1)
                 : "0"}{" "}
@@ -264,8 +263,8 @@ const RepStatsPanel: React.FC = () => {
         </div>
 
         {/* Schedule Gaps Section - Only show if we have actual visits and gaps */}
-        {schedule.some((day) => day.visits?.length > 0) &&
-          schedule.some((day) => day.visits.length < visitsPerDay) && (
+        {schedule.some((day) => toArray(day.visits).length > 0) &&
+          schedule.some((day) => toArray(day.visits).length < visitsPerDay) && (
             <div className="bg-yellow-900/10 rounded-lg border border-yellow-700/30 p-3 mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-400" />
@@ -294,7 +293,7 @@ const RepStatsPanel: React.FC = () => {
                   <div className="text-sm font-medium text-yellow-200">
                     {schedule.length * visitsPerDay -
                       schedule.reduce(
-                        (acc, day) => acc + day.visits.length,
+                        (acc, day) => acc + toArray(day.visits).length,
                         0
                       )}{" "}
                     gaps
@@ -302,7 +301,7 @@ const RepStatsPanel: React.FC = () => {
                       (
                       {
                         schedule.filter(
-                          (day) => day.visits.length < visitsPerDay
+                          (day) => toArray(day.visits).length < visitsPerDay
                         ).length
                       }{" "}
                       days affected)
@@ -476,14 +475,14 @@ const RepStatsPanel: React.FC = () => {
           <div className="text-right">
             <p className="text-sm font-medium text-eggplant-100">
               {Math.round(
-                (schedule.reduce((acc, day) => acc + day.visits.length, 0) /
+                (schedule.reduce((acc, day) => acc + toArray(day.visits).length, 0) /
                   (userFiles?.pubs?.length || 1)) *
                   100
               )}
               % of territory
             </p>
             <p className="text-xs text-eggplant-300">
-              {schedule.reduce((acc, day) => acc + day.visits.length, 0)} of{" "}
+              {schedule.reduce((acc, day) => acc + toArray(day.visits).length, 0)} of{" "}
               {userFiles?.pubs?.length || 0} pubs
             </p>
           </div>

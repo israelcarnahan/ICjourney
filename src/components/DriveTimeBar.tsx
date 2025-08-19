@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  Clock,
-  AlertTriangle,
   Car,
   Anchor,
   Plane,
@@ -9,13 +7,8 @@ import {
   Bus,
   Bike,
   Truck,
-  Home,
-  Beer,
-  Navigation,
   LucideIcon,
 } from "lucide-react";
-import * as Tooltip from "@radix-ui/react-tooltip";
-import * as Popover from "@radix-ui/react-popover";
 import {
   format,
   addMinutes,
@@ -72,19 +65,6 @@ const vehicleColors: Record<VehicleColor, string> = {
 
 interface DriveTimeBarProps {
   visits: Visit[];
-  totalDriveTime: number;
-  startDriveTime: number;
-  endDriveTime: number;
-  targetVisitsPerDay: number;
-  desiredEndTime?: string;
-}
-
-interface SegmentInfo {
-  type: "start" | "visit" | "drive" | "end";
-  index: number;
-  position: number;
-  duration: number;
-  pub?: string;
 }
 
 interface ScheduleEntry {
@@ -110,7 +90,7 @@ const BUSINESS_HOURS_DISTRIBUTION: BusinessHours[] = [
 ];
 
 // Function to get business hours for a pub based on its index
-const getPubBusinessHours = (pubIndex: number): BusinessHours => {
+const getPubBusinessHours = (_pubIndex: number): BusinessHours => {
   const random = Math.random() * 100;
   if (random < 75) return BUSINESS_HOURS_DISTRIBUTION[0];
   if (random < 85) return BUSINESS_HOURS_DISTRIBUTION[1];
@@ -120,216 +100,182 @@ const getPubBusinessHours = (pubIndex: number): BusinessHours => {
 };
 
 // Update the getScheduleTimes function to consider business hours
-const getScheduleTimes = (
-  visits: Visit[],
-  startTime: string,
-  desiredEndTime?: string
-) => {
-  // Use current date as base to ensure date consistency
-  const baseDate = new Date();
-  baseDate.setHours(0, 0, 0, 0); // Reset to start of day
+// const getScheduleTimes = (
+//   visits: Visit[],
+//   startTime: string,
+//   desiredEndTime?: string
+// ) => {
+//   // Use current date as base to ensure date consistency
+//   const baseDate = new Date();
+//   baseDate.setHours(0, 0, 0, 0); // Reset to start of day
 
-  // Parse start time
-  const [startHours, startMinutes] = startTime.split(":").map(Number);
-  const dayStart = new Date(baseDate);
-  dayStart.setHours(startHours, startMinutes, 0, 0);
+//   // Parse start time
+//   const [startHours, startMinutes] = startTime.split(":").map(Number);
+//   const dayStart = new Date(baseDate);
+//   dayStart.setHours(startHours, startMinutes, 0, 0);
 
-  // Parse end time
-  let desiredEnd = new Date(baseDate);
-  if (desiredEndTime) {
-    const [endHours, endMinutes] = desiredEndTime.split(":").map(Number);
-    desiredEnd.setHours(endHours, endMinutes, 0, 0);
-  } else {
-    desiredEnd.setHours(23, 0, 0, 0); // Default to 11 PM if not specified
-  }
+//   // Parse end time
+//   let desiredEnd = new Date(baseDate);
+//   if (desiredEndTime) {
+//     const [endHours, endMinutes] = desiredEndTime.split(":").map(Number);
+//     desiredEnd.setHours(endHours, endMinutes, 0, 0);
+//   } else {
+//     desiredEnd.setHours(23, 0, 0, 0); // Default to 11 PM if not specified
+//   }
 
-  const averageVisitTime = 45; // minutes
-  const minDriveTime = 30; // minimum minutes between visits
+//   const averageVisitTime = 45; // minutes
+//   const minDriveTime = 30; // minimum minutes between visits
 
-  // Initialize schedule array with all visits starting at the earliest possible time
-  const schedule: ScheduleEntry[] = visits.map((visit) => ({
-    pub: visit.pub,
-    arrival: new Date(dayStart),
-    departure: addMinutes(new Date(dayStart), averageVisitTime),
-    driveTime: visit.driveTimeToNext || minDriveTime,
-    isScheduled: Boolean(visit.scheduledTime),
-  }));
+//   // Initialize schedule array with all visits starting at the earliest possible time
+//   const schedule: ScheduleEntry[] = visits.map((visit) => ({
+//     pub: visit.pub,
+//     arrival: new Date(dayStart),
+//     departure: addMinutes(new Date(dayStart), averageVisitTime),
+//     driveTime: visit.driveTimeToNext || minDriveTime,
+//     isScheduled: Boolean(visit.scheduledTime),
+//   }));
 
-  // Update scheduled visits with their fixed times
-  const scheduledVisits = visits.filter(
-    (v): v is Visit & Required<Pick<Visit, "scheduledTime">> =>
-      Boolean(v.scheduledTime)
-  );
+//   // Update scheduled visits with their fixed times
+//   const scheduledVisits = visits.filter(
+//     (v): v is Visit & Required<Pick<Visit, "scheduledTime">> =>
+//       Boolean(v.scheduledTime)
+//   );
 
-  for (const visit of scheduledVisits) {
-    const index = visits.findIndex((v) => v.pub === visit.pub);
-    if (index === -1) continue;
+//   for (const visit of scheduledVisits) {
+//     const index = visits.findIndex((v) => v.pub === visit.pub);
+//     if (index === -1) continue;
 
-    const [hours, minutes] = visit.scheduledTime.split(":").map(Number);
-    const appointmentTime = new Date(baseDate);
-    appointmentTime.setHours(hours, minutes, 0, 0);
+//     const [hours, minutes] = visit.scheduledTime.split(":").map(Number);
+//     const appointmentTime = new Date(baseDate);
+//     appointmentTime.setHours(hours, minutes, 0, 0);
 
-    schedule[index] = {
-      pub: visit.pub,
-      arrival: appointmentTime,
-      departure: addMinutes(appointmentTime, averageVisitTime),
-      driveTime: visit.driveTimeToNext || minDriveTime,
-      isScheduled: true,
-    };
-  }
+//     schedule[index] = {
+//       pub: visit.pub,
+//       arrival: appointmentTime,
+//       departure: addMinutes(appointmentTime, averageVisitTime),
+//       driveTime: visit.driveTimeToNext || minDriveTime,
+//       isScheduled: true,
+//     };
+//   }
 
-  // Second pass: Schedule unscheduled visits in available time slots
-  let currentTime = new Date(dayStart);
+//   // Second pass: Schedule unscheduled visits in available time slots
+//   let currentTime = new Date(dayStart);
 
-  for (let i = 0; i < schedule.length; i++) {
-    if (schedule[i].isScheduled) continue;
+//   for (let i = 0; i < schedule.length; i++) {
+//     if (schedule[i].isScheduled) continue;
 
-    // Find the next scheduled visit (if any)
-    const nextScheduledIndex = schedule.findIndex(
-      (s, idx) => idx > i && s.isScheduled
-    );
-    const nextScheduledTime =
-      nextScheduledIndex !== -1
-        ? schedule[nextScheduledIndex].arrival
-        : desiredEnd;
+//     // Find the next scheduled visit (if any)
+//     const nextScheduledIndex = schedule.findIndex(
+//       (s, idx) => idx > i && s.isScheduled
+//     );
+//     const nextScheduledTime =
+//       nextScheduledIndex !== -1
+//         ? schedule[nextScheduledIndex].arrival
+//         : desiredEnd;
 
-    // Calculate available time window
-    const availableMinutes = differenceInMinutes(
-      nextScheduledTime,
-      currentTime
-    );
-    const neededMinutes =
-      averageVisitTime + (schedule[i].driveTime || minDriveTime);
+//     // Calculate available time window
+//     const availableMinutes = differenceInMinutes(
+//       nextScheduledTime,
+//       currentTime
+//     );
 
-    if (availableMinutes >= neededMinutes) {
-      // Schedule visit in the available window
-      schedule[i].arrival = new Date(currentTime);
-      schedule[i].departure = addMinutes(
-        new Date(currentTime),
-        averageVisitTime
-      );
-      currentTime = addMinutes(new Date(currentTime), neededMinutes);
-    } else {
-      // Not enough time before next scheduled visit, try after it
-      if (nextScheduledIndex !== -1) {
-        currentTime = addMinutes(
-          new Date(schedule[nextScheduledIndex].departure),
-          schedule[nextScheduledIndex].driveTime || minDriveTime
-        );
-        i--; // Retry scheduling this visit in the next available slot
-      }
-    }
-
-    // If we can't schedule within business hours, show warning
-    if (currentTime > desiredEnd) {
-      console.warn(
-        `Warning: Visit to ${schedule[i].pub} scheduled outside business hours`
-      );
-    }
-  }
-
-  return { schedule };
-};
+//   return { schedule };
+// };
 
 const stripParentheses = (str: string): string => {
   return str.replace(/\s*\([^)]*\)/g, "");
 };
 
 // Helper to parse time string to Date
-const parseTimeToDate = (timeStr: string) => {
-  const [hours, minutes] = timeStr.split(":").map(Number);
-  const date = new Date();
-  date.setHours(hours, minutes, 0, 0);
-  return date;
-};
+// const parseTimeToDate = (timeStr: string) => {
+//   const [hours, minutes] = timeStr.split(":").map(Number);
+//   const date = new Date();
+//   date.setHours(hours, minutes, 0, 0);
+//   return date;
+// };
 
-const formatDriveTime = (minutes: number): string => {
-  if (minutes < 60) {
-    return `${Math.round(minutes)}min`;
-  }
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = Math.round(minutes % 60);
-  return `${hours}h ${remainingMinutes}min`;
-};
+// const formatDriveTime = (minutes: number): string => {
+//   if (minutes < 60) {
+//     return `${Math.round(minutes)}min`;
+//   }
+//   const hours = Math.floor(minutes / 60);
+//   const remainingMinutes = Math.round(minutes % 60);
+//   return `${hours}h ${remainingMinutes}min`;
+// };
 
-const getCurrentProgress = (
-  schedule: ScheduleEntry[],
-  startTime: string,
-  visits: Visit[]
-) => {
-  const now = new Date();
-  const [startHours, startMinutes] = startTime.split(":").map(Number);
-  const dayStart = new Date(now);
-  dayStart.setHours(startHours, startMinutes, 0, 0);
+// const getCurrentProgress = (
+//   schedule: ScheduleEntry[],
+//   startTime: string,
+//   visits: Visit[]
+// ) => {
+//   const now = new Date();
+//   const [startHours, startMinutes] = startTime.split(":").map(Number);
+//   const dayStart = new Date(now);
+//   dayStart.setHours(startHours, startMinutes, 0, 0);
 
-  // If before start time
-  if (now < dayStart) return { position: 0, status: "not-started" };
+//   // If before start time
+//   if (now < dayStart) return { position: 0, status: "not-started" };
 
-  // Find current activity based on time
-  if (schedule.length === 0) return { position: 0, status: "not-started" };
+//   // Find current activity based on time
+//   if (schedule.length === 0) return { position: 0, status: "not-started" };
 
-  // Check if in initial drive
-  if (now < schedule[0].arrival) {
-    const firstPubName = stripParentheses(visits[0].pub).trim();
-    return {
-      position: 0,
-      status: "driving",
-      destination: firstPubName,
-      eta: format(schedule[0].arrival, "HH:mm"),
-    };
-  }
+//   // Check if in initial drive
+//   if (now < schedule[0].arrival) {
+//     const firstPubName = stripParentheses(visits[0].pub).trim();
+//     return {
+//       position: 0,
+//       status: "driving",
+//       destination: firstPubName,
+//       eta: format(schedule[0].arrival, "HH:mm"),
+//     };
+//   }
 
-  // Check each visit and drive segment
-  for (let i = 0; i < schedule.length; i++) {
-    const visit = schedule[i];
-    const shortPubName = stripParentheses(visits[i].pub).trim();
+//   // Check each visit and drive segment
+//   for (let i = 0; i < schedule.length; i++) {
+//     const visit = schedule[i];
+//     const shortPubName = stripParentheses(visits[i].pub).trim();
 
-    // Check if in visit time
-    if (isWithinInterval(now, { start: visit.arrival, end: visit.departure })) {
-      return {
-        position: (i / schedule.length) * 100,
-        status: "visiting",
-        location: shortPubName,
-        timeRemaining: differenceInMinutes(visit.departure, now),
-      };
-    }
+//     // Check if in visit time
+//     if (isWithinInterval(now, { start: visit.arrival, end: visit.departure })) {
+//       return {
+//         position: (i / schedule.length) * 100,
+//         status: "visiting",
+//         location: shortPubName,
+//         timeRemaining: differenceInMinutes(visit.departure, now),
+//       };
+//     }
 
-    // Check if driving to next location
-    const nextVisit = schedule[i + 1];
-    if (nextVisit && now < nextVisit.arrival) {
-      const nextPubName = stripParentheses(visits[i + 1].pub).trim();
-      return {
-        position: ((i + 0.5) / schedule.length) * 100,
-        status: "driving",
-        destination: nextPubName,
-        eta: format(nextVisit.arrival, "HH:mm"),
-      };
-    }
-  }
+//     // Check if driving to next location
+//     const nextVisit = schedule[i + 1];
+//     if (nextVisit && now < nextVisit.arrival) {
+//       const nextPubName = stripParentheses(visits[i + 1].pub).trim();
+//       return {
+//         position: ((i + 0.5) / schedule.length) * 100,
+//         status: "driving",
+//         destination: nextPubName,
+//         eta: format(nextVisit.arrival, "HH:mm"),
+//       };
+//     }
+//   }
 
-  // Must be in final drive home or completed
-  const lastVisit = schedule[schedule.length - 1];
-  if (now > lastVisit.departure) {
-    return { position: 100, status: "completed" };
-  }
+//   // Must be in final drive home or completed
+//   const lastVisit = schedule[schedule.length - 1];
+//   if (now > lastVisit.departure) {
+//     return { position: 100, status: "completed" };
+//   }
 
-  return {
-    position: ((schedule.length - 0.5) / schedule.length) * 100,
-    status: "returning",
-    eta: format(addMinutes(lastVisit.departure, 30), "HH:mm"),
-  };
-};
+//   return {
+//     position: ((schedule.length - 0.5) / schedule.length) * 100,
+//     status: "returning",
+//     eta: format(addMinutes(lastVisit.departure, 30), "HH:mm"),
+//   };
+// };
 
 // Add time markers array before the DriveTimeBar component
 const TIME_MARKERS = ["8:00", "10:00", "12:00", "14:00", "16:00", "18:00"];
 
 const DriveTimeBar: React.FC<DriveTimeBarProps> = ({
   visits,
-  totalDriveTime,
-  startDriveTime,
-  endDriveTime,
-  targetVisitsPerDay,
-  desiredEndTime = "17:00",
 }) => {
   const { selectedVehicle, selectedVehicleColor } = usePubData();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -380,8 +326,8 @@ const DriveTimeBar: React.FC<DriveTimeBarProps> = ({
 
   const getVisitTime = (visit: Visit): Date => {
     // For any visit with an optimized time in the list view, use that exact time
-    if (visit.optimizedTime) {
-      return getTimeFromString(visit.optimizedTime);
+    if ((visit as any).optimizedTime) {
+      return getTimeFromString((visit as any).optimizedTime);
     }
 
     // For scheduled visits, use their explicit time

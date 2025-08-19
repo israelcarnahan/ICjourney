@@ -1,5 +1,3 @@
-import { mapsService } from '../services/maps';
-
 // Mock data generator
 export const getMockPlaceData = (pubName: string) => {
   let seed = pubName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);

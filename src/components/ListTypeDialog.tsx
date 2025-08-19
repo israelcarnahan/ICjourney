@@ -1,4 +1,4 @@
-import React from "react";
+// import React from "react";
 
 interface ListTypeDialogProps {
   onSelect: (listType: "wins" | "hitlist") => void;

@@ -11,7 +11,7 @@ interface OpeningHoursIndicatorProps {
 
 const OpeningHoursIndicator: React.FC<OpeningHoursIndicatorProps> = ({ 
   pub,
-  postcode
+  // postcode
 }) => {
   const mockData = getMockPlaceData(pub || 'Unknown Pub');
   const isOpen = true; // Simplified for demo

@@ -1,10 +1,10 @@
 import * as React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { AlertTriangle, X, Calendar, Star } from "lucide-react";
+import { AlertTriangle, Calendar, Star } from "lucide-react";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { cn } from "../lib/utils";
+// import { Input } from "./ui/input";
+// import { Label } from "./ui/label";
+// import { cn } from "../lib/utils";
 import { useState, useCallback } from "react";
 import type { ListType } from "../context/PubDataContext";
 
@@ -62,9 +62,9 @@ export function ListCriteriaDialog({
     }
   }, [isOpen]);
 
-  const availablePriorityLevels = [1, 2, 3, 4, 5].filter(
-    (level) => !usedPriorityLevels.includes(level)
-  );
+  // const availablePriorityLevels = [1, 2, 3, 4, 5].filter(
+  //   (level) => !usedPriorityLevels.includes(level)
+  // );
 
   // Handlers
   const handleScheduleTypeChange = useCallback((type: ScheduleType) => {
