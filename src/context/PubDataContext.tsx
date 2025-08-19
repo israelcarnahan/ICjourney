@@ -84,11 +84,13 @@ export interface FileMetadata {
   type: ListType;
   count: number;
   priority?: number;
+  priorityLevel?: number;
   deadline?: string;
   color?: string;
   name: string;
   followUpDays?: number;
   uploadTime?: number;
+  schedulingMode?: 'priority' | 'deadline' | 'followup';
 }
 
 export interface ExtendedPub extends Pub {
@@ -405,16 +407,16 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, []);
 
-  const resetForUser = useCallback((targetUserId: string) => {
-    setUserFiles(initialState);
-    rehydratedFor.current = targetUserId;
-    saveAppState(initialState, targetUserId);
-    devLog('[PubDataContext] Reset for user:', targetUserId);
-  }, [initialState]);
+  // const resetForUser = useCallback((targetUserId: string) => {
+  //   setUserFiles(initialState);
+  //   rehydratedFor.current = targetUserId;
+  //   saveAppState(initialState, targetUserId);
+  //   devLog('[PubDataContext] Reset for user:', targetUserId);
+  // }, [initialState]);
 
   const clearAllData = useCallback(() => {
     clearAppState(userId);
-    clearMappings(userId);
+    // clearMappings(userId); // TODO: Implement clearMappings function
     setUserFiles(initialState);
     devLog('[PubDataContext] Cleared all data for user:', userId);
   }, [userId, initialState]);

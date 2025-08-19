@@ -25,14 +25,14 @@ class MapsService {
   getGeocoder(): any {
     // Return a mock geocoder for now
     return {
-      geocode: (request: any, callback: (results: any, status: string) => void) => {
+      geocode: (_request: any, callback: (results: any, status: string) => void) => {
         // Mock successful geocoding
         callback([], "OK");
       }
     };
   }
 
-  getPlaceDetails(query: string) {
+  getPlaceDetails(_query: string) {
     return {
       isOpen: true,
       openNow: true,

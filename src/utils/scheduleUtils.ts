@@ -104,7 +104,7 @@ export async function planVisits(
   let remainingDays = businessDays;
   let currentDate = startDate;
 
-  const [homePrefix] = extractNumericPart(homeAddress);
+  // const [homePrefix] = extractNumericPart(homeAddress); // TODO: Use for distance calculations
 
   // Track scheduled pubs to prevent duplicates
   const scheduledPubs = new Set<string>();

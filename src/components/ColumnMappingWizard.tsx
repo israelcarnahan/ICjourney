@@ -57,11 +57,11 @@ const ColumnMappingWizard: React.FC<Props> = ({
 
   // Get currently selected headers
   const selectedHeaders = new Set(Object.values(mapping).filter(Boolean));
-  const availableHeaders = cleanedHeaders.filter(h => !selectedHeaders.has(h));
+  // const availableHeaders = cleanedHeaders.filter(h => !selectedHeaders.has(h)); // TODO: Use for validation
 
   // Check if required fields are mapped
   const missing = REQUIRED_FIELDS.filter(field => !mapping[field]);
-  const canConfirm = missing.length === 0;
+  // const canConfirm = missing.length === 0; // TODO: Use for confirmation logic
 
   // Auto-guessed fields
   const autoGuessed = useMemo(() => autoGuessMapping(cleanedHeaders), [cleanedHeaders]);

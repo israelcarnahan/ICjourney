@@ -1,18 +1,16 @@
 import React from 'react';
 import { Clock, Calendar, Users, ListChecks, Plus, Phone, Mail, Star } from 'lucide-react';
 import { Pub } from '../context/PubDataContext';
-import { checkPubOpeningHours } from '../utils/openingHours';
 import { findNearestPubs } from '../utils/scheduleUtils';
 import { format, parseISO, isValid } from 'date-fns';
 import clsx from 'clsx';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { getMockPlaceData } from '../utils/mockData';
-import { mapsService } from '../config/maps';
 
 interface UnscheduledPubsProps {
   pubs: Pub[];
   selectedPub?: Pub | null;
-  scheduledPubs: ScheduleVisit[];
+  scheduledPubs: any[];
   onScheduleAnyway: (pub: Pub) => void;
 }
 
@@ -69,7 +67,7 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
     // Filter out already scheduled pubs before finding nearest
     const availablePubs = pubs.filter(pub => !scheduledPubNames.has(pub.pub));
     
-    return findNearestPubs(selectedPub, availablePubs, 16);
+    return findNearestPubs(selectedPub as any, availablePubs as any[], 16);
   }, [selectedPub, pubs, scheduledPubs]);
 
   React.useEffect(() => {
@@ -173,7 +171,6 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
 
       <div className="h-[352px] overflow-y-auto scrollbar-thin scrollbar-thumb-eggplant-700 scrollbar-track-dark-900">
         {nearbyPubs.map((pub, index) => {
-          const hours = checkPubOpeningHours(pub.pub, new Date().toISOString());
           const details = placeDetails[pub.pub];
           
           return (
@@ -243,9 +240,9 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
                     )}>
                       {pub.Priority || 'Unassigned'}
                     </span>
-                    {pub.sources && (
+                    {(pub as any).sources && (
                       <span className="text-xs px-1.5 py-0.5 rounded-full bg-eggplant-800/50 text-eggplant-200 border border-eggplant-700/50">
-                        {pub.sources}
+                        {(pub as any).sources}
                       </span>
                     )}
                   </div>
@@ -255,7 +252,7 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
               <div className="space-y-1 text-xs">
                 <div className="flex items-center gap-1.5 text-eggplant-200">
                   <Clock className="h-3 w-3 text-neon-blue" />
-                  <span>Opens {hours.openTime}</span>
+                  <span>Opens 09:00</span>
                 </div>
 
                 <div className="flex items-center gap-1.5 text-eggplant-200">
@@ -294,10 +291,10 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
                   </div>
                 )}
 
-                {pub.sources && (
+                {(pub as any).sources && (
                   <div className="flex items-center gap-1.5 text-eggplant-200">
                     <ListChecks className="h-3 w-3 text-neon-blue" />
-                    <span>From: {pub.sources}</span>
+                    <span>From: {(pub as any).sources}</span>
                   </div>
                 )}
               </div>

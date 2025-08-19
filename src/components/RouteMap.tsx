@@ -9,7 +9,7 @@ interface RouteMapProps {
   };
 }
 
-const RouteMap: React.FC<RouteMapProps> = ({ route }) => {
+const RouteMap: React.FC<RouteMapProps> = ({ route: _route }) => {
   return (
     <div className="w-full h-full bg-gray-100 rounded-lg p-4">
       <div className="text-center text-gray-500">

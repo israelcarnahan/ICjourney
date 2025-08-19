@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface AuthContextType {
   userId: string;
@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   });
 
   const signOut = () => {
-    const oldId = userId;
+    // const _oldId = userId; // TODO: Use for cleanup if needed
     const newId = `guest_${crypto.randomUUID()}`;
     
     // Write new userId to localStorage

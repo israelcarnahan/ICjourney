@@ -37,7 +37,7 @@ const ProtectedRoute: React.FC<{ element: React.ReactNode }> = ({
 };
 
 const AppContent: React.FC = () => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [_mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     requestAnimationFrame(() => {
