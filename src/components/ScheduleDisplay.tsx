@@ -570,40 +570,40 @@ const ScheduleDisplay: React.FC = () => {
   };
 
   // const handleRemovePubVisit = (dayDate: string, pubToRemove: string) => {
-    setRemovedPubs((prev) => ({
-      ...prev,
-      [dayDate]: new Set([...(prev[dayDate]?.values() || []), pubToRemove]),
-    }));
+  //   setRemovedPubs((prev) => ({
+  //     ...prev,
+  //     [dayDate]: new Set([...(prev[dayDate]?.values() || []), pubToRemove]),
+  //   }));
 
-    updateSchedule((prevSchedule) =>
-      prevSchedule.map((day) => {
-        if (day.date !== dayDate) return day;
+  //   updateSchedule((prevSchedule) =>
+  //     prevSchedule.map((day) => {
+  //       if (day.date !== dayDate) return day;
 
-        const pubIndex = day.visits.findIndex(
-          (visit) => visit.pub === pubToRemove
-        );
-        if (pubIndex === -1) return day;
+  //       const pubIndex = day.visits.findIndex(
+  //         (visit) => visit.pub === pubToRemove
+  //       );
+  //       if (pubIndex === -1) return day;
 
-        const removedPub = day.visits[pubIndex];
-        const replacementPub = findReplacementPub(dayDate, removedPub);
+  //       const removedPub = day.visits[pubIndex];
+  //       const replacementPub = findReplacementPub(dayDate, removedPub);
 
-        let updatedVisits = [...day.visits];
-        if (replacementPub) {
-          updatedVisits[pubIndex] = replacementPub;
-        } else {
-          updatedVisits = updatedVisits.filter(
-            (visit) => visit.pub !== pubToRemove
-          );
-        }
+  //       let updatedVisits = [...day.visits];
+  //       if (replacementPub) {
+  //         updatedVisits[pubIndex] = replacementPub;
+  //       } else {
+  //         updatedVisits = updatedVisits.filter(
+  //           (visit) => visit.pub !== pubToRemove
+  //       );
+  //       }
 
-        const metrics = recalculateMetrics(updatedVisits, homeAddress);
+  //       const metrics = recalculateMetrics(updatedVisits, homeAddress);
 
-        return {
-          ...day,
-          ...metrics,
-        };
-      })
-    );
+  //       return {
+  //         ...day,
+  //         ...metrics,
+  //       };
+  //     })
+  //   );
   // };
 
   // const handlePubSelect = useCallback((pub: any) => {
