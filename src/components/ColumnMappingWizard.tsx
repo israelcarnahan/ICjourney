@@ -70,6 +70,7 @@ const ColumnMappingWizard: React.FC<Props> = ({
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [hoveredField, setHoveredField] = useState<string | null>(null);
   const [showErrors, setShowErrors] = useState(false);
+  const [headerQuery, setHeaderQuery] = useState("");
 
   // Generate a stable signature ID for React keys
   const sigId = useMemo(() => `wizard-${Date.now()}`, []);
@@ -81,6 +82,20 @@ const ColumnMappingWizard: React.FC<Props> = ({
       .filter(h => h.length > 0 && h !== NONE);
     return Array.from(new Set(arr));
   }, [headers]);
+
+  // Filter headers based on search query
+  const filteredHeaders = useMemo(() => {
+    const q = headerQuery.trim().toLowerCase();
+    if (!q) return cleanedHeaders;
+    return cleanedHeaders.filter(h => h.toLowerCase().includes(q));
+  }, [cleanedHeaders, headerQuery]);
+
+  // Progress: how many fields mapped (visible fields only)
+  const VISIBLE_FIELDS = [...REQUIRED, ...OPTIONAL_VISIBLE];
+  const mappedCount = VISIBLE_FIELDS.reduce((n, f) => {
+    const v = mapping[f];
+    return n + (v && v !== NONE ? 1 : 0);
+  }, 0);
 
   // Check if required fields are mapped
   const missing = REQUIRED_FIELDS.filter(field => !mapping[field]);
@@ -192,34 +207,50 @@ const ColumnMappingWizard: React.FC<Props> = ({
         </div>
 
         {/* Main Content */}
-        <div className="flex flex-col md:flex-row max-h-[calc(85vh-140px)]">
+        <div className="flex flex-col md:flex-row max-h-[calc(85vh-140px)] overflow-hidden">
           {/* Left Pane - Excel-like headers */}
           <div className="w-full md:w-1/3 p-4 border-r border-eggplant-700/50 bg-eggplant-900/40">
-            <h3 className="text-sm font-medium text-eggplant-100 mb-3 flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Your File Headers
-            </h3>
-            <div className="space-y-1 divide-y divide-white/10">
-              {cleanedHeaders.map((header, idx) => (
-                <div
-                  key={`${sigId}-src-${idx}-${header}`}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('text/plain', header);
-                    e.dataTransfer.effectAllowed = 'copy';
-                  }}
-                  className="p-2 rounded cursor-move hover:bg-eggplant-800/50 transition-colors text-sm text-eggplant-100 hover:text-white"
-                >
-                  <div className="flex items-center gap-2">
-                    <svg className="w-3 h-3 text-eggplant-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                    </svg>
-                    <span className="font-mono text-xs">{header}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="rounded-xl border border-eggplant-700/50 p-4 flex flex-col min-h-0">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-eggplant-100">
+                  Your File Headers <span className="opacity-60">({cleanedHeaders.length})</span>
+                </h3>
+                <input
+                  type="text"
+                  value={headerQuery}
+                  onChange={e => setHeaderQuery(e.target.value)}
+                  placeholder="Filter headers…"
+                  aria-label="Filter headers"
+                  className="text-sm px-2 py-1 rounded-md border border-eggplant-700/60 bg-eggplant-900/60 text-eggplant-100 focus:outline-none focus:ring focus:ring-neon-purple/60"
+                />
+              </div>
+
+              {/* independent scroll area for LONG lists */}
+              <ul
+                data-testid="header-list"
+                aria-label="Your file headers"
+                className="space-y-2 overflow-y-auto pr-1"
+                style={{ maxHeight: "60vh" }}
+              >
+                {filteredHeaders.map((h, i) => (
+                  <li
+                    key={`${sigId}-src-${i}-${h}`}
+                    className="text-sm px-3 py-2 rounded-md border border-eggplant-700/60 flex items-center gap-2 select-none cursor-grab active:cursor-grabbing hover:bg-eggplant-800/50 transition-colors text-eggplant-100 hover:text-white"
+                    title={h}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("text/plain", h);
+                      e.dataTransfer.effectAllowed = "copyMove";
+                    }}
+                  >
+                    <span aria-hidden className="inline-block w-2 h-2 rounded-full bg-eggplant-400" />
+                    <span className="truncate">{h}</span>
+                  </li>
+                ))}
+                {filteredHeaders.length === 0 && (
+                  <li className="text-xs opacity-70 px-1 text-eggplant-300">No headers match "{headerQuery}".</li>
+                )}
+              </ul>
             </div>
           </div>
 
@@ -293,10 +324,12 @@ const ColumnMappingWizard: React.FC<Props> = ({
         {/* Sticky Footer */}
         <div className="sticky bottom-0 z-10 px-6 py-4 bg-eggplant-900/80 backdrop-blur border-t border-eggplant-700/50 flex justify-between items-center">
           <div className="text-sm text-eggplant-300">
-            {missing.length > 0 ? (
-              <span>Required fields: {missing.map(field => FIELD_LABELS[field]).join(", ")}</span>
-            ) : (
+            {mappedCount === VISIBLE_FIELDS.length ? (
               <span className="text-green-300">✓ All required fields mapped</span>
+            ) : (
+              <span className="opacity-80">
+                {mappedCount}/{VISIBLE_FIELDS.length} fields mapped
+              </span>
             )}
           </div>
           <div className="flex gap-3">
