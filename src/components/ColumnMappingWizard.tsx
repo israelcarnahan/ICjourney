@@ -1,16 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { ColumnMapping, CanonicalField } from '../types/import';
-import { CANONICAL_ORDER, REQUIRED_FIELDS, autoGuessMapping } from '../utils/columnSynonyms';
+import { CANONICAL_ORDER, autoGuessMapping } from '../utils/columnSynonyms';
 
 const NONE = "__none__"; // sentinel to represent "Not present"
 
 // Field configuration
 const REQUIRED = ['name', 'postcode'] as const;
 const OPTIONAL_VISIBLE = ['rtm', 'notes', 'address', 'town', 'phone', 'email'] as const;
-// Note: lat/lng fields are hidden from UI but preserved in mapping state
-
-const allVisible = [...REQUIRED, ...OPTIONAL_VISIBLE];
+const VISIBLE_FIELDS = [...REQUIRED, ...OPTIONAL_VISIBLE];
 
 type Props = {
   headers: string[];            // lowercased, trimmed
@@ -90,16 +88,22 @@ const ColumnMappingWizard: React.FC<Props> = ({
     return cleanedHeaders.filter(h => h.toLowerCase().includes(q));
   }, [cleanedHeaders, headerQuery]);
 
-  // Progress: how many fields mapped (visible fields only)
-  const VISIBLE_FIELDS = [...REQUIRED, ...OPTIONAL_VISIBLE];
-  const mappedCount = VISIBLE_FIELDS.reduce((n, f) => {
+  // Required fields status tracking
+  const requiredMappedCount = REQUIRED.reduce((n, f) => {
     const v = mapping[f];
     return n + (v && v !== NONE ? 1 : 0);
   }, 0);
+  const requiredComplete = requiredMappedCount === REQUIRED.length;
 
-  // Check if required fields are mapped
-  const missing = REQUIRED_FIELDS.filter(field => !mapping[field]);
-  const canConfirm = missing.length === 0;
+  // All visible fields status tracking
+  const allMappedCount = VISIBLE_FIELDS.reduce((n, f) => {
+    const v = mapping[f];
+    return n + (v && v !== NONE ? 1 : 0);
+  }, 0);
+  const allComplete = allMappedCount === VISIBLE_FIELDS.length;
+
+  // Confirm button is enabled only when required fields are mapped
+  const canConfirm = requiredComplete;
 
   // Auto-guessed fields
   const autoGuessed = useMemo(() => autoGuessMapping(cleanedHeaders), [cleanedHeaders]);
@@ -257,15 +261,15 @@ const ColumnMappingWizard: React.FC<Props> = ({
           {/* Right Pane - Destination fields */}
           <div className="w-full md:w-2/3 p-4 overflow-y-auto">
             {/* Validation message */}
-            {showErrors && missing.length > 0 && (
+            {showErrors && !requiredComplete && (
               <div className="mb-4 text-sm text-red-200 bg-red-900/20 border border-red-700/50 rounded-lg p-3">
-                <strong>Required fields missing:</strong> {missing.map(field => FIELD_LABELS[field]).join(", ")}
+                <strong>Required fields missing:</strong> {REQUIRED.filter(field => !mapping[field]).map(field => FIELD_LABELS[field]).join(", ")}
               </div>
             )}
 
             {/* Field mapping grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {allVisible.map((field) => (
+              {VISIBLE_FIELDS.map((field) => (
                 <div
                   key={`${sigId}-dst-${field}`}
                   className={`p-4 rounded-lg border-2 transition-all duration-200 ${
@@ -281,7 +285,7 @@ const ColumnMappingWizard: React.FC<Props> = ({
                 >
                   <label className="block text-sm font-medium text-eggplant-100 mb-2">
                     {FIELD_LABELS[field]}
-                    {REQUIRED_FIELDS.includes(field) && (
+                    {(REQUIRED as readonly string[]).includes(field) && (
                       <span className="text-red-400 ml-1">*</span>
                     )}
                   </label>
@@ -323,14 +327,42 @@ const ColumnMappingWizard: React.FC<Props> = ({
 
         {/* Sticky Footer */}
         <div className="sticky bottom-0 z-10 px-6 py-4 bg-eggplant-900/80 backdrop-blur border-t border-eggplant-700/50 flex justify-between items-center">
-          <div className="text-sm text-eggplant-300">
-            {mappedCount === VISIBLE_FIELDS.length ? (
-              <span className="text-green-300">✓ All required fields mapped</span>
+          <div className="text-xs flex items-center gap-4" aria-live="polite">
+            {/* Required chip */}
+            {requiredComplete ? (
+              <span
+                data-testid="status-required"
+                className="inline-flex items-center gap-1 text-green-500"
+                title="Required fields mapped"
+              >
+                <span aria-hidden>✓</span>
+                <span>Required fields mapped</span>
+              </span>
             ) : (
-              <span className="opacity-80">
-                {mappedCount}/{VISIBLE_FIELDS.length} fields mapped
+              <span
+                data-testid="status-required"
+                className="inline-flex items-center gap-1 text-red-500"
+                title="Map Business Name and Postcode to proceed"
+              >
+                <span aria-hidden>✕</span>
+                <span>
+                  Required missing: {REQUIRED.length - requiredMappedCount} of {REQUIRED.length} left
+                </span>
               </span>
             )}
+
+            {/* Optional chip */}
+            <span
+              data-testid="status-optional"
+              className={`inline-flex items-center gap-1 ${allComplete ? 'text-green-400' : 'text-white/70'}`}
+              title="Optional fields are not required"
+            >
+              <span aria-hidden>{allComplete ? '✓' : '•'}</span>
+              <span>
+                Optional mapped: {allMappedCount - requiredMappedCount}/{VISIBLE_FIELDS.length - REQUIRED.length}
+                <span className="ml-1 opacity-60">(not required)</span>
+              </span>
+            </span>
           </div>
           <div className="flex gap-3">
             <button
