@@ -990,3 +990,6 @@ const PlannerDashboard: React.FC = () => {
 };
 
 export default PlannerDashboard;
+
+// Intentional type error for testing pre-push hook
+const testError: string = 123;
