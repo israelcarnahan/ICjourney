@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import {
   usePubData,
-  ExtendedPub,
   VehicleType,
   VehicleColor,
   Pub,
@@ -31,46 +30,29 @@ import {
   format,
   parseISO,
   isValid,
-  differenceInBusinessDays,
-  addBusinessDays,
   addMinutes,
   differenceInMinutes,
   formatDuration,
   Duration,
 } from "date-fns";
-import SparkleWrapper from "./Sparkles";
-import ScheduleReport from "./ScheduleReport";
-import RescheduleDialog from "./RescheduleDialog";
 import { downloadICSFile } from "../utils/calendarUtils";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { checkPubOpeningHours } from "../utils/openingHours";
-import OpeningHoursIndicator from "./OpeningHoursIndicator";
 import clsx from "clsx";
-import RemovePubDialog from "./RemovePubDialog";
+import { toArray } from "../utils/typeGuards";
 import {
   calculateDistance,
   findNearestPubs,
   getPriorityOrder,
 } from "../utils/scheduleUtils";
 import RouteMap from "./RouteMap";
-import UnscheduledPubsPanel from "./UnscheduledPubsPanel";
 import VisitScheduler from "./VisitScheduler";
 import DriveTimeBar from "./DriveTimeBar";
-import * as Popover from "@radix-ui/react-popover";
-import {
-  BootIcon,
-  TopHatIcon,
-  ThimbleIcon,
-  WheelbarrowIcon,
-} from "./icons/MonopolyIcons";
 import {
   Visit,
-  EnhancedScheduleDay,
   ScheduleDay,
   OpeningHoursMap,
   ScheduleEntry,
 } from "../types";
-import { optimizeRoute } from "../utils/routeOptimization";
 
 // Custom icon for fairy
 const FairyIcon = () => (
@@ -113,25 +95,25 @@ const HorseIcon = () => (
   </svg>
 );
 
-const vehicleIcons: Record<VehicleType, LucideIcon | React.FC<any>> = {
-  car: Car,
-  truck: Truck,
-  bike: Bike,
-  bus: Bus,
-  train: Train,
-  plane: Plane,
-  boat: Anchor,
-  fairy: FairyIcon,
-};
+// const vehicleIcons: Record<VehicleType, LucideIcon | React.FC<any>> = {
+//   car: Car,
+//   truck: Truck,
+//   bike: Bike,
+//   bus: Bus,
+//   train: Train,
+//   plane: Plane,
+//   boat: Anchor,
+//   fairy: FairyIcon,
+// };
 
-const vehicleColors: Record<VehicleColor, string> = {
-  purple: "text-neon-purple",
-  blue: "text-neon-blue",
-  pink: "text-neon-pink",
-  green: "text-emerald-400",
-  orange: "text-orange-400",
-  yellow: "text-yellow-400",
-};
+// const vehicleColors: Record<VehicleColor, string> = {
+//   purple: "text-neon-purple",
+//   blue: "text-neon-blue",
+//   pink: "text-neon-pink",
+//   green: "text-emerald-400",
+//   orange: "text-orange-400",
+//   yellow: "text-yellow-400",
+// };
 
 const getPriorityStyles = (priority: string): string => {
   switch (priority) {
@@ -176,7 +158,7 @@ const formatDate = (dateStr: string | Date | null | undefined): string => {
 const recalculateMetrics = (
   visits: Visit[],
   homeAddress: string,
-  desiredEndTime?: string
+  // desiredEndTime?: string
 ) => {
   let totalMileage = 0;
   let totalDriveTime = 0;
@@ -231,11 +213,11 @@ const parseTimeToDate = (timeStr: string) => {
   return date;
 };
 
-const getScheduleTimes = (
-  visits: Visit[],
-  startTime: string,
-  desiredEndTime?: string
-) => {
+// const getScheduleTimes = (
+//   visits: Visit[],
+//   startTime: string,
+//   desiredEndTime?: string
+// ) => {
   // Default business hours
   const defaultStartTime = "09:00";
   const defaultEndTime = "17:00";
@@ -378,8 +360,8 @@ const getScheduleTimes = (
     }))
   );
 
-  return { schedule };
-};
+  // return { schedule };
+// };
 
 const isOutsideBusinessHours = (time: Date | string): boolean => {
   try {
@@ -401,15 +383,15 @@ const isOutsideBusinessHours = (time: Date | string): boolean => {
   }
 };
 
-interface DriveTimeBarProps {
-  visits: Pub[];
-  totalDriveTime: number;
-  startDriveTime: number;
-  endDriveTime: number;
-  targetVisitsPerDay: number;
-  desiredEndTime?: string;
-  onDesiredEndTimeChange: (time: string) => void;
-}
+// interface DriveTimeBarProps {
+//   visits: Pub[];
+//   totalDriveTime: number;
+//   startDriveTime: number;
+//   endDriveTime: number;
+//   targetVisitsPerDay: number;
+//   desiredEndTime?: string;
+//   onDesiredEndTimeChange: (time: string) => void;
+// }
 
 const ScheduleDisplay: React.FC = () => {
   const {
@@ -418,21 +400,21 @@ const ScheduleDisplay: React.FC = () => {
     userFiles,
     homeAddress,
     visitsPerDay,
-    selectedVehicle,
-    selectedVehicleColor,
-    setSelectedVehicle,
-    setSelectedVehicleColor,
+    // selectedVehicle,
+    // selectedVehicleColor,
+    // setSelectedVehicle,
+    // setSelectedVehicleColor,
     selectedDate,
   } = usePubData();
 
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
-  const [hoveredDay, setHoveredDay] = useState<string | null>(null);
+  // const [hoveredDay, setHoveredDay] = useState<string | null>(null);
   const [openingHours, setOpeningHours] = useState<OpeningHoursMap>({});
   const [removedPubs, setRemovedPubs] = useState<Record<string, Set<string>>>(
     {}
   );
-  const [selectedPub, setSelectedPub] = useState<Visit | null>(null);
-  const [isCustomizing, setIsCustomizing] = useState(false);
+  // const [selectedPub, setSelectedPub] = useState<Visit | null>(null);
+  // const [isCustomizing, setIsCustomizing] = useState(false);
   const [desiredEndTimes, setDesiredEndTimes] = useState<
     Record<string, string>
   >({});
@@ -441,7 +423,7 @@ const ScheduleDisplay: React.FC = () => {
   // Convert context schedule to our local type
   const schedule = contextSchedule.map((day) => ({
     date: day.date || "",
-    visits: (day.visits || []).map((visit) => ({
+    visits: toArray(day.visits).map((visit) => ({
       ...visit,
       Priority: visit.Priority || "Unscheduled",
     })),
@@ -453,7 +435,7 @@ const ScheduleDisplay: React.FC = () => {
     schedulingErrors: day.schedulingErrors,
   }));
 
-  const updateSchedule = (updater: (prev: ScheduleDay[]) => ScheduleDay[]) => {
+  const updateSchedule = (updater: (prev: any[]) => any[]) => {
     const updatedSchedule = updater(schedule);
     // Convert back to context schedule type when updating
     setContextSchedule(
@@ -587,7 +569,7 @@ const ScheduleDisplay: React.FC = () => {
     })[0];
   };
 
-  const handleRemovePubVisit = (dayDate: string, pubToRemove: string) => {
+  // const handleRemovePubVisit = (dayDate: string, pubToRemove: string) => {
     setRemovedPubs((prev) => ({
       ...prev,
       [dayDate]: new Set([...(prev[dayDate]?.values() || []), pubToRemove]),
@@ -622,11 +604,11 @@ const ScheduleDisplay: React.FC = () => {
         };
       })
     );
-  };
+  // };
 
-  const handlePubSelect = useCallback((pub: any) => {
-    setSelectedPub(pub);
-  }, []);
+  // const handlePubSelect = useCallback((pub: any) => {
+  //   setSelectedPub(pub);
+  // }, []);
 
   const exportToExcel = () => {
     const flatSchedule = schedule.flatMap((day) =>
@@ -1140,9 +1122,9 @@ const ScheduleDisplay: React.FC = () => {
               endDriveTime={day.endDriveTime || 0}
               targetVisitsPerDay={visitsPerDay}
               desiredEndTime={desiredEndTimes[day.date || ""]}
-              onDesiredEndTimeChange={(time) =>
-                handleDesiredEndTimeChange(day.date || "", time)
-              }
+              // onDesiredEndTimeChange={(time) =>
+              //   handleDesiredEndTimeChange(day.date || "", time)
+              // }
             />
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-eggplant-800/30">
@@ -1273,7 +1255,7 @@ const ScheduleDisplay: React.FC = () => {
                               )}
                             </div>
                             <VisitScheduler
-                              visit={visit}
+                              visit={visit as any}
                               date={day.date || ""}
                               onSchedule={handleVisitSchedule}
                             />
@@ -1332,7 +1314,7 @@ const ScheduleDisplay: React.FC = () => {
             </div>
             <div className="mt-4">
               <RouteMap
-                day={day}
+                day={day as any}
                 homeAddress={homeAddress}
                 className="h-[400px] rounded-lg animated-border"
               />
@@ -1378,7 +1360,7 @@ const ScheduleDisplay: React.FC = () => {
 
       <div className="flex justify-end gap-2 mt-4">
         <button
-          onClick={() => downloadICSFile(schedule)}
+          onClick={() => downloadICSFile(schedule as any)}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-white text-purple-900 hover:bg-white/90 transition-colors"
         >
           <Calendar className="h-4 w-4" />
