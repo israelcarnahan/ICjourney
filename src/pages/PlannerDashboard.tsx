@@ -126,12 +126,12 @@ const PlannerDashboard: React.FC = () => {
 
     // Get all pubs with their respective deadlines from file metadata
     const repslyWins = userFiles.pubs.filter((pub) => pub.listType === "wins");
-    const _repslyDeadlines = new Map(
-      (userFiles.files?.filter((f) => f.type === "wins") || []).map((f) => [
-        f.fileId,
-        f.deadline,
-      ])
-    );
+    // const _repslyDeadlines = new Map(
+    //   (userFiles.files?.filter((f) => f.type === "wins") || []).map((f) => [
+    //     f.fileId,
+    //     f.deadline,
+    //   ])
+    // );
 
     const processedRepslyWins = repslyWins.map((pub) => ({
       ...pub,
@@ -600,12 +600,12 @@ const PlannerDashboard: React.FC = () => {
   };
 
   // Update the files array in userFiles
-  const _updateUserFiles = (newFiles: FileMetadata[]) => {
-    setUserFiles((prev: UserFiles) => ({
-      ...prev,
-      files: newFiles,
-    }));
-  };
+  // const _updateUserFiles = (newFiles: FileMetadata[]) => {
+  //   setUserFiles((prev: UserFiles) => ({
+  //     ...prev,
+  //     files: newFiles,
+  //   }));
+  // };
 
   if (isLoading) {
     return (
