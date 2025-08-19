@@ -218,149 +218,149 @@ const parseTimeToDate = (timeStr: string) => {
 //   startTime: string,
 //   desiredEndTime?: string
 // ) => {
-  // Default business hours
-  const defaultStartTime = "09:00";
-  const defaultEndTime = "17:00";
+//   // Default business hours
+//   const defaultStartTime = "09:00";
+//   const defaultEndTime = "17:00";
 
-  // Use provided start time or default to 9 AM
-  const [startHours, startMinutes] = (startTime || defaultStartTime)
-    .split(":")
-    .map(Number);
-  const dayStart = new Date();
-  dayStart.setHours(startHours, startMinutes, 0, 0);
+//   // Use provided start time or default to 9 AM
+//   const [startHours, startMinutes] = (startTime || defaultStartTime)
+//     .split(":")
+//     .map(Number);
+//   const dayStart = new Date();
+//   dayStart.setHours(startHours, startMinutes, 0, 0);
 
-  // Use provided end time or default to 5 PM
-  let desiredEnd: Date = new Date(dayStart);
-  if (desiredEndTime) {
-    const [endHours, endMinutes] = desiredEndTime.split(":").map(Number);
-    desiredEnd.setHours(endHours, endMinutes, 0, 0);
-  } else {
-    const [defaultEndHours, defaultEndMinutes] = defaultEndTime
-      .split(":")
-      .map(Number);
-    desiredEnd.setHours(defaultEndHours, defaultEndMinutes, 0, 0);
-  }
+//   // Use provided end time or default to 5 PM
+//   let desiredEnd: Date = new Date(dayStart);
+//   if (desiredEndTime) {
+//     const [endHours, endMinutes] = desiredEndTime.split(":").map(Number);
+//     desiredEnd.setHours(endHours, endMinutes, 0, 0);
+//   } else {
+//     const [defaultEndHours, defaultEndMinutes] = defaultEndTime
+//       .split(":")
+//       .map(Number);
+//     desiredEnd.setHours(defaultEndHours, defaultEndMinutes, 0, 0);
+//   }
 
-  const averageVisitTime = 45; // minutes
-  const minDriveTime = 30; // minimum minutes between visits
+//   const averageVisitTime = 45; // minutes
+//   const minDriveTime = 30; // minimum minutes between visits
 
-  // First: Sort visits by their scheduled times
-  const sortedVisits = [...visits].sort((a, b) => {
-    if (!a.scheduledTime || a.scheduledTime === "Anytime") return 1;
-    if (!b.scheduledTime || b.scheduledTime === "Anytime") return -1;
+//   // First: Sort visits by their scheduled times
+//   const sortedVisits = [...visits].sort((a, b) => {
+//     if (!a.scheduledTime || a.scheduledTime === "Anytime") return 1;
+//     if (!b.scheduledTime || b.scheduledTime === "Anytime") return -1;
 
-    const [aHours, aMinutes] = a.scheduledTime.split(":").map(Number);
-    const [bHours, bMinutes] = b.scheduledTime.split(":").map(Number);
-    return aHours * 60 + aMinutes - (bHours * 60 + bMinutes);
-  });
+//     const [aHours, aMinutes] = a.scheduledTime.split(":").map(Number);
+//     const [bHours, bMinutes] = b.scheduledTime.split(":").map(Number);
+//     return aHours * 60 + aMinutes - (bHours * 60 + bMinutes);
+//   });
 
-  // Initialize schedule array with all visits
-  const schedule: ScheduleEntry[] = sortedVisits.map((visit) => ({
-    pub: visit.pub,
-    arrival: dayStart,
-    departure: addMinutes(dayStart, averageVisitTime),
-    driveTime: visit.driveTimeToNext || minDriveTime,
-    isScheduled:
-      Boolean(visit.scheduledTime) && visit.scheduledTime !== "Anytime",
-  }));
+//   // Initialize schedule array with all visits
+//   const schedule: ScheduleEntry[] = sortedVisits.map((visit) => ({
+//     pub: visit.pub,
+//     arrival: dayStart,
+//     departure: addMinutes(dayStart, averageVisitTime),
+//     driveTime: visit.driveTimeToNext || minDriveTime,
+//     isScheduled:
+//       Boolean(visit.scheduledTime) && visit.scheduledTime !== "Anytime",
+//   }));
 
-  // First pass: Schedule fixed appointments
-  const scheduledVisits = sortedVisits.filter(
-    (v): v is Visit & Required<Pick<Visit, "scheduledTime">> =>
-      Boolean(v.scheduledTime) && v.scheduledTime !== "Anytime"
-  );
+//   // First pass: Schedule fixed appointments
+//   const scheduledVisits = sortedVisits.filter(
+//     (v): v is Visit & Required<Pick<Visit, "scheduledTime">> =>
+//       Boolean(v.scheduledTime) && v.scheduledTime !== "Anytime"
+//   );
 
-  for (const visit of scheduledVisits) {
-    const index = sortedVisits.findIndex((v) => v.pub === visit.pub);
-    if (index === -1) continue;
+//   for (const visit of scheduledVisits) {
+//     const index = sortedVisits.findIndex((v) => v.pub === visit.pub);
+//     if (index === -1) continue;
 
-    const appointmentTime = parseTimeToDate(visit.scheduledTime);
-    schedule[index] = {
-      pub: visit.pub,
-      arrival: appointmentTime,
-      departure: addMinutes(appointmentTime, averageVisitTime),
-      driveTime: visit.driveTimeToNext || minDriveTime,
-      isScheduled: true,
-    };
-  }
+//     const appointmentTime = parseTimeToDate(visit.scheduledTime);
+//     schedule[index] = {
+//       pub: visit.pub,
+//       arrival: appointmentTime,
+//       departure: addMinutes(appointmentTime, averageVisitTime),
+//       driveTime: visit.driveTimeToNext || minDriveTime,
+//       isScheduled: true,
+//     };
+//   }
 
-  // Second pass: Schedule unscheduled and flexible visits in available time slots
-  let currentTime = dayStart;
-  for (let i = 0; i < schedule.length; i++) {
-    if (schedule[i].isScheduled) {
-      // For scheduled visits, update currentTime to after this visit
-      currentTime = addMinutes(
-        schedule[i].departure,
-        schedule[i].driveTime || minDriveTime
-      );
-      continue;
-    }
+//   // Second pass: Schedule unscheduled and flexible visits in available time slots
+//   let currentTime = dayStart;
+//   for (let i = 0; i < schedule.length; i++) {
+//     if (schedule[i].isScheduled) {
+//       // For scheduled visits, update currentTime to after this visit
+//       currentTime = addMinutes(
+//         schedule[i].departure,
+//         schedule[i].driveTime || minDriveTime
+//       );
+//       continue;
+//     }
 
-    // Find the next scheduled visit (if any)
-    const nextScheduledIndex = schedule.findIndex(
-      (s, idx) => idx > i && s.isScheduled
-    );
-    const nextScheduledTime =
-      nextScheduledIndex !== -1
-        ? schedule[nextScheduledIndex].arrival
-        : desiredEnd;
+//     // Find the next scheduled visit (if any)
+//     const nextScheduledIndex = schedule.findIndex(
+//       (s, idx) => idx > i && s.isScheduled
+//     );
+//     const nextScheduledTime =
+//       nextScheduledIndex !== -1
+//         ? schedule[nextScheduledIndex].arrival
+//         : desiredEnd;
 
-    // Calculate available time window
-    const availableMinutes = differenceInMinutes(
-      nextScheduledTime,
-      currentTime
-    );
-    const neededMinutes =
-      averageVisitTime + (schedule[i].driveTime || minDriveTime);
+//     // Calculate available time window
+//     const availableMinutes = differenceInMinutes(
+//       nextScheduledTime,
+//       currentTime
+//     );
+//     const neededMinutes =
+//       averageVisitTime + (schedule[i].driveTime || minDriveTime);
 
-    if (availableMinutes >= neededMinutes) {
-      // Schedule visit in the available window
-      schedule[i].arrival = currentTime;
-      schedule[i].departure = addMinutes(currentTime, averageVisitTime);
-      currentTime = addMinutes(currentTime, neededMinutes);
-    } else {
-      // Not enough time before next scheduled visit, try after it
-      if (nextScheduledIndex !== -1) {
-        currentTime = addMinutes(
-          schedule[nextScheduledIndex].departure,
-          schedule[nextScheduledIndex].driveTime || minDriveTime
-        );
-        i--; // Retry scheduling this visit in the next available slot
-      }
-    }
+//     if (availableMinutes >= neededMinutes) {
+//       // Schedule visit in the available window
+//       schedule[i].arrival = currentTime;
+//       schedule[i].departure = addMinutes(currentTime, averageVisitTime);
+//       currentTime = addMinutes(currentTime, neededMinutes);
+//     } else {
+//       // Not enough time before next scheduled visit, try after it
+//       if (nextScheduledIndex !== -1) {
+//         currentTime = addMinutes(
+//           schedule[nextScheduledIndex].departure,
+//           schedule[nextScheduledIndex].driveTime || minDriveTime
+//         );
+//         i--; // Retry scheduling this visit in the next available slot
+//         }
+//       }
 
-    // If we can't schedule within business hours, show warning
-    if (currentTime > desiredEnd) {
-      console.warn(
-        `Warning: Visit to ${schedule[i].pub} may be scheduled outside business hours`
-      );
-    }
-  }
+//       // If we can't schedule within business hours, show warning
+//       if (currentTime > desiredEnd) {
+//         console.warn(
+//           `Warning: Visit to ${schedule[i].pub} may be scheduled outside business hours`
+//         );
+//       }
+//     }
 
-  // Final pass: Ensure all visits have calculated times
-  for (let i = 0; i < schedule.length; i++) {
-    if (!schedule[i].arrival || !schedule[i].departure) {
-      const prevVisit = schedule[i - 1];
-      const startTime = prevVisit
-        ? addMinutes(prevVisit.departure, prevVisit.driveTime || minDriveTime)
-        : dayStart;
+//     // Final pass: Ensure all visits have calculated times
+//     for (let i = 0; i < schedule.length; i++) {
+//       if (!schedule[i].arrival || !schedule[i].departure) {
+//         const prevVisit = schedule[i - 1];
+//         const startTime = prevVisit
+//           ? addMinutes(prevVisit.departure, prevVisit.driveTime || minDriveTime)
+//           : dayStart;
 
-      schedule[i].arrival = startTime;
-      schedule[i].departure = addMinutes(startTime, averageVisitTime);
-    }
-  }
+//         schedule[i].arrival = startTime;
+//         schedule[i].departure = addMinutes(startTime, averageVisitTime);
+//       }
+//     }
 
-  console.log(
-    "Calculated schedule:",
-    schedule.map((s) => ({
-      pub: s.pub,
-      arrival: format(s.arrival, "HH:mm"),
-      isScheduled: s.isScheduled,
-      scheduledTime: sortedVisits.find((v) => v.pub === s.pub)?.scheduledTime,
-    }))
-  );
+//     console.log(
+//       "Calculated schedule:",
+//       schedule.map((s) => ({
+//         pub: s.pub,
+//         arrival: format(s.arrival, "HH:mm"),
+//         isScheduled: s.isScheduled,
+//         scheduledTime: sortedVisits.find((v) => v.pub === s.pub)?.scheduledTime,
+//       }))
+//     );
 
-  // return { schedule };
+//     // return { schedule };
 // };
 
 const isOutsideBusinessHours = (time: Date | string): boolean => {
