@@ -125,6 +125,3 @@ const App: React.FC = () => {
 };
 
 export default App;
-
-// Intentional type error for testing pre-push hook
-const testError: string = 123;

@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "typecheck": "tsc --build --noEmit",
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
     "prepush": "npm run typecheck"
   },
   "dependencies": {

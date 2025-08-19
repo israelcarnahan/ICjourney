@@ -9,7 +9,6 @@ import ScheduleDisplay from "../components/ScheduleDisplay";
 import UnscheduledPubsPanel from "../components/UnscheduledPubsPanel";
 import RepStatsPanel from "../components/RepStatsPanel";
 import FileTypeDialog from "../components/FileTypeDialog";
-import EnhancementSelector from "../components/EnhancementSelector";
 import VehicleSelector from "../components/VehicleSelector";
 import {
   usePubData,
@@ -20,6 +19,8 @@ import {
   ListType,
 } from "../context/PubDataContext";
 import { devLog } from "../utils/devLog";
+import { toArray } from "../utils/typeGuards";
+import { toScheduleDays } from "../utils/scheduleMappers";
 
 interface ScheduleVisit extends ExtendedPub {
   Priority: string;
@@ -30,7 +31,7 @@ interface ScheduleVisit extends ExtendedPub {
 const PlannerDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [unscheduledPubs, setUnscheduledPubs] = useState<ExtendedPub[]>([]);
+  const [_unscheduledPubs, setUnscheduledPubs] = useState<ExtendedPub[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<FileMetadata[]>([]);
   const [selectedPub, setSelectedPub] = useState<ExtendedPub | null>(null);
@@ -125,7 +126,7 @@ const PlannerDashboard: React.FC = () => {
 
     // Get all pubs with their respective deadlines from file metadata
     const repslyWins = userFiles.pubs.filter((pub) => pub.listType === "wins");
-    const repslyDeadlines = new Map(
+    const _repslyDeadlines = new Map(
       (userFiles.files?.filter((f) => f.type === "wins") || []).map((f) => [
         f.fileId,
         f.deadline,
@@ -180,7 +181,7 @@ const PlannerDashboard: React.FC = () => {
     );
 
     devLog("Generated schedule:", newSchedule);
-    setSchedule(newSchedule);
+    setSchedule(toScheduleDays(newSchedule));
     return newSchedule;
   };
 
@@ -205,7 +206,7 @@ const PlannerDashboard: React.FC = () => {
 
     // Validate pub data
     if (
-      schedule.some((day) => day.visits.some((visit) => visit.pub === pub.pub))
+      schedule.some((day) => toArray(day.visits).some((visit) => visit.pub === pub.pub))
     ) {
       console.warn("Pub already scheduled:", pub.pub);
       return;
@@ -219,7 +220,7 @@ const PlannerDashboard: React.FC = () => {
     // Find the selected day or first day with available space
     const dayIndex = selectedDay
       ? schedule.findIndex((day) => day.date === selectedDay)
-      : schedule.findIndex((day) => day.visits.length < visitsPerDay);
+      : schedule.findIndex((day) => toArray(day.visits).length < visitsPerDay);
 
     if (dayIndex === -1) {
       console.warn("No days with available space");
@@ -230,7 +231,7 @@ const PlannerDashboard: React.FC = () => {
     const dayWithSpace = schedule[dayIndex];
 
     // Check if day is already at capacity
-    if (dayWithSpace.visits.length >= visitsPerDay) {
+    if (toArray(dayWithSpace.visits).length >= visitsPerDay) {
       console.warn("Day is at capacity:", dayWithSpace.date);
       setError(
         `Cannot add more visits to ${dayWithSpace.date} - day is at capacity`
@@ -238,7 +239,7 @@ const PlannerDashboard: React.FC = () => {
       return;
     }
 
-    const visits = [...dayWithSpace.visits];
+    const visits = [...toArray(dayWithSpace.visits)];
     const lastVisit = visits[visits.length - 1];
     let totalMileage = dayWithSpace.totalMileage || 0;
     let totalDriveTime = dayWithSpace.totalDriveTime || 0;
@@ -281,7 +282,7 @@ const PlannerDashboard: React.FC = () => {
       };
     });
 
-    setSelectedDay(dayWithSpace.date);
+    setSelectedDay(dayWithSpace.date ?? null);
     setSchedule(updatedSchedule);
 
     // Return true to indicate success
@@ -599,7 +600,7 @@ const PlannerDashboard: React.FC = () => {
   };
 
   // Update the files array in userFiles
-  const updateUserFiles = (newFiles: FileMetadata[]) => {
+  const _updateUserFiles = (newFiles: FileMetadata[]) => {
     setUserFiles((prev: UserFiles) => ({
       ...prev,
       files: newFiles,
@@ -990,6 +991,3 @@ const PlannerDashboard: React.FC = () => {
 };
 
 export default PlannerDashboard;
-
-// Intentional type error for testing pre-push hook
-const testError: string = 123;
