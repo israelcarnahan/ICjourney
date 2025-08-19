@@ -8,6 +8,10 @@
     background-attachment: fixed;
   }
 
+  .backdrop-blur-card { 
+    backdrop-filter: blur(6px); 
+  }
+
   .animated-border {
     background: linear-gradient(
       90deg,
