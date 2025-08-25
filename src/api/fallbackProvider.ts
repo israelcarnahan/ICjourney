@@ -34,6 +34,8 @@ export class FallbackProvider implements BusinessDataProvider {
     const name = seed.name ?? "";
     const postcode = seed.postcode ?? null;
 
+    console.debug('[provider] fallback running for', seed?.name, seed?.postcode);
+
     // 1) start from seed (which includes merged "Your Lists" fields)
     const base: BusinessData = {
       name,

@@ -34,6 +34,7 @@ export class PostcodesProvider implements BusinessDataProvider {
         out.extras["longitude"] ??= result.longitude;
         out.extras["postcode_area"] ??= result.codes?.admin_district;
         out.extras["postcode_region"] ??= result.codes?.admin_county;
+        console.debug('[provider] postcodes result', data);
       }
     } catch {}
     return out;

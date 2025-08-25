@@ -120,10 +120,9 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
 
   // Debug log when dialog opens
   React.useEffect(() => {
-    if (isOpen) {
-      console.debug('[dialog-open] fetching business data for', seed);
-    }
-  }, [isOpen, seed]);
+    if (!isOpen) return;
+    console.debug('[dialog-open] fetching business data for', { name: visit?.pub, postcode: visit?.zip });
+  }, [isOpen, visit?.pub, visit?.zip]);
 
   const formatTimeDisplay = (timeStr: string | undefined): string => {
     if (!timeStr) return "Not scheduled";
@@ -314,13 +313,17 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                  <div className="mt-2 space-y-1 text-xs text-eggplant-300">
                    {(() => {
                      const prov = businessData.meta?.provenance || {};
-                     const showPhone = prov.phone === 'google' || prov.phone === 'user';
-                     const showSite = prov.website === 'google' || prov.website === 'user';
-                     const showHours = prov.openingHours === 'google' || prov.openingHours === 'user';
+                     const showPhone = !!businessData?.phone && (prov.phone === 'google' || prov.phone === 'user');
+                     const website = businessData?.extras?.website as string | undefined;
+                     const showSite = !!website && (prov.website === 'google' || prov.website === 'user');
+                     const hoursText = businessData?.extras?.google_opening_hours_text as string[] | undefined;
+                     const showHours = Array.isArray(hoursText) && hoursText.length && (prov.openingHours === 'google' || prov.openingHours === 'user');
+                     const rating = businessData?.extras?.google_rating as number | undefined;
+                     const ratingCount = businessData?.extras?.google_ratings_count as number | undefined;
                      
                      return (
                        <>
-                         {businessData.phone && showPhone && (
+                         {showPhone && (
                            <div>
                              <a
                                href={`tel:${businessData.phone}`}
@@ -340,10 +343,10 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                              </a>
                            </div>
                          )}
-                         {(businessData.extras?.website as string) && showSite && (
+                         {showSite && (
                            <div>
                              <a
-                               href={businessData.extras.website as string}
+                               href={website}
                                target="_blank"
                                rel="noopener noreferrer"
                                className="hover:text-neon-green transition-colors flex items-center gap-1"
@@ -353,13 +356,13 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                              </a>
                            </div>
                          )}
-                         {(businessData.extras?.google_rating as number) && (
+                         {rating && (
                            <div className="flex items-center gap-1">
                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                             <span>{String(businessData.extras.google_rating)}</span>
-                             {(businessData.extras?.google_ratings_count as number) && (
+                             <span>{String(rating)}</span>
+                             {ratingCount && (
                                <span className="text-eggplant-400">
-                                 ({String(businessData.extras.google_ratings_count)})
+                                 ({String(ratingCount)})
                                </span>
                              )}
                            </div>
@@ -378,13 +381,13 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                                  </span>
                                </div>
                              )}
-                             {(businessData.extras?.google_opening_hours_text as string[]) && (
+                             {hoursText && (
                                <details className="mt-2">
                                  <summary className="cursor-pointer text-xs text-eggplant-400 hover:text-eggplant-200">
                                    Detailed hours
                                  </summary>
                                  <div className="mt-1 pl-2 text-xs text-eggplant-300">
-                                   {(businessData.extras.google_opening_hours_text as string[]).map((day, i) => (
+                                   {hoursText.map((day, i) => (
                                      <div key={i}>{day}</div>
                                    ))}
                                  </div>
@@ -452,7 +455,8 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                 </p>
                                  {!isAnytime && selectedTime && (() => {
                    const prov = businessData?.meta?.provenance || {};
-                   const showHours = prov.openingHours === 'google' || prov.openingHours === 'user';
+                   const hoursText = businessData?.extras?.google_opening_hours_text as string[] | undefined;
+                   const showHours = Array.isArray(hoursText) && hoursText.length && (prov.openingHours === 'google' || prov.openingHours === 'user');
                    return showHours;
                  })() && (
                    <p

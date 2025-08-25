@@ -7,53 +7,61 @@ export class GooglePlacesProvider implements BusinessDataProvider {
     const postcode = (seed.postcode || '').trim();
     if (!name) return out;
 
-    console.debug('[provider] google running for', seed?.name, seed?.postcode);
-
     try {
-      // 1) Find
       const q = [name, postcode].filter(Boolean).join(', ');
-      console.info('[places] query:', q); // dev-only
+      console.debug('[provider] google running for', { name, postcode, q });
+
+      // 1) FIND
       const findRes = await fetch(`/api/places/find?q=${encodeURIComponent(q)}`);
-      if (!findRes.ok) return out;
+      if (!findRes.ok) {
+        console.debug('[places] find failed', findRes.status);
+        return out;
+      }
       const find = await findRes.json();
       const place = find?.places?.[0];
+      console.debug('[places] find result', place);
       if (!place?.id) return out;
 
-      // 2) Details
+      // 2) DETAILS (v1, via proxy)
+      console.debug('[places] details → id', place.id);
       const detRes = await fetch(`/api/places/details?id=${encodeURIComponent(place.id)}`);
-      if (!detRes.ok) return out;
-      const det = await detRes.json();
-      const r = det || {};
+      if (!detRes.ok) {
+        console.debug('[places] details failed', detRes.status);
+        return out;
+      }
+      const r = await detRes.json();
+      console.debug('[places] details payload', r);
 
-      // Map: v1 fields
-      // phone
+      // Map fields — only fill if empty; record provenance
+      (out as any).meta ||= {}; (out as any).meta.provenance ||= {};
+      const prov = (out as any).meta.provenance;
+
+      // Phone
       if (!out.phone && r.formattedPhoneNumber) {
         out.phone = r.formattedPhoneNumber;
-        (out as any).meta ||= {}; (out as any).meta.provenance ||= {};
-        (out as any).meta.provenance.phone = 'google';
-        (out as any).meta.provenance.google = true;
+        prov.phone = 'google';
+        prov.google = true;
       }
 
-      // website
-      if (r.websiteUri) {
+      // Website
+      const website = r.websiteUri;
+      if (website) {
         out.extras ||= {};
-        if (!out.extras['website']) out.extras['website'] = r.websiteUri;
-        (out as any).meta ||= {}; (out as any).meta.provenance ||= {};
-        (out as any).meta.provenance.website = 'google';
-        (out as any).meta.provenance.google = true;
+        if (!out.extras['website']) out.extras['website'] = website;
+        prov.website = 'google';
+        prov.google = true;
       }
 
-      // opening hours (text only for now)
+      // Opening hours (keep the text; do NOT fabricate)
       const weekday = r.currentOpeningHours?.weekdayDescriptions;
-      if (!out.openingHours && Array.isArray(weekday) && weekday.length) {
+      if (Array.isArray(weekday) && weekday.length) {
         out.extras ||= {};
-        out.extras['google_opening_hours_text'] = weekday; // keep text
-        (out as any).meta ||= {}; (out as any).meta.provenance ||= {};
-        (out as any).meta.provenance.openingHours = 'google';
-        (out as any).meta.provenance.google = true;
+        out.extras['google_opening_hours_text'] = weekday;
+        prov.openingHours = 'google';
+        prov.google = true;
       }
 
-      // rating
+      // Rating
       if (r.rating != null) {
         out.extras ||= {};
         out.extras['google_rating'] = r.rating;
@@ -63,17 +71,18 @@ export class GooglePlacesProvider implements BusinessDataProvider {
         out.extras['google_ratings_count'] = r.userRatingCount;
       }
 
-      // geometry (preferred lat/lng)
+      // Coordinates (prefer precise)
       const lat = r.location?.latitude;
       const lng = r.location?.longitude;
       if (lat != null && lng != null) {
         out.extras ||= {};
         if (out.extras['lat'] == null) out.extras['lat'] = lat;
         if (out.extras['lng'] == null) out.extras['lng'] = lng;
-        (out as any).meta ||= {}; (out as any).meta.provenance ||= {};
-        (out as any).meta.provenance.google = true;
+        prov.google = true;
       }
-    } catch { /* swallow to keep UI smooth */ }
+    } catch (e) {
+      console.debug('[places] provider error', e);
+    }
 
     return out;
   }

@@ -22,6 +22,8 @@ export class NominatimProvider implements BusinessDataProvider {
     const name = seed.name?.trim();
     if (!name) return out;
 
+    console.debug('[provider] nominatim running for', seed?.name, seed?.postcode);
+
     try {
       const u = new URL(API_CFG.endpoints.nominatim);
       u.searchParams.set("q", buildQuery(name, seed.postcode ?? undefined, seed.town ?? undefined));
