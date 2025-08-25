@@ -19,6 +19,28 @@ export interface Visit {
   optimizedTime?: string;
   visitNotes?: string;
   uploadTime?: number;
+  
+  // Lineage fields (optional for backward compatibility)
+  sources?: Array<{
+    sourceId: string;
+    fileId: string;
+    fileName: string;
+    rowIndex: number;
+    schedulingMode?: 'priority' | 'deadline' | 'followup';
+    priority?: number;
+    deadline?: string;
+    followUpDays?: number;
+    mapped: Record<string, string>;
+    extras: Record<string, string>;
+  }>;
+  fieldValuesBySource?: Record<string, Array<{ sourceId: string; value: string }>>;
+  mergedExtras?: Record<string, Array<{ sourceId: string; value: string }>>;
+  effectivePlan?: {
+    deadline?: string;
+    priorityLevel?: number;
+    followUpDays?: number;
+    listNames: string[];
+  };
 }
 
 export interface BusinessHours {

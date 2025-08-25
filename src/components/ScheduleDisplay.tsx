@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Calendar,
   MapPin,
@@ -8,22 +8,11 @@ import {
   ChevronUp,
   AlertTriangle,
   Trash2,
-  Car,
-  Anchor,
-  Plane,
-  Train,
-  Bus,
-  Bike,
-  Truck,
-  LucideIcon,
   Users,
   RefreshCw,
 } from "lucide-react";
 import {
   usePubData,
-  VehicleType,
-  VehicleColor,
-  Pub,
 } from "../context/PubDataContext";
 import * as XLSX from "xlsx-js-style";
 import {
@@ -31,7 +20,6 @@ import {
   parseISO,
   isValid,
   addMinutes,
-  differenceInMinutes,
   formatDuration,
   Duration,
 } from "date-fns";
@@ -47,53 +35,56 @@ import {
 import RouteMap from "./RouteMap";
 import VisitScheduler from "./VisitScheduler";
 import DriveTimeBar from "./DriveTimeBar";
+import { SourceChips } from "./SourceChips";
 import {
   Visit,
   ScheduleDay,
   OpeningHoursMap,
-  ScheduleEntry,
 } from "../types";
 
-// Custom icon for fairy
-const FairyIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 2l1.5 5h5l-4 3 1.5 5-4-3-4 3 1.5-5-4-3h5z" />
-    <path d="M12 16v6" />
-    <path d="M8 14l-4 4" />
-    <path d="M16 14l4 4" />
-  </svg>
-);
 
-// Custom icon for horse
-const HorseIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M4 16v4h4v-4" />
-    <path d="M4 20h16" />
-    <path d="M16 16v4h4v-4" />
-    <path d="M10 12c0-2.8 2.2-5 5-5s5 2.2 5 5" />
-    <path d="M7 12c0-4.4 3.6-8 8-8s8 3.6 8 8" />
-  </svg>
-);
+
+// Helper function to get proper priority display
+const getPriorityDisplay = (visit: Visit) => {
+  // Check if we have effective plan with priority info
+  if (visit.effectivePlan) {
+    if (visit.effectivePlan.deadline) {
+      return `Visit by ${visit.effectivePlan.deadline}`;
+    }
+    if (visit.effectivePlan.priorityLevel) {
+      return `Priority ${visit.effectivePlan.priorityLevel}`;
+    }
+    if (visit.effectivePlan.followUpDays) {
+      return `Follow-up ${visit.effectivePlan.followUpDays}d`;
+    }
+  }
+  
+  // Fallback to legacy priority field
+  if (visit.priorityLevel) {
+    return `Priority ${visit.priorityLevel}`;
+  }
+  if (visit.deadline) {
+    return `Visit by ${visit.deadline}`;
+  }
+  if (visit.followUpDays) {
+    return `Follow-up ${visit.followUpDays}d`;
+  }
+  
+  // Default fallback
+  return visit.Priority || "No priority";
+};
+
+// Helper function to get RTM display
+const getRTMDisplay = (visit: Visit) => {
+  // Check if we have field values by source
+  if (visit.fieldValuesBySource?.rtm && visit.fieldValuesBySource.rtm.length > 0) {
+    // Show the first RTM value (could be enhanced to show all)
+    return visit.fieldValuesBySource.rtm[0].value;
+  }
+  
+  // Fallback to direct RTM field
+  return visit.rtm || "—";
+};
 
 // const vehicleIcons: Record<VehicleType, LucideIcon | React.FC<any>> = {
 //   car: Car,
@@ -116,6 +107,30 @@ const HorseIcon = () => (
 // };
 
 const getPriorityStyles = (priority: string): string => {
+  // Handle new priority display format
+  if (priority.startsWith("Priority ")) {
+    const level = priority.split(" ")[1];
+    switch (level) {
+      case "1":
+        return "bg-red-900/20 text-red-200 border border-red-700/50";
+      case "2":
+        return "bg-orange-900/20 text-orange-200 border border-orange-700/50";
+      case "3":
+        return "bg-yellow-900/20 text-yellow-200 border border-yellow-700/50";
+      default:
+        return "bg-blue-900/20 text-blue-200 border border-blue-700/50";
+    }
+  }
+  
+  if (priority.startsWith("Visit by ")) {
+    return "bg-green-900/20 text-green-200 border border-green-700/50";
+  }
+  
+  if (priority.startsWith("Follow-up ")) {
+    return "bg-purple-900/20 text-purple-200 border border-purple-700/50";
+  }
+  
+  // Handle legacy priority values
   switch (priority) {
     case "RepslyWin":
       return "bg-purple-900/20 text-purple-200 border border-purple-700/50";
@@ -1143,6 +1158,12 @@ const ScheduleDisplay: React.FC = () => {
                       Priority
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-eggplant-100 uppercase tracking-wider">
+                      Lists
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-eggplant-100 uppercase tracking-wider">
+                      RTM
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-eggplant-100 uppercase tracking-wider">
                       Drive Time
                     </th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-eggplant-100 uppercase tracking-wider">
@@ -1272,11 +1293,17 @@ const ScheduleDisplay: React.FC = () => {
                         <td className="px-4 py-2 whitespace-nowrap">
                           <span
                             className={`px-2 py-1 text-xs rounded-full ${getPriorityStyles(
-                              visit.Priority || ""
+                              getPriorityDisplay(visit)
                             )}`}
                           >
-                            {visit.Priority}
+                            {getPriorityDisplay(visit)}
                           </span>
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          <SourceChips pub={visit} className="text-xs" />
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
+                          {getRTMDisplay(visit)}
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
                           {visit.driveTimeToNext
