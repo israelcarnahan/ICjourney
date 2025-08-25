@@ -44,6 +44,33 @@ export interface Pub {
   scheduledTime?: string;
   visitNotes?: string;
   Priority?: string;
+  
+  // Lineage and effective plan fields (optional for backward compatibility)
+  sources?: SourceRef[];
+  fieldValuesBySource?: Record<string, Array<{ sourceId: string; value: string }>>;
+  mergedExtras?: Record<string, Array<{ sourceId: string; value: string }>>;
+  effectivePlan?: EffectivePlan;
+}
+
+// New types for lineage tracking
+export interface SourceRef {
+  sourceId: string;
+  fileId: string;
+  fileName: string;
+  rowIndex: number;
+  schedulingMode?: 'priority' | 'deadline' | 'followup';
+  priority?: number;
+  deadline?: string;
+  followUpDays?: number;
+  mapped: Record<string, string>; // Original mapped values
+  extras: Record<string, string>; // Any additional fields
+}
+
+export interface EffectivePlan {
+  deadline?: string;
+  priorityLevel?: number;
+  followUpDays?: number;
+  listNames: string[];
 }
 
 export interface BusinessHours {

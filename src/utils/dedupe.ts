@@ -290,7 +290,8 @@ export function convertToSuggestions(
   candidates: DedupeCandidate[],
   existingPubs: Pub[],
   incomingPubs: Pub[],
-  fileName: string
+  fileName: string,
+  rowIndices?: Record<string, number>
 ): Suggestion[] {
   return candidates.map(candidate => {
     const existingPub = existingPubs.find(p => p.uuid === candidate.existing.uuid);
@@ -331,7 +332,7 @@ export function convertToSuggestions(
         postcode: incomingPub.postcode,
         extras: {},
         fileName,
-        rowIndex: 0 // We'll need to pass this from the caller
+        rowIndex: rowIndices?.[incomingPub.uuid] || 0
       },
       nameSim: candidate.nameSim,
       score: candidate.score,

@@ -16,6 +16,7 @@ import type { ColumnMapping, HeaderSignature, MappedRow } from "../types/import"
 import { devLog } from "../utils/devLog";
 import { suggest, convertToSuggestions } from "../utils/dedupe";
 import { DedupReviewDialog, type Suggestion } from "./DedupReviewDialog";
+import { mergeIntoCanonical } from "../utils/lineageMerge";
 
 // Minimal row returned from Excel (no ids/metadata yet)
 type ImportedRow = {
@@ -67,6 +68,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   const [pendingPubs, setPendingPubs] = useState<Pub[]>([]);
   const [pendingFile, setPendingFile] = useState<any>(null);
   const [hasPendingDedup, setHasPendingDedup] = useState(false);
+  const [pendingRowIndices, setPendingRowIndices] = useState<Record<string, number>>({});
 
   // reflect prop
   useEffect(() => setIsFileLoaded(isLoaded), [isLoaded]);
@@ -323,29 +325,73 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   });
 
   const handleDedupConfirm = (decisions: Array<{ id: string; action: 'merge' | 'skip' }>) => {
-    // Mark merged pubs with canonicalId
-    const mergeDecisions = decisions.filter(d => d.action === 'merge');
-    const updatedPubs = pendingPubs.map(pub => {
-      const decision = mergeDecisions.find(d => {
-        const [existingId] = d.id.split('::');
-        return pub.uuid === existingId;
+    setUserFiles((prev) => {
+      const updatedPubs = [...prev.pubs];
+      const newPubs: Pub[] = [];
+      
+      // Process each decision
+      decisions.forEach(decision => {
+        const [existingId, incomingId] = decision.id.split('::');
+        
+        if (decision.action === 'merge') {
+          // Find the canonical pub and incoming pub
+          const canonicalIndex = updatedPubs.findIndex(p => p.uuid === existingId);
+          const incomingPub = pendingPubs.find(p => p.uuid === incomingId);
+          
+          if (canonicalIndex !== -1 && incomingPub) {
+            // Get the original row data for mapping
+            const rowIndex = pendingRowIndices[incomingId] || 0;
+            const originalRow = processedPubs[rowIndex];
+            
+            // Build mapped values and extras
+            const mappedValues: Record<string, string> = {
+              pub: incomingPub.pub,
+              zip: incomingPub.zip,
+              rtm: incomingPub.rtm || '',
+              landlord: incomingPub.landlord || '',
+              notes: incomingPub.notes || '',
+            };
+            
+            const extras: Record<string, string> = {};
+            if (originalRow) {
+              Object.entries(originalRow).forEach(([key, value]) => {
+                if (value !== null && value !== undefined) {
+                  extras[key] = String(value);
+                }
+              });
+            }
+            
+            // Merge into canonical using append-only lineage
+            const updatedCanonical = mergeIntoCanonical(
+              updatedPubs[canonicalIndex],
+              incomingPub,
+              rowIndex,
+              mappedValues,
+              extras
+            );
+            
+            updatedPubs[canonicalIndex] = updatedCanonical;
+          }
+        } else {
+          // Skip - add as new pub
+          const incomingPub = pendingPubs.find(p => p.uuid === incomingId);
+          if (incomingPub) {
+            newPubs.push(incomingPub);
+          }
+        }
       });
-      if (decision) {
-        return { ...pub, canonicalId: decision.id.split('::')[0] };
-      }
-      return pub;
+      
+      return {
+        files: [...prev.files, pendingFile],
+        pubs: [...updatedPubs, ...newPubs],
+      };
     });
-
-    // Add the processed pubs to state
-    setUserFiles((prev) => ({
-      files: [...prev.files, pendingFile],
-      pubs: [...prev.pubs, ...updatedPubs],
-    }));
 
     // Reset state
     setShowDedupDialog(false);
     setPendingPubs([]);
     setPendingFile(null);
+    setPendingRowIndices({});
     setDedupSuggestions({ autoMerge: [], needsReview: [] });
     setHasPendingDedup(false);
 
@@ -431,12 +477,19 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                  const { autoMerge, needsReview } = suggest(existingPubs, incomingPubs);
          
          if (autoMerge.length > 0 || needsReview.length > 0) {
+           // Build row index mapping
+           const rowIndices: Record<string, number> = {};
+           enriched.forEach((pub, index) => {
+             rowIndices[pub.uuid] = index;
+           });
+           
            // Convert to suggestions format
-           const autoMergeSuggestions = convertToSuggestions(autoMerge, existingPubs, incomingPubs, currentFileName);
-           const needsReviewSuggestions = convertToSuggestions(needsReview, existingPubs, incomingPubs, currentFileName);
+           const autoMergeSuggestions = convertToSuggestions(autoMerge, existingPubs, incomingPubs, currentFileName, rowIndices);
+           const needsReviewSuggestions = convertToSuggestions(needsReview, existingPubs, incomingPubs, currentFileName, rowIndices);
            
            // Store pending data and show compact summary
            setPendingPubs(enriched);
+           setPendingRowIndices(rowIndices);
            setPendingFile({
              fileId,
              fileName: currentFileName,
@@ -654,6 +707,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
              setShowDedupDialog(false);
              setPendingPubs([]);
              setPendingFile(null);
+             setPendingRowIndices({});
              setDedupSuggestions({ autoMerge: [], needsReview: [] });
              setHasPendingDedup(false);
              setShowTypeDialog(false);
