@@ -36,6 +36,7 @@ import RouteMap from "./RouteMap";
 import VisitScheduler from "./VisitScheduler";
 import DriveTimeBar from "./DriveTimeBar";
 import { SourceChips } from "./SourceChips";
+import { OriginalValues } from "./OriginalValues";
 import {
   Visit,
   ScheduleDay,
@@ -433,6 +434,7 @@ const ScheduleDisplay: React.FC = () => {
   const [desiredEndTimes, setDesiredEndTimes] = useState<
     Record<string, string>
   >({});
+  const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
   const [totalDriveTime] = useState<Duration>({ minutes: 480 }); // 8 hours
 
   // Convert context schedule to our local type
@@ -1284,7 +1286,12 @@ const ScheduleDisplay: React.FC = () => {
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
                           <div className="flex items-center justify-between">
-                            <span>{visit.pub}</span>
+                            <button
+                              onClick={() => setSelectedVisit(visit)}
+                              className="text-left hover:text-neon-purple transition-colors cursor-pointer"
+                            >
+                              {visit.pub}
+                            </button>
                           </div>
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
@@ -1401,6 +1408,66 @@ const ScheduleDisplay: React.FC = () => {
           Export Excel
         </button>
       </div>
+      
+      {/* Visit Detail Dialog */}
+      {selectedVisit && (
+        <div className="fixed inset-0 z-[100000] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+          <div className="w-[min(800px,calc(100vw-32px))] max-h-[90vh] rounded-2xl overflow-hidden bg-eggplant-900 border border-eggplant-700/60 shadow-2xl">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-eggplant-900 via-eggplant-800 to-neon-purple text-white border-b border-eggplant-700/50 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Visit Details</h2>
+                <button
+                  onClick={() => setSelectedVisit(null)}
+                  className="p-2 hover:bg-eggplant-800/50 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="space-y-6">
+                {/* Basic Info */}
+                <div>
+                  <h3 className="text-lg font-medium text-eggplant-100 mb-3">Basic Information</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-eggplant-300">Pub Name:</span>
+                      <div className="text-eggplant-100 font-medium">{selectedVisit.pub}</div>
+                    </div>
+                    <div>
+                      <span className="text-eggplant-300">Postcode:</span>
+                      <div className="text-eggplant-100 font-medium">{selectedVisit.zip}</div>
+                    </div>
+                    <div>
+                      <span className="text-eggplant-300">Priority:</span>
+                      <div className="text-eggplant-100 font-medium">{getPriorityDisplay(selectedVisit)}</div>
+                    </div>
+                    <div>
+                      <span className="text-eggplant-300">RTM:</span>
+                      <div className="text-eggplant-100 font-medium">{getRTMDisplay(selectedVisit)}</div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Source Lists */}
+                <div>
+                  <h3 className="text-lg font-medium text-eggplant-100 mb-3">Source Lists</h3>
+                  <SourceChips pub={selectedVisit} />
+                </div>
+                
+                {/* Original Values */}
+                <div>
+                  <h3 className="text-lg font-medium text-eggplant-100 mb-3">Original Values</h3>
+                  <OriginalValues pub={selectedVisit} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
