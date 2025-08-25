@@ -4,6 +4,7 @@ import { fallbackProvider } from "./fallbackProvider";
 import { nominatimProvider } from "./nominatimProvider";
 import { postcodesProvider } from "./postcodesProvider";
 import { googlePlacesProvider } from "./googlePlacesProvider";
+import { FLAGS } from "../config/flags";
 
 /** simple in-memory cache per session; later you can persist to localStorage */
 const cache = new Map<string, BusinessData>();
@@ -18,9 +19,14 @@ export function useBusinessData(pubId: string, seed: Partial<BusinessData>, chai
     async function run() {
       // serve from cache fast
       if (cache.has(pubId)) { setData(cache.get(pubId)!); }
+      
+      // Log provider banner
+      console.debug('[providers] order Postcodes → Google → Nominatim → Fallback', FLAGS);
+      
       // run providers in order
       let current: Partial<BusinessData> = { ...seed };
       for (const p of providers) {
+        console.debug(`[provider] ${p.constructor.name} running for`, seed?.name, seed?.postcode);
         const next = await p.get(pubId, current);
         current = { ...current, ...mergePreferNonEmpty(current, next) };
       }

@@ -118,6 +118,9 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
   const seed = seedFromPub(visit);
   const businessData = useBusinessData(visit.pub || visit.uuid || 'unknown', seed);
 
+  // Description ID for accessibility
+  const descId = 'visit-desc';
+
   // Debug log when dialog opens
   React.useEffect(() => {
     if (!isOpen) return;
@@ -280,14 +283,14 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
       </Dialog.Trigger>
 
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
-                 <Dialog.Content
-           className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md max-h-[90vh] animated-border bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 rounded-lg overflow-hidden flex flex-col"
-           aria-describedby="visit-desc"
-         >
-           <Dialog.Description id="visit-desc" className="sr-only">
-             Schedule a visit and add optional notes.
-           </Dialog.Description>
+                 <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
+                  <Dialog.Content
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md max-h-[90vh] animated-border bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 rounded-lg overflow-hidden flex flex-col"
+            aria-describedby={descId}
+          >
+            <Dialog.Description id={descId}>
+              Choose a time for this visit. We'll validate against business hours when available.
+            </Dialog.Description>
           <div className="flex justify-between items-center p-6 pb-4">
                          <Dialog.Title className="text-xl font-bold text-eggplant-100">
                {visit.scheduledTime ? "Edit Scheduled Visit" : "Schedule Visit"}

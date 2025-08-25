@@ -9,10 +9,11 @@ export class GooglePlacesProvider implements BusinessDataProvider {
 
     try {
       const q = [name, postcode].filter(Boolean).join(', ');
-      console.debug('[provider] google running for', { name, postcode, q });
+      console.debug('[places] query:', q);
 
       // 1) FIND
       const findRes = await fetch(`/api/places/find?q=${encodeURIComponent(q)}`);
+      console.debug('[places] find result', findRes);
       if (!findRes.ok) {
         console.debug('[places] find failed', findRes.status);
         return out;
@@ -23,14 +24,14 @@ export class GooglePlacesProvider implements BusinessDataProvider {
       if (!place?.id) return out;
 
       // 2) DETAILS (v1, via proxy)
-      console.debug('[places] details → id', place.id);
+      console.debug('[places] details → id', place?.id);
       const detRes = await fetch(`/api/places/details?id=${encodeURIComponent(place.id)}`);
       if (!detRes.ok) {
         console.debug('[places] details failed', detRes.status);
         return out;
       }
       const r = await detRes.json();
-      console.debug('[places] details payload', r);
+      console.debug('[places] details payload', detRes);
 
       // Map fields — only fill if empty; record provenance
       (out as any).meta ||= {}; (out as any).meta.provenance ||= {};

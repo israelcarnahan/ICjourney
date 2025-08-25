@@ -7,8 +7,10 @@ export const FEATURES = {
 };
 
 export const FLAGS = {
-  PROVIDER_GOOGLE: true,
-  PROVIDER_POSTCODES: true,
-  PROVIDER_NOMINATIM: true,
-  PROVIDER_FALLBACK: true
+  PROVIDERS: { POSTCODES: true, GOOGLE_PLACES: true, NOMINATIM: true, FALLBACK: true },
+  DEBUG: true,
+  LOG_PROVIDERS: true,
 };
+// expose for debugging
+// @ts-ignore
+window.__FLAGS = FLAGS;
