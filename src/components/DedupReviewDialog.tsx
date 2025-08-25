@@ -35,6 +35,46 @@ interface DecisionState {
   [id: string]: 'merge' | 'skip';
 }
 
+// fields we always show under the name row
+const PRIMARY_FIELDS: Array<{ key: 'postcode'|'rtm'|'address'|'town'; label: string }> = [
+  { key: 'postcode', label: 'Postcode' },
+  { key: 'rtm',      label: 'RTM'      },
+  { key: 'address',  label: 'Address'  },
+  { key: 'town',     label: 'Town/City'},
+];
+
+// Normalize + pretty print helpers
+const norm = (v?: string | null) => (v ?? '').trim();
+const isEqual = (a?: string|null, b?: string|null) => norm(a).toLowerCase() === norm(b).toLowerCase();
+
+// build a union of all keys to show in the "More details" section
+function buildExtraKeys(existing: Pub, incoming: { extras: Record<string,string> }) {
+  const base = new Set<string>(Object.keys(incoming.extras || {}));
+  // include known optional fields that may live on the pub
+  ['phone','email','notes','list_name','priority','dueBy','followUpDays'].forEach(k => base.add(k));
+  // include any extras we've already accumulated on the canonical pub (if you store them)
+  if ((existing as any).extras) Object.keys((existing as any).extras).forEach(k => base.add(k));
+  // drop any we already render as primary
+  PRIMARY_FIELDS.forEach(f => base.delete(f.key));
+  base.delete('name');
+  base.delete('postcode'); // already primary but just in case
+  return Array.from(base).sort();
+}
+
+// Make a reusable row renderer for comparisons
+function FieldRow({
+  label, left, right,
+}: { label:string; left?:string|null; right?:string|null }) {
+  const same = isEqual(left, right);
+  return (
+    <div className="grid grid-cols-3 gap-3 text-sm items-start py-1 border-b border-eggplant-700/30 last:border-0">
+      <div className="text-eggplant-300">{label}</div>
+      <div className={`truncate ${same ? 'text-eggplant-200' : 'text-yellow-300'}`} title={norm(left)}>{norm(left) || '—'}</div>
+      <div className={`truncate ${same ? 'text-eggplant-200' : 'text-yellow-300'}`} title={norm(right)}>{norm(right) || '—'}</div>
+    </div>
+  );
+}
+
 export function DedupReviewDialog({
   autoMerge,
   needsReview,
@@ -46,6 +86,7 @@ export function DedupReviewDialog({
   const [autoMergeExpanded, setAutoMergeExpanded] = useState(false);
   const [dragOverZone, setDragOverZone] = useState<'merge' | 'skip' | null>(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -254,6 +295,29 @@ export function DedupReviewDialog({
           <span className="text-sm text-eggplant-300">Skip</span>
         </div>
       </div>
+
+      {/* Primary details under names */}
+      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {PRIMARY_FIELDS.map(f => {
+          const left  = (suggestion.existing as any)[f.key] as string | undefined;
+          const right = (suggestion.incoming as any)[f.key] as string | undefined
+                      ?? suggestion.incoming.extras?.[f.key];
+          const same = isEqual(left, right);
+          return (
+            <div key={`${suggestion.id}-pf-${f.key}`} className="flex items-center gap-2">
+              <span className="text-[11px] px-2 py-0.5 rounded-full border border-eggplant-700/60 text-eggplant-200">
+                {f.label}
+              </span>
+              <span className={`text-sm ${same ? 'text-eggplant-200' : 'text-yellow-300'}`}>
+                {norm(left) || '—'}
+                <span className="opacity-60"> → </span>
+                {norm(right) || '—'}
+                {same ? <span className="ml-1 text-green-400">✓</span> : null}
+              </span>
+            </div>
+          );
+        })}
+      </div>
       
       <div className="flex flex-wrap gap-1 mb-2">
         {suggestion.reasons.map((reason, index) => (
@@ -266,6 +330,38 @@ export function DedupReviewDialog({
           </span>
         ))}
       </div>
+
+      {/* Expand/collapse toggle */}
+      <button
+        type="button"
+        className="mt-3 inline-flex items-center gap-2 text-eggplant-200 hover:text-white text-sm"
+        aria-expanded={!!expanded[suggestion.id]}
+        onClick={(e) => {
+          e.stopPropagation();
+          setExpanded(prev => ({ ...prev, [suggestion.id]: !prev[suggestion.id] }));
+        }}
+        data-testid={`dedupe-expand-${suggestion.id}`}
+      >
+        <svg className={`w-4 h-4 transition-transform ${expanded[suggestion.id] ? 'rotate-90' : ''}`} viewBox="0 0 20 20" fill="currentColor"><path d="M7 5l6 5-6 5V5z"/></svg>
+        More details
+      </button>
+
+      {expanded[suggestion.id] && (
+        <div className="mt-2 rounded-lg border border-eggplant-700/50 bg-eggplant-900/40 p-3">
+          <div className="grid grid-cols-3 gap-3 text-xs text-eggplant-400 mb-2">
+            <div></div><div>Existing</div><div>Incoming</div>
+          </div>
+
+          {buildExtraKeys(suggestion.existing, suggestion.incoming).map(key => {
+            const left  = (suggestion.existing as any)[key]
+              ?? (suggestion as any).existing?.extras?.[key];
+            const right = suggestion.incoming.extras?.[key];
+            return (
+              <FieldRow key={`${suggestion.id}-ex-${key}`} label={key} left={left} right={right} />
+            );
+          })}
+        </div>
+      )}
       
       <div className="text-xs text-eggplant-400">
         From: {suggestion.incoming.fileName} (row {suggestion.incoming.rowIndex + 1})
