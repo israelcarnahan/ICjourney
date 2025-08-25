@@ -3,6 +3,7 @@ import { BusinessData, ProviderChain } from "./types";
 import { fallbackProvider } from "./fallbackProvider";
 import { nominatimProvider } from "./nominatimProvider";
 import { postcodesProvider } from "./postcodesProvider";
+import { googlePlacesProvider } from "./googlePlacesProvider";
 
 /** simple in-memory cache per session; later you can persist to localStorage */
 const cache = new Map<string, BusinessData>();
@@ -10,7 +11,7 @@ const cache = new Map<string, BusinessData>();
 export function useBusinessData(pubId: string, seed: Partial<BusinessData>, chain?: ProviderChain) {
   const [data, setData] = useState<BusinessData | null>(null);
 
-  const providers = useMemo(() => chain?.providers ?? [postcodesProvider, nominatimProvider, fallbackProvider], [chain]);
+  const providers = useMemo(() => chain?.providers ?? [postcodesProvider, nominatimProvider, fallbackProvider, googlePlacesProvider], [chain]);
 
   useEffect(() => {
     let alive = true;

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Clock, Calendar, Clock4, MapPin } from "lucide-react";
+import { Clock, Calendar, Clock4, MapPin, Star, Globe } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import { ExtendedPub } from "../context/PubDataContext";
@@ -308,53 +308,94 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
               <p className="text-sm text-eggplant-200">
                 {visit.pub} - {visit.zip}
               </p>
-              {businessData && (
-                <div className="mt-2 space-y-1 text-xs text-eggplant-300">
-                  {businessData.phone && (
-                    <div>
-                      <a
-                        href={`tel:${businessData.phone}`}
-                        className="hover:text-neon-blue transition-colors"
-                      >
-                        {businessData.phone}
-                      </a>
-                    </div>
-                  )}
-                  {businessData.email && (
-                    <div>
-                      <a
-                        href={`mailto:${businessData.email}`}
-                        className="hover:text-neon-pink transition-colors"
-                      >
-                        {businessData.email}
-                      </a>
-                    </div>
-                  )}
-                  {businessData.openingHours && (
-                    <div className="flex items-center gap-2 mt-2 text-sm">
-                      <Clock className="h-4 w-4 text-neon-purple" />
-                      <span className="text-eggplant-200">Business Hours:</span>
-                      <span className="text-neon-purple">
-                        {businessData.openingHours.weekly[1] ? 
-                          `${businessData.openingHours.weekly[1][0]} - ${businessData.openingHours.weekly[1][1]}` : 
-                          "Hours vary"
-                        }
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 mt-2 text-sm">
-                    <MapPin className="h-4 w-4 text-neon-purple" />
-                    <a
-                      href={getDirectionsUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-neon-blue hover:text-neon-purple transition-colors"
-                    >
-                      Get Directions
-                    </a>
-                  </div>
-                </div>
-              )}
+                             {businessData && (
+                 <div className="mt-2 space-y-1 text-xs text-eggplant-300">
+                   {businessData.phone && (
+                     <div>
+                       <a
+                         href={`tel:${businessData.phone}`}
+                         className="hover:text-neon-blue transition-colors"
+                       >
+                         {businessData.phone}
+                       </a>
+                     </div>
+                   )}
+                   {businessData.email && (
+                     <div>
+                       <a
+                         href={`mailto:${businessData.email}`}
+                         className="hover:text-neon-pink transition-colors"
+                       >
+                         {businessData.email}
+                       </a>
+                     </div>
+                   )}
+                   {(businessData.extras?.website as string) && (
+                     <div>
+                       <a
+                         href={businessData.extras.website as string}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="hover:text-neon-green transition-colors flex items-center gap-1"
+                       >
+                         <Globe className="h-3 w-3" />
+                         Website
+                       </a>
+                     </div>
+                   )}
+                   {(businessData.extras?.google_rating as number) && (
+                     <div className="flex items-center gap-1">
+                       <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                       <span>{String(businessData.extras.google_rating)}</span>
+                       {(businessData.extras?.google_ratings_count as number) && (
+                         <span className="text-eggplant-400">
+                           ({String(businessData.extras.google_ratings_count)})
+                         </span>
+                       )}
+                     </div>
+                   )}
+                   {businessData.openingHours && (
+                     <div className="flex items-center gap-2 mt-2 text-sm">
+                       <Clock className="h-4 w-4 text-neon-purple" />
+                       <span className="text-eggplant-200">Business Hours:</span>
+                       <span className="text-neon-purple">
+                         {businessData.openingHours.weekly[1] ? 
+                           `${businessData.openingHours.weekly[1][0]} - ${businessData.openingHours.weekly[1][1]}` : 
+                           "Hours vary"
+                         }
+                       </span>
+                     </div>
+                   )}
+                   {(businessData.extras?.google_opening_hours_text as string[]) && (
+                     <details className="mt-2">
+                       <summary className="cursor-pointer text-xs text-eggplant-400 hover:text-eggplant-200">
+                         Detailed hours
+                       </summary>
+                       <div className="mt-1 pl-2 text-xs text-eggplant-300">
+                         {(businessData.extras.google_opening_hours_text as string[]).map((day, i) => (
+                           <div key={i}>{day}</div>
+                         ))}
+                       </div>
+                     </details>
+                   )}
+                   <div className="flex items-center gap-2 mt-2 text-sm">
+                     <MapPin className="h-4 w-4 text-neon-purple" />
+                     <a
+                       href={getDirectionsUrl()}
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="text-neon-blue hover:text-neon-purple transition-colors"
+                     >
+                       Get Directions
+                     </a>
+                   </div>
+                   {(businessData.extras?.google_places as boolean) && (
+                     <div className="text-xs text-eggplant-400 mt-2">
+                       Some info © Google
+                     </div>
+                   )}
+                 </div>
+               )}
             </div>
 
             <div>
