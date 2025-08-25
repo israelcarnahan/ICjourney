@@ -519,6 +519,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         <ColumnMappingWizard
           headers={sourceHeaders}
           storedMapping={storedForWizard}
+          fileName={currentFileName}
           onCancel={() => {
             setShowMapping(false);
             resolverRef.current = null;

@@ -30,9 +30,9 @@ export default {
           400: '#e770ff',
           500: '#d43aff',
           600: '#b91aef',
-          700: '#9c14cc',
-          800: '#8015a5',
-          900: '#671585',
+          700: '#4A225D',
+          800: '#3C1B4A',
+          900: '#2D1437',
           950: '#3f0d52'
         }
       },
@@ -44,7 +44,8 @@ export default {
       boxShadow: {
         'neon-blue': '0 0 5px #00ffff, 0 0 20px rgba(0, 255, 255, 0.3)',
         'neon-pink': '0 0 5px #ff00ff, 0 0 20px rgba(255, 0, 255, 0.3)',
-        'neon-purple': '0 0 5px #9d00ff, 0 0 20px rgba(157, 0, 255, 0.3)'
+        'neon-purple': '0 0 5px #9d00ff, 0 0 20px rgba(157, 0, 255, 0.3)',
+        'glow': '0 0 0.5rem 0.1rem rgba(177,108,255,0.35)'
       },
       animation: {
         'gradient-x': 'gradient-x 15s ease infinite',

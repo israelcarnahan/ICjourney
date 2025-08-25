@@ -5,11 +5,19 @@ import { CANONICAL_ORDER, REQUIRED_FIELDS, autoGuessMapping } from '../utils/col
 
 const NONE = "__none__"; // sentinel to represent "Not present"
 
+// Field configuration
+const REQUIRED = ['name', 'postcode'] as const;
+const OPTIONAL_VISIBLE = ['rtm', 'notes', 'address', 'town', 'phone', 'email'] as const;
+// Note: lat/lng fields are hidden from UI but preserved in mapping state
+
+const allVisible = [...REQUIRED, ...OPTIONAL_VISIBLE];
+
 type Props = {
   headers: string[];            // lowercased, trimmed
   storedMapping?: ColumnMapping | null;
   onCancel: () => void;
   onConfirm: (mapping: ColumnMapping) => void;
+  fileName?: string;            // Optional file name to display in header
 };
 
 const FIELD_LABELS: Record<CanonicalField, string> = {
@@ -25,11 +33,25 @@ const FIELD_LABELS: Record<CanonicalField, string> = {
   notes: 'Notes',
 };
 
+const FIELD_HELPERS: Record<CanonicalField, string> = {
+  name: 'Tip: choose the header from your file that best matches "Business Name".',
+  postcode: 'Tip: choose the header from your file that best matches "Postcode".',
+  rtm: 'Tip: choose the header from your file that best matches "Route to Market".',
+  address: 'Tip: choose the header from your file that best matches "Address".',
+  town: 'Tip: choose the header from your file that best matches "Town/City".',
+  phone: 'Tip: choose the header from your file that best matches "Phone".',
+  email: 'Tip: choose the header from your file that best matches "Email".',
+  lat: 'Tip: choose the header from your file that best matches "Latitude".',
+  lng: 'Tip: choose the header from your file that best matches "Longitude".',
+  notes: 'Tip: choose the header from your file that best matches "Notes".',
+};
+
 const ColumnMappingWizard: React.FC<Props> = ({
   headers,
   storedMapping,
   onCancel,
   onConfirm,
+  fileName,
 }) => {
   const [mapping, setMapping] = useState<ColumnMapping>(() => {
     // Initialize with stored mapping or auto-guess
@@ -45,7 +67,12 @@ const ColumnMappingWizard: React.FC<Props> = ({
     return initial;
   });
 
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [hoveredField, setHoveredField] = useState<string | null>(null);
   const [showErrors, setShowErrors] = useState(false);
+
+  // Generate a stable signature ID for React keys
+  const sigId = useMemo(() => `wizard-${Date.now()}`, []);
 
   // Clean and dedupe headers
   const cleanedHeaders = useMemo(() => {
@@ -55,13 +82,9 @@ const ColumnMappingWizard: React.FC<Props> = ({
     return Array.from(new Set(arr));
   }, [headers]);
 
-  // Get currently selected headers
-  const selectedHeaders = new Set(Object.values(mapping).filter(Boolean));
-  // const availableHeaders = cleanedHeaders.filter(h => !selectedHeaders.has(h)); // TODO: Use for validation
-
   // Check if required fields are mapped
   const missing = REQUIRED_FIELDS.filter(field => !mapping[field]);
-  // const canConfirm = missing.length === 0; // TODO: Use for confirmation logic
+  const canConfirm = missing.length === 0;
 
   // Auto-guessed fields
   const autoGuessed = useMemo(() => autoGuessMapping(cleanedHeaders), [cleanedHeaders]);
@@ -85,90 +108,218 @@ const ColumnMappingWizard: React.FC<Props> = ({
   }, []);
 
   const handleSelect = (field: CanonicalField, value: string | null) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
     setMapping(prev => ({
       ...prev,
       [field]: value,
     }));
   };
 
+  const onDropToField = (field: string, e: React.DragEvent) => {
+    e.preventDefault();
+    const header = e.dataTransfer.getData('text/plain');
+    if (!header) return;
+    handleSelect(field as CanonicalField, header);
+    setHoveredField(null);
+  };
+
+  const onDragOver = (field: string, e: React.DragEvent) => {
+    e.preventDefault();
+    setHoveredField(field);
+  };
+
+  const onDragLeave = () => {
+    setHoveredField(null);
+  };
+
+  const handleConfirm = () => {
+    if (canConfirm) {
+      onConfirm(mapping);
+    } else {
+      setShowErrors(true);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && canConfirm) {
+      handleConfirm();
+    } else if (e.key === "Escape") {
+      onCancel();
+    }
+  };
+
+  // Get display file name
+  const displayFileName = fileName || "This file";
+
   return createPortal(
     <div
       className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/60 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onCancel();
-      }}
+      data-testid="mapping-wizard"
+      onKeyDown={handleKeyDown}
       onClick={(e) => {
         // backdrop close (ignore clicks inside the panel)
         if (e.currentTarget === e.target) onCancel();
       }}
     >
       <div
-        className="w-[min(920px,calc(100vw-32px))] max-h-[85vh] rounded-2xl shadow-2xl overflow-hidden
+        className="w-[min(1000px,calc(100vw-32px))] max-h-[85vh] rounded-2xl shadow-2xl overflow-hidden
                    bg-gradient-to-b from-eggplant-900 via-eggplant-800 to-eggplant-900 border border-eggplant-700/60"
       >
-        {/* Header (sticky) */}
-        <div className="sticky top-0 z-10 px-5 py-4 bg-eggplant-900/80 backdrop-blur border-b border-eggplant-700/50">
-          <h2 className="text-xl font-semibold text-white">Match your columns</h2>
-          <p className="text-[13px] text-eggplant-200 mt-1">
-            Match your file's headers to our fields. Required fields are marked. Everything else is saved in
-            <span className="px-1 font-medium text-neon-purple">extras</span>.
-          </p>
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-10 px-6 py-4 bg-gradient-to-r from-eggplant-900 via-eggplant-800 to-neon-purple text-white border-b border-eggplant-700/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-white">Match your columns</h2>
+              <p className="text-sm text-eggplant-200 mt-1">
+                Mapping: <span className="font-medium">{displayFileName}</span>
+              </p>
+              <p className="text-[13px] text-eggplant-200 mt-1">
+                Drag a header from your file onto a field or pick from the dropdown. Required fields are marked.
+              </p>
+            </div>
+            <button
+              onClick={onCancel}
+              className="text-eggplant-200 hover:text-white transition-colors"
+              aria-label="Close mapping wizard"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {/* Scrollable content */}
-        <div className="px-5 py-4 overflow-y-auto max-h-[calc(85vh-128px)]">
-          {/* Validation message (inside scroll area so it stays near fields) */}
-          {showErrors && missing.length > 0 && (
-            <div className="mt-4 text-sm text-red-200 bg-red-900/20 border border-red-700/50 rounded-lg p-3">
-              Required fields missing: {missing.join(", ")}
-            </div>
-          )}
-
-          {/* 2-col on md+, 1-col on mobile */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {CANONICAL_ORDER.map((field) => (
-              <div key={field} className="flex flex-col gap-1">
-                <label className="text-sm font-medium text-eggplant-100">
-                  {FIELD_LABELS[field]}
-                  {REQUIRED_FIELDS.includes(field) && (
-                    <span className="text-red-400 ml-1">*</span>
-                  )}
-                </label>
-                <select
-                  value={mapping[field] ?? NONE}
-                  onChange={(e) => handleSelect(field, e.target.value === NONE ? null : e.target.value)}
-                  className="border border-eggplant-700/60 bg-eggplant-900/60 text-eggplant-100 rounded-lg px-3 py-2 text-sm focus:outline-none
-                             focus:ring-2 focus:ring-neon-purple/60 focus:border-neon-purple/60"
+        {/* Main Content */}
+        <div className="flex flex-col md:flex-row max-h-[calc(85vh-140px)]">
+          {/* Left Pane - Excel-like headers */}
+          <div className="w-full md:w-1/3 p-4 border-r border-eggplant-700/50 bg-eggplant-900/40">
+            <h3 className="text-sm font-medium text-eggplant-100 mb-3 flex items-center gap-2">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Your File Headers
+            </h3>
+            <div className="space-y-1 divide-y divide-white/10">
+              {cleanedHeaders.map((header, idx) => (
+                <div
+                  key={`${sigId}-src-${idx}-${header}`}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', header);
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
+                  className="p-2 rounded cursor-move hover:bg-eggplant-800/50 transition-colors text-sm text-eggplant-100 hover:text-white"
                 >
-                  <option key={`opt-${NONE}`} value={NONE}>— Not present —</option>
-                  {cleanedHeaders.map((h, i) => (
-                    <option key={`opt-${h}-${i}`} value={h}>{h}</option>
-                  ))}
-                </select>
-              </div>
-            ))}
+                  <div className="flex items-center gap-2">
+                    <svg className="w-3 h-3 text-eggplant-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    </svg>
+                    <span className="font-mono text-xs">{header}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
+          {/* Right Pane - Destination fields */}
+          <div className="w-full md:w-2/3 p-4 overflow-y-auto">
+            {/* Validation message */}
+            {showErrors && missing.length > 0 && (
+              <div className="mb-4 text-sm text-red-200 bg-red-900/20 border border-red-700/50 rounded-lg p-3">
+                <strong>Required fields missing:</strong> {missing.map(field => FIELD_LABELS[field]).join(", ")}
+              </div>
+            )}
+
+            {/* Field mapping grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {allVisible.map((field) => (
+                <div
+                  key={`${sigId}-dst-${field}`}
+                  className={`p-4 rounded-lg border-2 transition-all duration-200 ${
+                    hoveredField === field
+                      ? 'border-neon-purple bg-neon-purple/10 shadow-glow'
+                      : 'border-eggplant-700/60 bg-eggplant-900/40'
+                  } ${
+                    !mapping[field] && touched[field] ? 'border-red-500/60 bg-red-900/20' : ''
+                  }`}
+                  onDragOver={(e) => onDragOver(field, e)}
+                  onDragLeave={onDragLeave}
+                  onDrop={(e) => onDropToField(field, e)}
+                >
+                  <label className="block text-sm font-medium text-eggplant-100 mb-2">
+                    {FIELD_LABELS[field]}
+                    {REQUIRED_FIELDS.includes(field) && (
+                      <span className="text-red-400 ml-1">*</span>
+                    )}
+                  </label>
+                  
+                  <select
+                    id={`field-${field}`}
+                    value={mapping[field] ?? NONE}
+                    onChange={(e) => handleSelect(field, e.target.value === NONE ? null : e.target.value)}
+                    className={`w-full border border-eggplant-700/60 bg-eggplant-900/60 text-eggplant-100 rounded-lg px-3 py-2 text-sm focus:outline-none
+                               focus:ring-2 focus:ring-neon-purple/60 focus:border-neon-purple/60 transition-colors ${
+                                 !mapping[field] && touched[field] ? 'border-red-500/60' : ''
+                               }`}
+                    aria-invalid={!mapping[field] && touched[field]}
+                    aria-describedby={`${field}-helper`}
+                  >
+                    <option key={`${sigId}-${field}-opt-none`} value={NONE}>— Not present —</option>
+                    {cleanedHeaders.map((h, i) => (
+                      <option key={`${sigId}-${field}-opt-${i}-${h}`} value={h}>{h}</option>
+                    ))}
+                  </select>
+
+                  <p 
+                    id={`${field}-helper`}
+                    className="text-xs text-eggplant-300 mt-2"
+                  >
+                    {FIELD_HELPERS[field]}
+                  </p>
+
+                  {!mapping[field] && touched[field] && (
+                    <p className="text-xs text-red-400 mt-1">
+                      This field is required
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Footer (sticky) */}
-        <div className="sticky bottom-0 z-10 px-5 py-3 bg-eggplant-900/80 backdrop-blur border-t border-eggplant-700/50 flex justify-end gap-3">
-          <button
-            className="px-4 py-2 rounded-lg border border-eggplant-700/70 text-eggplant-200 hover:text-white hover:border-neon-purple hover:bg-eggplant-800/50 transition"
-            onClick={onCancel}
-            data-testid="mapping-cancel"
-          >
-            Cancel
-          </button>
-          <button
-            className="px-4 py-2 rounded-lg bg-neon-purple text-white hover:brightness-110 transition"
-            onClick={() => (missing.length ? setShowErrors(true) : onConfirm(mapping))}
-            data-testid="mapping-confirm"
-          >
-            Confirm
-          </button>
+        {/* Sticky Footer */}
+        <div className="sticky bottom-0 z-10 px-6 py-4 bg-eggplant-900/80 backdrop-blur border-t border-eggplant-700/50 flex justify-between items-center">
+          <div className="text-sm text-eggplant-300">
+            {missing.length > 0 ? (
+              <span>Required fields: {missing.map(field => FIELD_LABELS[field]).join(", ")}</span>
+            ) : (
+              <span className="text-green-300">✓ All required fields mapped</span>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button
+              className="px-4 py-2 rounded-lg border border-eggplant-700/70 text-eggplant-200 hover:text-white hover:border-neon-purple hover:bg-eggplant-800/50 transition"
+              onClick={onCancel}
+              data-testid="mapping-cancel"
+            >
+              Cancel
+            </button>
+            <button
+              className={`px-4 py-2 rounded-lg transition ${
+                canConfirm
+                  ? 'bg-eggplant-800 hover:bg-eggplant-700 text-white shadow-glow'
+                  : 'bg-eggplant-800/50 text-eggplant-400 cursor-not-allowed'
+              }`}
+              onClick={handleConfirm}
+              disabled={!canConfirm}
+              data-testid="mapping-confirm"
+            >
+              Confirm
+            </button>
+          </div>
         </div>
       </div>
     </div>,
