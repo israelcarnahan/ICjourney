@@ -27,23 +27,10 @@ function makeIsOpenAt(oh?: OpeningHours | null) {
   };
 }
 
-/** Merge extras from multiple lists without losing anything */
-function mergeExtras(base: Record<string, unknown>, add: Record<string, unknown>) {
-  const out: Record<string, unknown> = { ...base };
-  for (const [k, v] of Object.entries(add || {})) {
-    if (v == null || v === "") continue;
-    const prev = out[k];
-    if (prev == null) { out[k] = v; continue; }
-    // If same scalar, keep one. If different, store an array of unique values.
-    const toArr = (x: unknown) => Array.isArray(x) ? x : [x];
-    const arr = [...new Set([...toArr(prev), ...toArr(v)])];
-    out[k] = arr.length === 1 ? arr[0] : arr;
-  }
-  return out;
-}
+
 
 export class FallbackProvider implements BusinessDataProvider {
-  async get(pubId: string, seed: Partial<BusinessData>): Promise<BusinessData> {
+  async get(_pubId: string, seed: Partial<BusinessData>): Promise<BusinessData> {
     const name = seed.name ?? "";
     const postcode = seed.postcode ?? null;
 
