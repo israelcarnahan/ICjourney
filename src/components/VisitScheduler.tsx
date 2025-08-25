@@ -4,9 +4,10 @@ import * as Dialog from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import { ExtendedPub } from "../context/PubDataContext";
 import { format } from "date-fns";
-import { getMockPlaceData } from "../utils/mockData";
 import { Star } from "lucide-react";
 import { getSourceDetails } from "../utils/sourceDetails";
+import { useBusinessData } from "../api/useBusinessData";
+import { seedFromPub } from "../utils/seedFromPub";
 
 interface ScheduleVisit extends ExtendedPub {
   Priority: string;
@@ -52,7 +53,17 @@ interface VisitSchedulerProps {
 }
 
 function SourceDetailsPanel({ visitOrPub }: { visitOrPub: any }) {
-  const { fileNames, details } = getSourceDetails(visitOrPub);
+  const seed = seedFromPub(visitOrPub);
+  const businessData = useBusinessData(visitOrPub.pub || visitOrPub.uuid || 'unknown', seed);
+
+  if (!businessData) {
+    return (
+      <div className="mt-6" data-testid="source-details">
+        <h4 className="text-sm font-semibold text-eggplant-100 mb-2">From your lists</h4>
+        <p className="text-xs text-eggplant-300">Loading business data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-6" data-testid="source-details">
@@ -61,57 +72,55 @@ function SourceDetailsPanel({ visitOrPub }: { visitOrPub: any }) {
 
       {/* Row of list chips */}
       <div className="flex flex-wrap gap-2 mb-3">
-        {fileNames.map(n => (
-          <span key={n} className="px-2 py-0.5 rounded-full bg-eggplant-800 text-eggplant-50 text-xs">{n}</span>
+        {businessData.sources.map((source, i) => (
+          <span key={`${source.listName}-${i}`} className="px-2 py-0.5 rounded-full bg-eggplant-800 text-eggplant-50 text-xs">
+            {source.listName}
+          </span>
         ))}
       </div>
 
-      {/* Collapsible per-list details */}
+      {/* Business information from API provider */}
       <div className="space-y-3">
-        {details.map((d, i) => (
-          <details key={`${d.fileName}-${i}`} className="rounded-lg bg-eggplant-900/50 border border-eggplant-700/50">
-            <summary className="cursor-pointer px-3 py-2 text-eggplant-200 hover:text-white flex items-center gap-2">
-              <span className="font-medium truncate">{d.fileName}</span>
-              {d.priorityLabel && <span className="text-xs text-eggplant-300 flex-shrink-0">• {d.priorityLabel}</span>}
-              {d.listType && <span className="text-xs text-eggplant-300 flex-shrink-0">• {d.listType}</span>}
-            </summary>
+        <details className="rounded-lg bg-eggplant-900/50 border border-eggplant-700/50">
+          <summary className="cursor-pointer px-3 py-2 text-eggplant-200 hover:text-white flex items-center gap-2">
+            <span className="font-medium">Business Information</span>
+            <span className="text-xs text-eggplant-300 flex-shrink-0">• {businessData.sources.length} sources</span>
+          </summary>
 
-            <div className="px-3 pb-3 text-sm text-eggplant-100">
-              {/* Common mapped bits, only show if present */}
-              <ul className="grid grid-cols-1 gap-x-6 gap-y-1">
-                {d.mapped.postcode && <li className="break-words"><span className="opacity-70">Postcode:</span> {d.mapped.postcode}</li>}
-                {d.mapped.rtm && <li className="break-words"><span className="opacity-70">RTM:</span> {d.mapped.rtm}</li>}
-                {d.mapped.address && <li className="break-words"><span className="opacity-70">Address:</span> {d.mapped.address}</li>}
-                {d.mapped.town && <li className="break-words"><span className="opacity-70">Town/City:</span> {d.mapped.town}</li>}
-                {d.mapped.phone && <li className="break-words"><span className="opacity-70">Phone:</span> {d.mapped.phone}</li>}
-                {d.mapped.email && <li className="break-words"><span className="opacity-70">Email:</span> {d.mapped.email}</li>}
-              </ul>
+          <div className="px-3 pb-3 text-sm text-eggplant-100">
+            {/* Core business fields */}
+            <ul className="grid grid-cols-1 gap-x-6 gap-y-1">
+              {businessData.postcode && <li className="break-words"><span className="opacity-70">Postcode:</span> {businessData.postcode}</li>}
+              {businessData.address && <li className="break-words"><span className="opacity-70">Address:</span> {businessData.address}</li>}
+              {businessData.town && <li className="break-words"><span className="opacity-70">Town/City:</span> {businessData.town}</li>}
+              {businessData.phone && <li className="break-words"><span className="opacity-70">Phone:</span> {businessData.phone}</li>}
+              {businessData.email && <li className="break-words"><span className="opacity-70">Email:</span> {businessData.email}</li>}
+            </ul>
 
-              {d.mapped.notes && (
-                <div className="mt-2">
-                  <div className="opacity-70 text-xs mb-0.5">Notes</div>
-                  <div className="p-2 rounded bg-eggplant-900 border border-eggplant-700/40 whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
-                    {d.mapped.notes}
-                  </div>
+            {businessData.notes && (
+              <div className="mt-2">
+                <div className="opacity-70 text-xs mb-0.5">Notes</div>
+                <div className="p-2 rounded bg-eggplant-900 border border-eggplant-700/40 whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
+                  {businessData.notes}
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Extras (anything else) */}
-              {d.extras && Object.keys(d.extras).length > 0 && (
-                <div className="mt-2">
-                  <div className="opacity-70 text-xs mb-1">More from this file</div>
-                  <div className="grid grid-cols-1 gap-x-6 gap-y-1">
-                    {Object.entries(d.extras).map(([k, v]) => (
-                      <div key={k} className="break-words">
-                        <span className="opacity-70">{k}:</span> <span>{String(v ?? '')}</span>
-                      </div>
-                    ))}
-                  </div>
+            {/* Extras from all sources */}
+            {businessData.extras && Object.keys(businessData.extras).length > 0 && (
+              <div className="mt-2">
+                <div className="opacity-70 text-xs mb-1">Additional fields from your lists</div>
+                <div className="grid grid-cols-1 gap-x-6 gap-y-1">
+                  {Object.entries(businessData.extras).map(([k, v]) => (
+                    <div key={k} className="break-words">
+                      <span className="opacity-70">{k}:</span> <span>{String(v ?? '')}</span>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
-          </details>
-        ))}
+              </div>
+            )}
+          </div>
+        </details>
       </div>
     </div>
   );
@@ -128,6 +137,10 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
   );
   const [isAnytime, setIsAnytime] = useState(visit.scheduledTime === "Anytime");
   const [notes, setNotes] = useState(visit.visitNotes || "");
+
+  // Get business data from API provider
+  const seed = seedFromPub(visit);
+  const businessData = useBusinessData(visit.pub || visit.uuid || 'unknown', seed);
 
   const formatTimeDisplay = (timeStr: string | undefined): string => {
     if (!timeStr) return "Not scheduled";
@@ -179,10 +192,23 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
   };
 
   const isOutsideBusinessHours = (timeStr: string): boolean => {
+    if (!businessData?.isOpenAt) {
+      // Fallback to default hours if no business data
+      try {
+        const [hours, minutes] = timeStr.split(":").map(Number);
+        const totalMinutes = hours * 60 + minutes;
+        return totalMinutes < 9 * 60 || totalMinutes >= 17 * 60;
+      } catch (error) {
+        console.warn("Time validation error:", error);
+        return true;
+      }
+    }
+
     try {
       const [hours, minutes] = timeStr.split(":").map(Number);
-      const totalMinutes = hours * 60 + minutes;
-      return totalMinutes < 9 * 60 || totalMinutes >= 17 * 60;
+      const testDate = new Date();
+      testDate.setHours(hours, minutes, 0, 0);
+      return !businessData.isOpenAt(testDate);
     } catch (error) {
       console.warn("Time validation error:", error);
       return true;
@@ -293,40 +319,42 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
               <p className="text-sm text-eggplant-200">
                 {visit.pub} - {visit.zip}
               </p>
-              {(() => {
-                const mockData = getMockPlaceData(visit.pub);
-                return (
-                  <div className="mt-2 space-y-1 text-xs text-eggplant-300">
-                    <div className="flex items-center gap-1">
-                      <StarRating rating={mockData.rating} />
-                      <span>({mockData.totalRatings})</span>
-                    </div>
+              {businessData && (
+                <div className="mt-2 space-y-1 text-xs text-eggplant-300">
+                  {businessData.phone && (
                     <div>
                       <a
-                        href={`tel:${mockData.phoneNumber}`}
+                        href={`tel:${businessData.phone}`}
                         className="hover:text-neon-blue transition-colors"
                       >
-                        {mockData.phoneNumber}
+                        {businessData.phone}
                       </a>
                     </div>
+                  )}
+                  {businessData.email && (
                     <div>
                       <a
-                        href={`mailto:${mockData.email}`}
+                        href={`mailto:${businessData.email}`}
                         className="hover:text-neon-pink transition-colors"
                       >
-                        {mockData.email}
+                        {businessData.email}
                       </a>
                     </div>
+                  )}
+                  {businessData.openingHours && (
                     <div className="flex items-center gap-2 mt-2 text-sm">
                       <Clock className="h-4 w-4 text-neon-purple" />
                       <span className="text-eggplant-200">Business Hours:</span>
                       <span className="text-neon-purple">
-                        9:00 AM - 5:00 PM
+                        {businessData.openingHours.weekly[1] ? 
+                          `${businessData.openingHours.weekly[1][0]} - ${businessData.openingHours.weekly[1][1]}` : 
+                          "Hours vary"
+                        }
                       </span>
                     </div>
-                  </div>
-                );
-              })()}
+                  )}
+                </div>
+              )}
             </div>
 
             <div>

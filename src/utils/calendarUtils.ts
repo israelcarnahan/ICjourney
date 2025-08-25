@@ -2,6 +2,7 @@ import { ScheduleDay } from '../context/PubDataContext';
 import { createEvents } from 'ics';
 import { parseISO, addHours, format } from 'date-fns';
 import { toArray } from './typeGuards';
+import { formatPriorityForUser } from './sourceDetails';
 
 // helper to satisfy ics DateTime tuple typing
 type DateTuple = [number, number, number, number, number];
@@ -33,7 +34,7 @@ export const generateICSFile = (schedule: ScheduleDay[]): Promise<string> => {
           start: toDateTuple(visitStartTime),
           end: toDateTuple(visitEndTime),
           title: `Visit: ${visit?.pub ?? 'Unknown'}`,
-          description: `Priority: ${visit?.Priority ?? 'Unknown'}\nPostcode: ${visit?.zip ?? ''}${driveInfo}`,
+          description: `Priority: ${formatPriorityForUser(visit) || visit?.Priority || 'Unknown'}\nPostcode: ${visit?.zip ?? ''}${driveInfo}`,
           location: visit?.zip ?? ''
         };
       });
