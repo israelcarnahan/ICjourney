@@ -66,6 +66,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   const [dedupSuggestions, setDedupSuggestions] = useState<{ autoMerge: Suggestion[]; needsReview: Suggestion[] }>({ autoMerge: [], needsReview: [] });
   const [pendingPubs, setPendingPubs] = useState<Pub[]>([]);
   const [pendingFile, setPendingFile] = useState<any>(null);
+  const [hasPendingDedup, setHasPendingDedup] = useState(false);
 
   // reflect prop
   useEffect(() => setIsFileLoaded(isLoaded), [isLoaded]);
@@ -346,6 +347,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     setPendingPubs([]);
     setPendingFile(null);
     setDedupSuggestions({ autoMerge: [], needsReview: [] });
+    setHasPendingDedup(false);
 
     // Handle UI state
     if (fileType === "masterhouse") {
@@ -433,7 +435,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
            const autoMergeSuggestions = convertToSuggestions(autoMerge, existingPubs, incomingPubs, currentFileName);
            const needsReviewSuggestions = convertToSuggestions(needsReview, existingPubs, incomingPubs, currentFileName);
            
-           // Store pending data and show deduplication dialog
+           // Store pending data and show compact summary
            setPendingPubs(enriched);
            setPendingFile({
              fileId,
@@ -448,7 +450,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
              followUpDays: schedulingMode === 'followup' ? followUpDays : undefined,
            });
            setDedupSuggestions({ autoMerge: autoMergeSuggestions, needsReview: needsReviewSuggestions });
-           setShowDedupDialog(true);
+           setHasPendingDedup(true);
            return prev; // Return unchanged state
          }
       }
@@ -617,7 +619,33 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         usedPriorities={usedPriorities}
       />
 
-             {showDedupDialog && (
+      {/* Deduplication Summary Card */}
+      {hasPendingDedup && (
+        <div className="mt-4 p-4 bg-gradient-to-r from-eggplant-900/90 via-eggplant-800/95 to-eggplant-900/90 backdrop-blur-sm rounded-lg border border-eggplant-700/60">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-neon-purple mb-1">
+                Duplicate Detection Results
+              </h3>
+              <p className="text-xs text-eggplant-200">
+                Found {dedupSuggestions.autoMerge.length + dedupSuggestions.needsReview.length} potential duplicates in {pendingFile?.fileName}
+              </p>
+              <div className="flex items-center space-x-4 mt-2 text-xs text-eggplant-300">
+                <span>✅ Auto-merge: {dedupSuggestions.autoMerge.length}</span>
+                <span>⚠️ Needs review: {dedupSuggestions.needsReview.length}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowDedupDialog(true)}
+              className="px-4 py-2 text-sm font-medium text-white bg-neon-purple border border-transparent rounded-lg hover:bg-neon-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neon-purple"
+            >
+              Review duplicates
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showDedupDialog && (
          <DedupReviewDialog
            autoMerge={dedupSuggestions.autoMerge}
            needsReview={dedupSuggestions.needsReview}
@@ -627,6 +655,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
              setPendingPubs([]);
              setPendingFile(null);
              setDedupSuggestions({ autoMerge: [], needsReview: [] });
+             setHasPendingDedup(false);
              setShowTypeDialog(false);
              setProcessedPubs([]);
              setCurrentFileName("");

@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Pub } from '../context/PubDataContext';
+import { X, Maximize2, Minimize2 } from 'lucide-react';
 
 export type ReasonBadge = { 
   type: 'postcode' | 'rtm' | 'addrTokens' | 'town' | 'phone' | 'email'; 
@@ -43,7 +45,9 @@ export function DedupReviewDialog({
   const [searchTerm, setSearchTerm] = useState('');
   const [autoMergeExpanded, setAutoMergeExpanded] = useState(false);
   const [dragOverZone, setDragOverZone] = useState<'merge' | 'skip' | null>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   // Initialize decisions
   useEffect(() => {
@@ -61,6 +65,19 @@ export function DedupReviewDialog({
     
     setDecisions(initialDecisions);
   }, [autoMerge, needsReview]);
+
+  // Store previous focus and lock body scroll
+  useEffect(() => {
+    previousFocusRef.current = document.activeElement as HTMLElement;
+    document.body.style.overflow = 'hidden';
+    
+    return () => {
+      document.body.style.overflow = '';
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, []);
 
   // Handle escape key
   useEffect(() => {
@@ -137,6 +154,12 @@ export function DedupReviewDialog({
     }));
     onConfirm(decisionsArray);
   }, [decisions, onConfirm]);
+
+  const handleBackdropClick = useCallback((e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onCancel();
+    }
+  }, [onCancel]);
 
   // Filter suggestions based on search
   const filteredAutoMerge = autoMerge.filter(suggestion =>
@@ -215,6 +238,7 @@ export function DedupReviewDialog({
             onChange={() => handleDecisionChange(suggestion.id, 'merge')}
             className="h-4 w-4 text-neon-purple border-eggplant-600 focus:ring-neon-purple"
             onClick={(e) => e.stopPropagation()}
+            data-testid="dedupe-merge"
           />
           <span className="text-sm text-eggplant-300">Merge</span>
           <input
@@ -225,6 +249,7 @@ export function DedupReviewDialog({
             onChange={() => handleDecisionChange(suggestion.id, 'skip')}
             className="h-4 w-4 text-neon-purple border-eggplant-600 focus:ring-neon-purple"
             onClick={(e) => e.stopPropagation()}
+            data-testid="dedupe-skip"
           />
           <span className="text-sm text-eggplant-300">Skip</span>
         </div>
@@ -294,38 +319,59 @@ export function DedupReviewDialog({
     </div>
   );
 
-  return (
-    <div className="fixed inset-0 z-[100000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+  const modalContent = (
+    <div 
+      className="fixed inset-0 z-[100000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={handleBackdropClick}
+    >
       <div
         ref={dialogRef}
-        className="w-[min(1100px,calc(100vw-32px))] max-h-[85vh] rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-b from-eggplant-900 via-eggplant-800 to-eggplant-900 border border-eggplant-700/60"
+        className={`${
+          isFullScreen 
+            ? 'w-screen h-screen max-h-screen rounded-none' 
+            : 'w-[min(1100px,calc(100vw-32px))] max-h-[85vh] rounded-2xl'
+        } overflow-hidden shadow-2xl bg-gradient-to-b from-eggplant-900 via-eggplant-800 to-eggplant-900 border border-eggplant-700/60 mx-auto`}
         role="dialog"
         aria-modal="true"
         data-testid="dedupe-dialog"
       >
         {/* Sticky Header */}
-        <div className="bg-gradient-to-r from-eggplant-900 to-neon-purple p-6 border-b border-eggplant-700/60">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-1">
-                Review possible duplicates
-              </h2>
-              <p className="text-eggplant-200">
-                {autoMerge.length + needsReview.length} suggestions found
-              </p>
+        <div className="bg-gradient-to-r from-eggplant-900 to-neon-purple p-6 border-b border-eggplant-700/60 flex items-center justify-between">
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-white mb-1">
+              Review possible duplicates
+            </h2>
+            <p className="text-eggplant-200">
+              {autoMerge.length + needsReview.length} suggestions found
+            </p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-eggplant-200">
+              Merge: {mergeCount} | Skip: {skipCount}
             </div>
-            <div className="flex items-center space-x-4 text-sm">
-              <span className="text-eggplant-200">
-                Merge: {mergeCount} | Skip: {skipCount}
-              </span>
-            </div>
+            <button
+              onClick={() => setIsFullScreen(!isFullScreen)}
+              className="p-2 text-eggplant-200 hover:text-white hover:bg-eggplant-700/50 rounded-lg transition-colors"
+              title={isFullScreen ? 'Exit full screen' : 'Full screen'}
+            >
+              {isFullScreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+            </button>
+            <button
+              onClick={onCancel}
+              className="p-2 text-eggplant-200 hover:text-white hover:bg-eggplant-700/50 rounded-lg transition-colors"
+              title="Close"
+            >
+              <X size={20} />
+            </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex h-[calc(85vh-200px)]">
-          {/* Left Pane - Suggestions */}
-          <div className="w-1/2 p-6 border-r border-eggplant-700/60">
+        <div className={`flex flex-col md:flex-row gap-4 p-4 ${
+          isFullScreen ? 'h-[calc(100vh-140px)]' : 'max-h-[calc(85vh-140px)]'
+        }`}>
+          {/* Left Column - Suggestions */}
+          <div className="w-full md:w-1/2">
             <div className="mb-4">
               <input
                 type="text"
@@ -411,8 +457,8 @@ export function DedupReviewDialog({
             )}
           </div>
 
-          {/* Right Pane - Drop Zones */}
-          <div className="w-1/2 p-6 flex flex-col space-y-4">
+          {/* Right Column - Drop Zones */}
+          <div className="w-full md:w-1/2 flex flex-col space-y-4">
             <DropZone
               type="merge"
               title="✅ Merge"
@@ -464,4 +510,6 @@ export function DedupReviewDialog({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
