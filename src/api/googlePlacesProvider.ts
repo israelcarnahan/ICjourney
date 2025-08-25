@@ -1,76 +1,80 @@
-import { BusinessData, BusinessDataProvider } from "./types";
-import { getJson } from "./http";
-import { FEATURES } from "../config/flags";
-
-function makeQuery(name: string, postcode?: string|null) {
-  return [name, postcode].filter(Boolean).join(", ");
-}
+import type { BusinessData, BusinessDataProvider } from './types';
 
 export class GooglePlacesProvider implements BusinessDataProvider {
   async get(_pubId: string, seed: Partial<BusinessData>): Promise<BusinessData> {
     const out: BusinessData = { ...(seed as any) };
-    if (!FEATURES.liveProviders.googlePlaces) return out;
+    const name = (seed.name || '').trim();
+    const postcode = (seed.postcode || '').trim();
+    if (!name) return out;
 
-    const name = seed.name?.trim(); if (!name) return out;
+    console.debug('[provider] google running for', seed?.name, seed?.postcode);
 
-    // If the dev proxy is disabled (no key), the endpoint returns 501 → we just no-op.
     try {
-      // 1) Find place by text ("Name, Postcode")
-      const q = makeQuery(name, seed.postcode ?? undefined);
-      const find = await getJson(`/api/places/find?q=${encodeURIComponent(q)}`);
-      if (!find?.places?.[0]?.id) return out;
-      const placeId = find.places[0].id as string;
+      // 1) Find
+      const q = [name, postcode].filter(Boolean).join(', ');
+      console.info('[places] query:', q); // dev-only
+      const findRes = await fetch(`/api/places/find?q=${encodeURIComponent(q)}`);
+      if (!findRes.ok) return out;
+      const find = await findRes.json();
+      const place = find?.places?.[0];
+      if (!place?.id) return out;
 
-      // 2) Details: phone, website, opening_hours, rating, count (+ geometry lat/lng)
-      const det = await getJson(`/api/places/details?id=${encodeURIComponent(placeId)}`);
-      if (!det) return out;
-      const r = det;
+      // 2) Details
+      const detRes = await fetch(`/api/places/details?id=${encodeURIComponent(place.id)}`);
+      if (!detRes.ok) return out;
+      const det = await detRes.json();
+      const r = det || {};
 
-      // Non-clobbering fills:
+      // Map: v1 fields
+      // phone
       if (!out.phone && r.formattedPhoneNumber) {
         out.phone = r.formattedPhoneNumber;
-        out.meta ||= {};
-        out.meta.provenance ||= {};
-        out.meta.provenance.phone = 'google';
-      }
-      out.email ||= null; // Google typically doesn't provide email
-      out.extras ||= {};
-      if (r.websiteUri && !out.extras["website"]) {
-        out.extras["website"] = r.websiteUri;
-        out.meta ||= {};
-        out.meta.provenance ||= {};
-        out.meta.provenance.website = 'google';
+        (out as any).meta ||= {}; (out as any).meta.provenance ||= {};
+        (out as any).meta.provenance.phone = 'google';
+        (out as any).meta.provenance.google = true;
       }
 
-      // Opening hours
-      if (!out.openingHours && r.currentOpeningHours?.weekdayDescriptions) {
-        // Google returns verbose weekday descriptions; keep as-is in extras
-        out.extras["google_opening_hours_text"] = r.currentOpeningHours.weekdayDescriptions;
-        out.meta ||= {};
-        out.meta.provenance ||= {};
-        out.meta.provenance.openingHours = 'google';
+      // website
+      if (r.websiteUri) {
+        out.extras ||= {};
+        if (!out.extras['website']) out.extras['website'] = r.websiteUri;
+        (out as any).meta ||= {}; (out as any).meta.provenance ||= {};
+        (out as any).meta.provenance.website = 'google';
+        (out as any).meta.provenance.google = true;
       }
 
-      // Rating
-      if (r.rating != null)  out.extras["google_rating"] = r.rating;
-      if (r.userRatingCount != null) out.extras["google_ratings_count"] = r.userRatingCount;
+      // opening hours (text only for now)
+      const weekday = r.currentOpeningHours?.weekdayDescriptions;
+      if (!out.openingHours && Array.isArray(weekday) && weekday.length) {
+        out.extras ||= {};
+        out.extras['google_opening_hours_text'] = weekday; // keep text
+        (out as any).meta ||= {}; (out as any).meta.provenance ||= {};
+        (out as any).meta.provenance.openingHours = 'google';
+        (out as any).meta.provenance.google = true;
+      }
 
-      // Geometry (better than postcode centroid if present)
+      // rating
+      if (r.rating != null) {
+        out.extras ||= {};
+        out.extras['google_rating'] = r.rating;
+      }
+      if (r.userRatingCount != null) {
+        out.extras ||= {};
+        out.extras['google_ratings_count'] = r.userRatingCount;
+      }
+
+      // geometry (preferred lat/lng)
       const lat = r.location?.latitude;
       const lng = r.location?.longitude;
       if (lat != null && lng != null) {
-        if (out.extras["lat"] == null) out.extras["lat"] = lat;
-        if (out.extras["lng"] == null) out.extras["lng"] = lng;
+        out.extras ||= {};
+        if (out.extras['lat'] == null) out.extras['lat'] = lat;
+        if (out.extras['lng'] == null) out.extras['lng'] = lng;
+        (out as any).meta ||= {}; (out as any).meta.provenance ||= {};
+        (out as any).meta.provenance.google = true;
       }
+    } catch { /* swallow to keep UI smooth */ }
 
-      // mark provenance (for UI labels and non-export)
-      out.extras["google_places"] = true;
-      out.meta ||= {};
-      out.meta.provenance ||= {};
-      out.meta.provenance.google = true;
-    } catch {
-      // swallow & stay graceful
-    }
     return out;
   }
 }

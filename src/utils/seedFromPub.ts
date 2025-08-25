@@ -18,7 +18,7 @@ export function seedFromPub(pub: any): Partial<BusinessData> {
     if (pub?.openingHours) meta.provenance.openingHours = 'user';
   }
   
-  return {
+  const seed = {
     name: pub?.name ?? pub?.pub ?? "",
     postcode: pub?.postcode ?? pub?.zip ?? "",
     address: pub?.address ?? pub?.street ?? "",
@@ -31,4 +31,7 @@ export function seedFromPub(pub: any): Partial<BusinessData> {
     extras,
     meta,
   };
+
+  console.debug('[seed]', { name: seed.name, postcode: seed.postcode });
+  return seed;
 }

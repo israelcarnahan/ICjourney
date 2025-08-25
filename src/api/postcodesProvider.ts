@@ -8,6 +8,8 @@ export class PostcodesProvider implements BusinessDataProvider {
     const postcode = seed.postcode?.trim();
     if (!postcode) return out;
 
+    console.debug('[provider] postcodes running for', seed?.name, seed?.postcode);
+
     try {
       const encodedPostcode = encodeURIComponent(postcode.trim().toUpperCase());
       let url = `${API_CFG.endpoints.postcodes}/${encodedPostcode}`;

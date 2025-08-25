@@ -118,6 +118,13 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
   const seed = seedFromPub(visit);
   const businessData = useBusinessData(visit.pub || visit.uuid || 'unknown', seed);
 
+  // Debug log when dialog opens
+  React.useEffect(() => {
+    if (isOpen) {
+      console.debug('[dialog-open] fetching business data for', seed);
+    }
+  }, [isOpen, seed]);
+
   const formatTimeDisplay = (timeStr: string | undefined): string => {
     if (!timeStr) return "Not scheduled";
     if (timeStr === "Anytime") return "Anytime";
@@ -307,10 +314,13 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                  <div className="mt-2 space-y-1 text-xs text-eggplant-300">
                    {(() => {
                      const prov = businessData.meta?.provenance || {};
+                     const showPhone = prov.phone === 'google' || prov.phone === 'user';
+                     const showSite = prov.website === 'google' || prov.website === 'user';
+                     const showHours = prov.openingHours === 'google' || prov.openingHours === 'user';
                      
                      return (
                        <>
-                         {businessData.phone && prov.phone && (
+                         {businessData.phone && showPhone && (
                            <div>
                              <a
                                href={`tel:${businessData.phone}`}
@@ -330,7 +340,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                              </a>
                            </div>
                          )}
-                         {(businessData.extras?.website as string) && prov.website && (
+                         {(businessData.extras?.website as string) && showSite && (
                            <div>
                              <a
                                href={businessData.extras.website as string}
@@ -354,30 +364,33 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                              )}
                            </div>
                          )}
-                         {businessData.openingHours && prov.openingHours && 
-                          (prov.openingHours === 'google' || prov.openingHours === 'user') && (
-                           <div className="flex items-center gap-2 mt-2 text-sm">
-                             <Clock className="h-4 w-4 text-neon-purple" />
-                             <span className="text-eggplant-200">Business Hours:</span>
-                             <span className="text-neon-purple">
-                               {businessData.openingHours.weekly[1] ? 
-                                 `${businessData.openingHours.weekly[1][0]} - ${businessData.openingHours.weekly[1][1]}` : 
-                                 "Hours vary"
-                               }
-                             </span>
-                           </div>
-                         )}
-                         {(businessData.extras?.google_opening_hours_text as string[]) && (
-                           <details className="mt-2">
-                             <summary className="cursor-pointer text-xs text-eggplant-400 hover:text-eggplant-200">
-                               Detailed hours
-                             </summary>
-                             <div className="mt-1 pl-2 text-xs text-eggplant-300">
-                               {(businessData.extras.google_opening_hours_text as string[]).map((day, i) => (
-                                 <div key={i}>{day}</div>
-                               ))}
-                             </div>
-                           </details>
+                         {showHours && (
+                           <>
+                             {businessData.openingHours && (
+                               <div className="flex items-center gap-2 mt-2 text-sm">
+                                 <Clock className="h-4 w-4 text-neon-purple" />
+                                 <span className="text-eggplant-200">Business Hours:</span>
+                                 <span className="text-neon-purple">
+                                   {businessData.openingHours.weekly[1] ? 
+                                     `${businessData.openingHours.weekly[1][0]} - ${businessData.openingHours.weekly[1][1]}` : 
+                                     "Hours vary"
+                                   }
+                                 </span>
+                               </div>
+                             )}
+                             {(businessData.extras?.google_opening_hours_text as string[]) && (
+                               <details className="mt-2">
+                                 <summary className="cursor-pointer text-xs text-eggplant-400 hover:text-eggplant-200">
+                                   Detailed hours
+                                 </summary>
+                                 <div className="mt-1 pl-2 text-xs text-eggplant-300">
+                                   {(businessData.extras.google_opening_hours_text as string[]).map((day, i) => (
+                                     <div key={i}>{day}</div>
+                                   ))}
+                                 </div>
+                               </details>
+                             )}
+                           </>
                          )}
                          <div className="flex items-center gap-2 mt-2 text-sm">
                            <MapPin className="h-4 w-4 text-neon-purple" />
@@ -439,7 +452,8 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                 </p>
                                  {!isAnytime && selectedTime && (() => {
                    const prov = businessData?.meta?.provenance || {};
-                   return prov.openingHours && (prov.openingHours === 'google' || prov.openingHours === 'user');
+                   const showHours = prov.openingHours === 'google' || prov.openingHours === 'user';
+                   return showHours;
                  })() && (
                    <p
                      className={clsx(
