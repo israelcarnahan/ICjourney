@@ -8,6 +8,7 @@ const NONE = "__none__"; // sentinel to represent "Not present"
 // Field configuration
 const REQUIRED = ['name', 'postcode'] as const;
 const OPTIONAL_VISIBLE = ['rtm', 'notes', 'address', 'town', 'phone', 'email'] as const;
+// Note: lat/lng fields are hidden from UI but preserved in mapping state
 const VISIBLE_FIELDS = [...REQUIRED, ...OPTIONAL_VISIBLE];
 
 type Props = {
@@ -70,7 +71,7 @@ const ColumnMappingWizard: React.FC<Props> = ({
   const [showErrors, setShowErrors] = useState(false);
   const [headerQuery, setHeaderQuery] = useState("");
 
-  // Generate a stable signature ID for React keys
+  // Stable signature for React keys
   const sigId = useMemo(() => `wizard-${Date.now()}`, []);
 
   // Clean and dedupe headers
@@ -95,7 +96,7 @@ const ColumnMappingWizard: React.FC<Props> = ({
   }, 0);
   const requiredComplete = requiredMappedCount === REQUIRED.length;
 
-  // All visible fields status tracking
+  // All visible fields status tracking (for the optional chip)
   const allMappedCount = VISIBLE_FIELDS.reduce((n, f) => {
     const v = mapping[f];
     return n + (v && v !== NONE ? 1 : 0);
@@ -289,11 +290,11 @@ const ColumnMappingWizard: React.FC<Props> = ({
                       <span className="text-red-400 ml-1">*</span>
                     )}
                   </label>
-                  
+
                   <select
                     id={`field-${field}`}
                     value={mapping[field] ?? NONE}
-                    onChange={(e) => handleSelect(field, e.target.value === NONE ? null : e.target.value)}
+                    onChange={(e) => handleSelect(field as CanonicalField, e.target.value === NONE ? null : e.target.value)}
                     className={`w-full border border-eggplant-700/60 bg-eggplant-900/60 text-eggplant-100 rounded-lg px-3 py-2 text-sm focus:outline-none
                                focus:ring-2 focus:ring-neon-purple/60 focus:border-neon-purple/60 transition-colors ${
                                  !mapping[field] && touched[field] ? 'border-red-500/60' : ''
@@ -307,17 +308,12 @@ const ColumnMappingWizard: React.FC<Props> = ({
                     ))}
                   </select>
 
-                  <p 
-                    id={`${field}-helper`}
-                    className="text-xs text-eggplant-300 mt-2"
-                  >
+                  <p id={`${field}-helper`} className="text-xs text-eggplant-300 mt-2">
                     {FIELD_HELPERS[field]}
                   </p>
 
                   {!mapping[field] && touched[field] && (
-                    <p className="text-xs text-red-400 mt-1">
-                      This field is required
-                    </p>
+                    <p className="text-xs text-red-400 mt-1">This field is required</p>
                   )}
                 </div>
               ))}
@@ -364,6 +360,7 @@ const ColumnMappingWizard: React.FC<Props> = ({
               </span>
             </span>
           </div>
+
           <div className="flex gap-3">
             <button
               className="px-4 py-2 rounded-lg border border-eggplant-700/70 text-eggplant-200 hover:text-white hover:border-neon-purple hover:bg-eggplant-800/50 transition"
