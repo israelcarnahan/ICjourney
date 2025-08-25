@@ -14,8 +14,8 @@ import ColumnMappingWizard from "./ColumnMappingWizard";
 import { useColumnMapping } from "../hooks/useColumnMapping";
 import type { ColumnMapping, HeaderSignature, MappedRow } from "../types/import";
 import { devLog } from "../utils/devLog";
-import { suggest } from "../utils/dedupe";
-import { DedupReviewDialog } from "./DedupReviewDialog";
+import { suggest, convertToSuggestions } from "../utils/dedupe";
+import { DedupReviewDialog, type Suggestion } from "./DedupReviewDialog";
 
 // Minimal row returned from Excel (no ids/metadata yet)
 type ImportedRow = {
@@ -63,7 +63,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
   // Deduplication state
   const [showDedupDialog, setShowDedupDialog] = useState(false);
-  const [dedupCandidates, setDedupCandidates] = useState<{ autoMerge: any[]; needsReview: any[] }>({ autoMerge: [], needsReview: [] });
+  const [dedupSuggestions, setDedupSuggestions] = useState<{ autoMerge: Suggestion[]; needsReview: Suggestion[] }>({ autoMerge: [], needsReview: [] });
   const [pendingPubs, setPendingPubs] = useState<Pub[]>([]);
   const [pendingFile, setPendingFile] = useState<any>(null);
 
@@ -321,17 +321,16 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     },
   });
 
-  const handleDedupConfirm = (autoMergeIds: string[], reviewMergeIds: string[]) => {
+  const handleDedupConfirm = (decisions: Array<{ id: string; action: 'merge' | 'skip' }>) => {
     // Mark merged pubs with canonicalId
-    const mergedIds = new Set([...autoMergeIds, ...reviewMergeIds]);
+    const mergeDecisions = decisions.filter(d => d.action === 'merge');
     const updatedPubs = pendingPubs.map(pub => {
-      if (mergedIds.has(pub.uuid)) {
-        // Find the existing pub to merge with
-        const candidate = [...dedupCandidates.autoMerge, ...dedupCandidates.needsReview]
-          .find(c => c.incoming.uuid === pub.uuid);
-        if (candidate) {
-          return { ...pub, canonicalId: candidate.existing.uuid };
-        }
+      const decision = mergeDecisions.find(d => {
+        const [existingId] = d.id.split('::');
+        return pub.uuid === existingId;
+      });
+      if (decision) {
+        return { ...pub, canonicalId: decision.id.split('::')[0] };
       }
       return pub;
     });
@@ -346,7 +345,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     setShowDedupDialog(false);
     setPendingPubs([]);
     setPendingFile(null);
-    setDedupCandidates({ autoMerge: [], needsReview: [] });
+    setDedupSuggestions({ autoMerge: [], needsReview: [] });
 
     // Handle UI state
     if (fileType === "masterhouse") {
@@ -427,27 +426,31 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           rtm: pub.rtm,
         }));
         
-        const { autoMerge, needsReview } = suggest(existingPubs, incomingPubs);
-        
-        if (autoMerge.length > 0 || needsReview.length > 0) {
-          // Store pending data and show deduplication dialog
-          setPendingPubs(enriched);
-          setPendingFile({
-            fileId,
-            fileName: currentFileName,
-            name: currentFileName,
-            type,
-            uploadTime,
-            count: enriched.length,
-            schedulingMode,
-            deadline: schedulingMode === 'deadline' ? deadline : undefined,
-            priority: schedulingMode === 'priority' ? priorityLevel : undefined,
-            followUpDays: schedulingMode === 'followup' ? followUpDays : undefined,
-          });
-          setDedupCandidates({ autoMerge, needsReview });
-          setShowDedupDialog(true);
-          return prev; // Return unchanged state
-        }
+                 const { autoMerge, needsReview } = suggest(existingPubs, incomingPubs);
+         
+         if (autoMerge.length > 0 || needsReview.length > 0) {
+           // Convert to suggestions format
+           const autoMergeSuggestions = convertToSuggestions(autoMerge, existingPubs, incomingPubs, currentFileName);
+           const needsReviewSuggestions = convertToSuggestions(needsReview, existingPubs, incomingPubs, currentFileName);
+           
+           // Store pending data and show deduplication dialog
+           setPendingPubs(enriched);
+           setPendingFile({
+             fileId,
+             fileName: currentFileName,
+             name: currentFileName,
+             type,
+             uploadTime,
+             count: enriched.length,
+             schedulingMode,
+             deadline: schedulingMode === 'deadline' ? deadline : undefined,
+             priority: schedulingMode === 'priority' ? priorityLevel : undefined,
+             followUpDays: schedulingMode === 'followup' ? followUpDays : undefined,
+           });
+           setDedupSuggestions({ autoMerge: autoMergeSuggestions, needsReview: needsReviewSuggestions });
+           setShowDedupDialog(true);
+           return prev; // Return unchanged state
+         }
       }
 
       // No duplicates or master file - add directly
@@ -614,24 +617,25 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         usedPriorities={usedPriorities}
       />
 
-      <DedupReviewDialog
-        isOpen={showDedupDialog}
-        onClose={() => {
-          setShowDedupDialog(false);
-          setPendingPubs([]);
-          setPendingFile(null);
-          setDedupCandidates({ autoMerge: [], needsReview: [] });
-          setShowTypeDialog(false);
-          setProcessedPubs([]);
-          setCurrentFileName("");
-          setIsProcessing(false);
-          setIsFileLoaded(false);
-          setShowDetails(false);
-        }}
-        autoMerge={dedupCandidates.autoMerge}
-        needsReview={dedupCandidates.needsReview}
-        onConfirm={handleDedupConfirm}
-      />
+             {showDedupDialog && (
+         <DedupReviewDialog
+           autoMerge={dedupSuggestions.autoMerge}
+           needsReview={dedupSuggestions.needsReview}
+           onConfirm={handleDedupConfirm}
+           onCancel={() => {
+             setShowDedupDialog(false);
+             setPendingPubs([]);
+             setPendingFile(null);
+             setDedupSuggestions({ autoMerge: [], needsReview: [] });
+             setShowTypeDialog(false);
+             setProcessedPubs([]);
+             setCurrentFileName("");
+             setIsProcessing(false);
+             setIsFileLoaded(false);
+             setShowDetails(false);
+           }}
+         />
+       )}
 
       {showMapping && (
         <ColumnMappingWizard

@@ -7,6 +7,8 @@ import {
   normalizePostcode 
 } from './fuzzy';
 import { devLog } from './devLog';
+import type { Suggestion, ReasonBadge } from '../components/DedupReviewDialog';
+import type { Pub as ContextPub } from '../context/PubDataContext';
 
 export interface Pub {
   uuid: string;
@@ -31,6 +33,11 @@ export interface DedupeCandidate {
 export interface DedupeResult {
   autoMerge: DedupeCandidate[];
   needsReview: DedupeCandidate[];
+}
+
+export interface SuggestionResult {
+  autoMerge: Suggestion[];
+  needsReview: Suggestion[];
 }
 
 /**
@@ -250,4 +257,86 @@ export function suggest(existingPubs: Pub[], incomingPubs: Pub[]): DedupeResult 
   devLog('dedupe', `Found ${autoMerge.length} auto-merge and ${needsReview.length} needs-review candidates`);
   
   return { autoMerge, needsReview };
+}
+
+/**
+ * Convert string reasons to ReasonBadge format
+ */
+function convertReasonsToBadges(reasons: string[]): ReasonBadge[] {
+  return reasons.map(reason => {
+    if (reason === 'postcode') {
+      return { type: 'postcode' };
+    } else if (reason === 'rtm') {
+      return { type: 'rtm' };
+    } else if (reason === 'town') {
+      return { type: 'town' };
+    } else if (reason === 'phone') {
+      return { type: 'phone' };
+    } else if (reason === 'email') {
+      return { type: 'email' };
+    } else if (reason.includes('address tokens')) {
+      const match = reason.match(/(\d+)/);
+      return { type: 'addrTokens', value: match ? match[1] : '3' };
+    } else {
+      return { type: 'postcode' }; // fallback
+    }
+  });
+}
+
+/**
+ * Convert dedupe candidates to suggestions format
+ */
+export function convertToSuggestions(
+  candidates: DedupeCandidate[],
+  existingPubs: Pub[],
+  incomingPubs: Pub[],
+  fileName: string
+): Suggestion[] {
+  return candidates.map(candidate => {
+    const existingPub = existingPubs.find(p => p.uuid === candidate.existing.uuid);
+    const incomingPub = incomingPubs.find(p => p.uuid === candidate.incoming.uuid);
+    
+    if (!existingPub || !incomingPub) {
+      throw new Error('Pub not found in conversion');
+    }
+
+    // Convert the dedupe Pub format to the context Pub format
+    const contextExistingPub: ContextPub = {
+      uuid: existingPub.uuid,
+      fileId: '',
+      fileName: '',
+      listType: 'masterhouse',
+      zip: existingPub.postcode || '',
+      pub: existingPub.name,
+      rtm: existingPub.rtm,
+      // Add other required fields with defaults
+      deadline: undefined,
+      priorityLevel: undefined,
+      followUpDays: undefined,
+      mileageToNext: undefined,
+      driveTimeToNext: undefined,
+      last_visited: undefined,
+      landlord: undefined,
+      notes: undefined,
+      scheduledTime: undefined,
+      visitNotes: undefined,
+      Priority: undefined
+    };
+
+    return {
+      id: `${existingPub.uuid}::${incomingPub.uuid}`,
+      existing: contextExistingPub,
+      incoming: {
+        name: incomingPub.name,
+        postcode: incomingPub.postcode,
+        extras: {},
+        fileName,
+        rowIndex: 0 // We'll need to pass this from the caller
+      },
+      nameSim: candidate.nameSim,
+      score: candidate.score,
+      reasons: convertReasonsToBadges(candidate.reasons),
+      defaultAction: candidate.score >= 0.92 ? 'merge' : 'review'
+    };
+  });
 }
