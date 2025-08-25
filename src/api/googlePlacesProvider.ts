@@ -33,47 +33,52 @@ export class GooglePlacesProvider implements BusinessDataProvider {
       const r = await detRes.json();
       console.debug('[places] details payload', detRes);
 
-      // after we fetch details JSON into `r`
+      // r is the v1 details response
       const phone =
         r.nationalPhoneNumber ||
         r.internationalPhoneNumber ||
         undefined;
 
       const website = r.websiteUri || undefined;
-
-      // v1 "weekdayDescriptions" is an array of strings like
-      // ["Monday: 9:00 AM – 5:00 PM", ...]
       const hoursText: string[] = r.currentOpeningHours?.weekdayDescriptions ?? [];
-
       const lat = r.location?.latitude;
       const lng = r.location?.longitude;
 
-      const patch: Partial<BusinessData> = { extras: { ...seed.extras } };
+      const prov = { ...(seed.meta?.provenance || {}) };
 
+      const patch: Partial<BusinessData> = {
+        ...seed,
+        extras: { ...(seed.extras || {}) },
+        meta: { provenance: prov },
+      };
+
+      // PHONE (top-level + extras) + provenance
       if (phone) {
-        patch.phone = seed.phone || phone;
-        patch.meta = patch.meta ?? { provenance: {} as any };
-        patch.meta.provenance = { ...(patch.meta.provenance || {}), phone: 'google', google: true };
+        if (!patch.phone) patch.phone = phone;
+        patch.extras!.phone = phone;
+        patch.meta!.provenance = { ...patch.meta!.provenance, phone: 'google', google: true };
       }
+
+      // WEBSITE (extras only) + provenance
       if (website) {
         patch.extras!.website = website;
-        patch.meta = patch.meta ?? { provenance: {} as any };
-        patch.meta.provenance = { ...(patch.meta.provenance || {}), website: 'google', google: true };
+        patch.meta!.provenance = { ...patch.meta!.provenance, website: 'google', google: true };
       }
+
+      // HOURS (extras) + provenance
       if (hoursText.length) {
-        // keep hours as text list; we only show it when provenance is google
         patch.extras!.google_opening_hours_text = hoursText;
-        patch.meta = patch.meta ?? { provenance: {} as any };
-        patch.meta.provenance = { ...(patch.meta.provenance || {}), openingHours: 'google', google: true };
+        patch.meta!.provenance = { ...patch.meta!.provenance, openingHours: 'google', google: true };
       }
+
+      // COORDS (extras only)
       if (typeof lat === 'number' && typeof lng === 'number') {
         patch.extras!.lat = lat;
         patch.extras!.lng = lng;
-        patch.meta = patch.meta ?? { provenance: {} as any };
-        patch.meta.provenance = { ...(patch.meta.provenance || {}), google: true };
+        patch.meta!.provenance = { ...patch.meta!.provenance, google: true };
       }
 
-      // rating is non-sensitive and just informational
+      // RATING (extras only)
       if (typeof r.rating === 'number') {
         patch.extras!.google_rating = r.rating;
       }
@@ -84,7 +89,7 @@ export class GooglePlacesProvider implements BusinessDataProvider {
       console.debug('[google] mapped', {
         phone: patch.phone,
         website: patch.extras?.website,
-        hours: patch.extras?.google_opening_hours_text,
+        hours: Array.isArray(patch.extras?.google_opening_hours_text) ? patch.extras.google_opening_hours_text.length : 0,
         lat: patch.extras?.lat, lng: patch.extras?.lng,
         rating: patch.extras?.google_rating
       });

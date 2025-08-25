@@ -313,67 +313,70 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                  {visit.pub} - {visit.zip}
                </p>
                
-               {/* Business contact info - only show when proven */}
-               {businessData && (() => {
-                 const prov = businessData.meta?.provenance || {};
-                 
-                 return (
-                   <div className="mt-3 space-y-2">
-                     {/* Website & phone */}
-                     {((prov.website === 'google' || prov.website === 'user') && businessData?.extras?.website) ? (
-                       <div className="text-eggplant-200">
-                         <a href={businessData.extras.website as string} target="_blank" rel="noreferrer" className="underline">
-                           Visit website
-                         </a>
-                       </div>
-                     ) : null}
-                     {((prov.phone === 'google' || prov.phone === 'user') && businessData?.phone) ? (
-                       <div className="text-eggplant-200">
-                         {businessData.phone}
-                       </div>
-                     ) : null}
+                               {/* Business contact info - only show when proven */}
+                {businessData && (() => {
+                  const prov = businessData?.meta?.provenance || {};
+                  const website = businessData?.extras?.website;
+                  const phone   = businessData?.phone   || businessData?.extras?.phone;
+                  
+                  return (
+                    <div className="mt-3 space-y-2">
+                      {/* Website (proven only) */}
+                      {website && (prov.website === 'google' || prov.website === 'user') ? (
+                        <div className="mt-2 text-eggplant-200">
+                          <a href={website as string} target="_blank" rel="noreferrer" className="underline">
+                            Visit website
+                          </a>
+                        </div>
+                      ) : null}
 
-                     {/* Hours (Google text list in extras) */}
-                     {(prov.openingHours === 'google' && Array.isArray(businessData?.extras?.google_opening_hours_text)) ? (
-                       <details className="mt-3">
-                         <summary className="cursor-pointer text-eggplant-100">Business hours</summary>
-                         <ul className="mt-2 text-eggplant-200 text-sm space-y-1">
-                           {(businessData.extras.google_opening_hours_text as string[]).map((line:string, i:number) => (
-                             <li key={`hrs-${i}`}>{line}</li>
-                           ))}
-                         </ul>
-                         <div className="mt-2 text-[11px] text-eggplant-400">Some info © Google</div>
-                       </details>
-                     ) : null}
+                      {/* Phone (proven only) */}
+                      {phone && (prov.phone === 'google' || prov.phone === 'user') ? (
+                        <div className="text-eggplant-200">{String(phone)}</div>
+                      ) : null}
 
-                     {/* Rating (always show if available) */}
-                     {businessData?.extras?.google_rating ? (
-                       <div className="flex items-center gap-1">
-                         <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                         <span className="text-eggplant-200">{String(businessData.extras.google_rating)}</span>
-                         {(businessData?.extras?.google_ratings_count as number) ? (
-                           <span className="text-eggplant-400">
-                             ({String(businessData.extras.google_ratings_count as number)})
-                           </span>
-                         ) : null}
-                       </div>
-                     ) : null}
+                      {/* Hours (proven Google) */}
+                      {(prov.openingHours === 'google' &&
+                        Array.isArray(businessData?.extras?.google_opening_hours_text)) && (
+                        <details className="mt-3">
+                          <summary className="cursor-pointer text-eggplant-100">Business hours</summary>
+                          <ul className="mt-2 text-eggplant-200 text-sm space-y-1">
+                            {businessData!.extras!.google_opening_hours_text.map((line: string, i: number) => (
+                              <li key={`hrs-${i}`}>{line}</li>
+                            ))}
+                          </ul>
+                          <div className="mt-2 text-[11px] text-eggplant-400">Some info © Google</div>
+                        </details>
+                      )}
 
-                     {/* Directions */}
-                     <div className="flex items-center gap-2 mt-2 text-sm">
-                       <MapPin className="h-4 w-4 text-neon-purple" />
-                       <a
-                         href={getDirectionsUrl()}
-                         target="_blank"
-                         rel="noopener noreferrer"
-                         className="text-neon-blue hover:text-neon-purple transition-colors"
-                       >
-                         Get Directions
-                       </a>
-                     </div>
-                   </div>
-                 );
-               })()}
+                      {/* Rating (always show if available) */}
+                      {businessData?.extras?.google_rating ? (
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                          <span className="text-eggplant-200">{String(businessData.extras.google_rating)}</span>
+                          {(businessData?.extras?.google_ratings_count as number) ? (
+                            <span className="text-eggplant-400">
+                              ({String(businessData.extras.google_ratings_count as number)})
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      {/* Directions */}
+                      <div className="flex items-center gap-2 mt-2 text-sm">
+                        <MapPin className="h-4 w-4 text-neon-purple" />
+                        <a
+                          href={getDirectionsUrl()}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-neon-blue hover:text-neon-purple transition-colors"
+                        >
+                          Get Directions
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })()}
             </div>
 
             <div>
