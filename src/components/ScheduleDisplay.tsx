@@ -37,7 +37,7 @@ import DriveTimeBar from "./DriveTimeBar";
 import { SourceChips } from "./SourceChips";
 import { OriginalValues } from "./OriginalValues";
 import { SourceListChips } from "./SourceListChips";
-import { collectSources } from "../utils/lineageMerge";
+import { getSourceDetails, formatPriorityForUser } from "../utils/sourceDetails";
 import { checkPubOpeningHours } from "../utils/openingHours";
 import {
   Visit,
@@ -582,8 +582,8 @@ const ScheduleDisplay: React.FC = () => {
         "Pub Name": visit.pub,
         "Post Code": visit.zip,
         "Last Visited": formatDate(visit.last_visited),
-        Priority: formatPriorityLabel(visit),
-        Lists: (visit.sourceLists || collectSources([visit])).join(', '),
+        Priority: formatPriorityForUser(visit) || formatPriorityLabel(visit),
+        Lists: getSourceDetails(visit).fileNames.join('; '),
         RTM: visit.rtm || "",
         Landlord: visit.landlord || "",
         Notes: visit.notes || "",
@@ -1236,7 +1236,7 @@ const ScheduleDisplay: React.FC = () => {
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap">
                           <SourceListChips 
-                            sources={visit.sourceLists || collectSources([visit])} 
+                            sources={getSourceDetails(visit).fileNames} 
                             className="text-xs" 
                           />
                         </td>

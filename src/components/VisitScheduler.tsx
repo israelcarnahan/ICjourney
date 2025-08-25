@@ -6,6 +6,7 @@ import { ExtendedPub } from "../context/PubDataContext";
 import { format } from "date-fns";
 import { getMockPlaceData } from "../utils/mockData";
 import { Star } from "lucide-react";
+import { getSourceDetails } from "../utils/sourceDetails";
 
 interface ScheduleVisit extends ExtendedPub {
   Priority: string;
@@ -48,6 +49,72 @@ interface VisitSchedulerProps {
     time: string,
     notes: string
   ) => void;
+}
+
+function SourceDetailsPanel({ visitOrPub }: { visitOrPub: any }) {
+  const { fileNames, details } = getSourceDetails(visitOrPub);
+
+  return (
+    <div className="mt-6" data-testid="source-details">
+      <h4 className="text-sm font-semibold text-eggplant-100 mb-2">From your lists</h4>
+      <p className="text-xs text-eggplant-300 mb-3">This section shows data imported from your files.</p>
+
+      {/* Row of list chips */}
+      <div className="flex flex-wrap gap-2 mb-3">
+        {fileNames.map(n => (
+          <span key={n} className="px-2 py-0.5 rounded-full bg-eggplant-800 text-eggplant-50 text-xs">{n}</span>
+        ))}
+      </div>
+
+      {/* Collapsible per-list details */}
+      <div className="space-y-3">
+        {details.map((d, i) => (
+          <details key={`${d.fileName}-${i}`} className="rounded-lg bg-eggplant-900/50 border border-eggplant-700/50">
+            <summary className="cursor-pointer px-3 py-2 text-eggplant-200 hover:text-white flex items-center gap-2">
+              <span className="font-medium">{d.fileName}</span>
+              {d.priorityLabel && <span className="text-xs text-eggplant-300">• {d.priorityLabel}</span>}
+              {d.listType && <span className="text-xs text-eggplant-300">• {d.listType}</span>}
+            </summary>
+
+            <div className="px-3 pb-3 text-sm text-eggplant-100">
+              {/* Common mapped bits, only show if present */}
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+                {d.mapped.postcode && <li><span className="opacity-70">Postcode:</span> {d.mapped.postcode}</li>}
+                {d.mapped.rtm && <li><span className="opacity-70">RTM:</span> {d.mapped.rtm}</li>}
+                {d.mapped.address && <li><span className="opacity-70">Address:</span> {d.mapped.address}</li>}
+                {d.mapped.town && <li><span className="opacity-70">Town/City:</span> {d.mapped.town}</li>}
+                {d.mapped.phone && <li><span className="opacity-70">Phone:</span> {d.mapped.phone}</li>}
+                {d.mapped.email && <li><span className="opacity-70">Email:</span> {d.mapped.email}</li>}
+              </ul>
+
+              {d.mapped.notes && (
+                <div className="mt-2">
+                  <div className="opacity-70 text-xs mb-0.5">Notes</div>
+                  <div className="p-2 rounded bg-eggplant-900 border border-eggplant-700/40 whitespace-pre-wrap">
+                    {d.mapped.notes}
+                  </div>
+                </div>
+              )}
+
+              {/* Extras (anything else) */}
+              {d.extras && Object.keys(d.extras).length > 0 && (
+                <div className="mt-2">
+                  <div className="opacity-70 text-xs mb-1">More from this file</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+                    {Object.entries(d.extras).map(([k, v]) => (
+                      <div key={k}>
+                        <span className="opacity-70">{k}:</span> <span className="break-words">{String(v ?? '')}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 const VisitScheduler: React.FC<VisitSchedulerProps> = ({
@@ -324,6 +391,8 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                 placeholder="Add any notes about this visit..."
               />
             </div>
+
+            <SourceDetailsPanel visitOrPub={visit} />
           </div>
 
           <div className="flex justify-end gap-3 mt-6">
