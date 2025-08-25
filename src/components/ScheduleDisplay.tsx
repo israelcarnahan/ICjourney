@@ -38,6 +38,8 @@ import VisitScheduler from "./VisitScheduler";
 import DriveTimeBar from "./DriveTimeBar";
 import { SourceChips } from "./SourceChips";
 import { OriginalValues } from "./OriginalValues";
+import { SourceListChips } from "./SourceListChips";
+import { collectSources } from "../utils/lineageMerge";
 import {
   Visit,
   ScheduleDay,
@@ -88,6 +90,14 @@ const getRTMDisplay = (visit: Visit) => {
   return visit.rtm || "—";
 };
 
+// Helper function to format priority label
+function formatPriorityLabel(v: Visit): string {
+  if (v.schedulingMode === 'priority' && v.priorityLevel) return `Priority ${v.priorityLevel}`;
+  if (v.schedulingMode === 'deadline' && v.deadline) return `Visit by ${format(parseISO(v.deadline), 'yyyy-MM-dd')}`;
+  if (v.schedulingMode === 'followup' && v.followUpDays != null) return `Follow-up in ${v.followUpDays}d`;
+  return 'Masterfile';
+}
+
 // const vehicleIcons: Record<VehicleType, LucideIcon | React.FC<any>> = {
 //   car: Car,
 //   truck: Truck,
@@ -130,6 +140,14 @@ const getPriorityStyles = (priority: string): string => {
   
   if (priority.startsWith("Follow-up ")) {
     return "bg-purple-900/20 text-purple-200 border border-purple-700/50";
+  }
+  
+  if (priority.startsWith("Follow-up in ")) {
+    return "bg-purple-900/20 text-purple-200 border border-purple-700/50";
+  }
+  
+  if (priority === "Masterfile") {
+    return "bg-gray-900/20 text-gray-200 border border-gray-700/50";
   }
   
   // Handle legacy priority values
@@ -639,14 +657,8 @@ const ScheduleDisplay: React.FC = () => {
         "Pub Name": visit.pub,
         "Post Code": visit.zip,
         "Last Visited": formatDate(visit.last_visited),
-        Priority:
-          visit.listType === "wins"
-            ? "Recent Win"
-            : visit.listType === "hitlist"
-            ? "Hit List"
-            : visit.listType === "unvisited"
-            ? "Unvisited"
-            : "Masterhouse",
+        Priority: formatPriorityLabel(visit),
+        Lists: (visit.sourceLists || collectSources([visit])).join(', '),
         RTM: visit.rtm || "",
         Landlord: visit.landlord || "",
         Notes: visit.notes || "",
@@ -674,6 +686,7 @@ const ScheduleDisplay: React.FC = () => {
       { wch: 10 },
       { wch: 12 },
       { wch: 15 },
+      { wch: 25 },
       { wch: 20 },
       { wch: 20 },
       { wch: 50 },
@@ -1301,14 +1314,17 @@ const ScheduleDisplay: React.FC = () => {
                         <td className="px-4 py-2 whitespace-nowrap">
                           <span
                             className={`px-2 py-1 text-xs rounded-full ${getPriorityStyles(
-                              getPriorityDisplay(visit)
+                              formatPriorityLabel(visit)
                             )}`}
                           >
-                            {getPriorityDisplay(visit)}
+                            {formatPriorityLabel(visit)}
                           </span>
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap">
-                          <SourceChips pub={visit} className="text-xs" />
+                          <SourceListChips 
+                            sources={visit.sourceLists || collectSources([visit])} 
+                            className="text-xs" 
+                          />
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
                           {getRTMDisplay(visit)}

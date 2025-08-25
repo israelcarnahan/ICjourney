@@ -272,6 +272,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               rtm: r.rtm ?? undefined,
               landlord: r.landlord ?? undefined,
               notes: r.notes ?? undefined,
+              sourceLists: [file.name], // Add source list
+              schedulingMode: undefined, // Masterfile doesn't have scheduling mode
               Priority: "Masterfile",
             }));
 
@@ -454,6 +456,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       rtm: r.rtm ?? undefined,
       landlord: r.landlord ?? undefined,
       notes: r.notes ?? undefined,
+      sourceLists: [currentFileName], // Add source list
+      schedulingMode, // Add scheduling mode
       Priority:
         type === "wins"
           ? "RepslyWin"

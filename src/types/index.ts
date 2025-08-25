@@ -20,6 +20,10 @@ export interface Visit {
   visitNotes?: string;
   uploadTime?: number;
   
+  // Source lists and scheduling mode (for clarity)
+  sourceLists?: string[]; // unique list names (e.g., "Masterfile", "TNT Hitlist.xlsx", ...)
+  schedulingMode?: 'priority' | 'deadline' | 'followup';
+  
   // Lineage fields (optional for backward compatibility)
   sources?: Array<{
     sourceId: string;

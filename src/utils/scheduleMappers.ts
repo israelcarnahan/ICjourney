@@ -17,7 +17,12 @@ export type DaySchedule = {
 // Map DaySchedule (loose) -> ScheduleDay (strict)
 export const toScheduleDay = (d: DaySchedule): ScheduleDay => ({
   date: coerceString(d.date, ''),
-  visits: toArray(d.visits),
+  visits: toArray(d.visits).map(visit => ({
+    ...visit,
+    // Preserve sourceLists and schedulingMode from Pub objects
+    sourceLists: (visit as any).sourceLists || [],
+    schedulingMode: (visit as any).schedulingMode || undefined,
+  })),
   pub: '', // Default empty string for pub field
   arrival: new Date(),
   departure: new Date(),

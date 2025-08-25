@@ -1,4 +1,5 @@
 import type { Pub, SourceRef, EffectivePlan } from '../context/PubDataContext';
+import type { Visit } from '../types';
 import { devLog } from './devLog';
 
 /**
@@ -124,13 +125,19 @@ export function mergeIntoCanonical(
   // Recompute effective plan
   const effectivePlan = recomputeEffectivePlan(canonicalPub, sourceRef);
   
+  // Merge sourceLists
+  const canonicalSourceLists = canonicalPub.sourceLists || [];
+  const incomingSourceLists = incomingPub.sourceLists || [];
+  const mergedSourceLists = [...new Set([...canonicalSourceLists, ...incomingSourceLists])];
+  
   // Return updated canonical pub
   return {
     ...canonicalPub,
     sources,
     fieldValuesBySource,
     mergedExtras,
-    effectivePlan
+    effectivePlan,
+    sourceLists: mergedSourceLists
   };
 }
 
@@ -182,4 +189,43 @@ export function getSourceInfo(pub: Pub): { count: number; fileNames: string[] } 
     count: sources.length,
     fileNames
   };
+}
+
+/**
+ * Collect unique source list names from visits or pub metadata
+ */
+export function collectSources(visitsOrPubs: Array<Pub | Visit>): string[] {
+  const allSources = new Set<string>();
+  
+  visitsOrPubs.forEach(item => {
+    // Check for sourceLists first (new field)
+    if (item.sourceLists && Array.isArray(item.sourceLists)) {
+      item.sourceLists.forEach(source => allSources.add(source));
+    }
+    
+    // Check for sources array (lineage field)
+    if (item.sources && Array.isArray(item.sources)) {
+      item.sources.forEach(source => {
+        if (typeof source === 'string') {
+          allSources.add(source);
+        } else if (source.fileName) {
+          allSources.add(source.fileName);
+        }
+      });
+    }
+    
+    // Fallback to fileName if no sources found
+    if (allSources.size === 0 && item.fileName) {
+      allSources.add(item.fileName);
+    }
+  });
+  
+  // Sort alphabetically but put "Masterfile" first
+  const sortedSources = Array.from(allSources).sort((a, b) => {
+    if (a === "Masterfile") return -1;
+    if (b === "Masterfile") return 1;
+    return a.localeCompare(b);
+  });
+  
+  return sortedSources;
 }
