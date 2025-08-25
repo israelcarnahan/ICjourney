@@ -30,8 +30,6 @@ import clsx from "clsx";
 import { toArray } from "../utils/typeGuards";
 import {
   calculateDistance,
-  findNearestPubs,
-  getPriorityOrder,
 } from "../utils/scheduleUtils";
 import RouteMap from "./RouteMap";
 import VisitScheduler from "./VisitScheduler";
@@ -40,6 +38,7 @@ import { SourceChips } from "./SourceChips";
 import { OriginalValues } from "./OriginalValues";
 import { SourceListChips } from "./SourceListChips";
 import { collectSources } from "../utils/lineageMerge";
+import { checkPubOpeningHours } from "../utils/openingHours";
 import {
   Visit,
   ScheduleDay,
@@ -240,13 +239,7 @@ const recalculateMetrics = (
   };
 };
 
-// Helper to parse time string to Date
-const parseTimeToDate = (timeStr: string) => {
-  const [hours, minutes] = timeStr.split(":").map(Number);
-  const date = new Date();
-  date.setHours(hours, minutes, 0, 0);
-  return date;
-};
+
 
 // const getScheduleTimes = (
 //   visits: Visit[],
@@ -445,9 +438,7 @@ const ScheduleDisplay: React.FC = () => {
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   // const [hoveredDay, setHoveredDay] = useState<string | null>(null);
   const [openingHours, setOpeningHours] = useState<OpeningHoursMap>({});
-  const [removedPubs, setRemovedPubs] = useState<Record<string, Set<string>>>(
-    {}
-  );
+
   // const [selectedPub, setSelectedPub] = useState<Visit | null>(null);
   // const [isCustomizing, setIsCustomizing] = useState(false);
   const [desiredEndTimes, setDesiredEndTimes] = useState<
@@ -465,8 +456,10 @@ const ScheduleDisplay: React.FC = () => {
     })),
     totalDriveTime: day.totalDriveTime || 0,
     totalMileage: day.totalMileage || 0,
+    startMileage: day.startMileage || 0,
     startDriveTime:
       typeof day.startDriveTime === "number" ? day.startDriveTime : 0,
+    endMileage: day.endMileage || 0,
     endDriveTime: typeof day.endDriveTime === "number" ? day.endDriveTime : 0,
     schedulingErrors: day.schedulingErrors,
   }));
@@ -483,24 +476,7 @@ const ScheduleDisplay: React.FC = () => {
     );
   };
 
-  const fetchOpeningHours = async (pubName: string, postcode: string) => {
-    try {
-      const result = await checkPubOpeningHours(pubName);
-      setOpeningHours((prev) => ({
-        ...prev,
-        [`${pubName}-${postcode}`]: result,
-      }));
-    } catch (error) {
-      console.error("Error fetching opening hours:", error);
-      setOpeningHours((prev) => ({
-        ...prev,
-        [`${pubName}-${postcode}`]: {
-          isOpen: false,
-          error: "Failed to fetch opening hours",
-        },
-      }));
-    }
-  };
+
 
   useEffect(() => {
     Object.entries(expandedDays).forEach(async ([date, isExpanded]) => {
@@ -552,58 +528,7 @@ const ScheduleDisplay: React.FC = () => {
     }
   };
 
-  const findReplacementPub = (dayDate: string, removedPub: any) => {
-    // Get all pubs from userFiles
-    const allPubs = [
-      ...userFiles.pubs.map((pub) => ({
-        ...pub,
-        Priority:
-          pub.listType === "wins"
-            ? "RepslyWin"
-            : pub.listType === "hitlist"
-            ? "Wishlist"
-            : pub.listType === "unvisited"
-            ? "Unvisited"
-            : "Masterfile",
-      })),
-    ];
 
-    const scheduledPubs = new Set(
-      schedule.flatMap((day) => day.visits.map((visit) => visit.pub))
-    );
-    const dayRemovedPubs = removedPubs[dayDate] || new Set();
-
-    const availablePubs = allPubs.filter(
-      (pub) =>
-        pub &&
-        pub.pub &&
-        pub.zip &&
-        !scheduledPubs.has(pub.pub) &&
-        !dayRemovedPubs.has(pub.pub)
-    );
-
-    const removedPubPriorityOrder = getPriorityOrder(removedPub);
-    const eligiblePubs = availablePubs.filter(
-      (pub) => getPriorityOrder(pub) <= removedPubPriorityOrder
-    );
-
-    if (!removedPub || !removedPub.zip) {
-      console.warn("Invalid removed pub:", removedPub);
-      return null;
-    }
-
-    const nearbyPubs = findNearestPubs(removedPub, eligiblePubs, 10);
-    if (!nearbyPubs.length) return null;
-
-    return nearbyPubs.sort((a, b) => {
-      const priorityDiff = getPriorityOrder(a) - getPriorityOrder(b);
-      if (priorityDiff !== 0) return priorityDiff;
-
-      const distanceA = calculateDistance(removedPub.zip, a.zip).mileage;
-      const distanceB = calculateDistance(removedPub.zip, b.zip).mileage;
-      return distanceA - distanceB;
-    })[0];
-  };
 
   // const handleRemovePubVisit = (dayDate: string, pubToRemove: string) => {
   //   setRemovedPubs((prev) => ({
@@ -704,7 +629,7 @@ const ScheduleDisplay: React.FC = () => {
       prevSchedule.map((day) => {
         if (!day.date || day.date !== date) return day;
 
-        const metrics = recalculateMetrics(day.visits || [], homeAddress, time);
+        const metrics = recalculateMetrics(day.visits || [], homeAddress);
         return {
           ...day,
           ...metrics,
@@ -727,7 +652,7 @@ const ScheduleDisplay: React.FC = () => {
 
         // Find the visit to update
         const visitIndex = day.visits.findIndex(
-          (visit) => visit.pub === visitId
+          (visit: Visit) => visit.pub === visitId
         );
         if (visitIndex === -1) return day;
 
@@ -765,8 +690,7 @@ const ScheduleDisplay: React.FC = () => {
         // Recalculate metrics with the new order
         const metrics = recalculateMetrics(
           sortedVisits,
-          homeAddress,
-          desiredEndTimes[date]
+          homeAddress
         );
 
         // Return updated day with all required properties
@@ -824,19 +748,18 @@ const ScheduleDisplay: React.FC = () => {
       prevSchedule.map((d) => {
         if (d.date !== date) return d;
 
-        const updatedVisits = d.visits.filter((v) => v.pub !== visitId);
+        const updatedVisits = d.visits.filter((v: Visit) => v.pub !== visitId);
 
         // Recalculate metrics
         const metrics = recalculateMetrics(
           updatedVisits,
-          homeAddress,
-          desiredEndTimes[date]
+          homeAddress
         );
 
         return {
           ...d,
-          visits: updatedVisits,
           ...metrics,
+          visits: updatedVisits,
         };
       })
     );
@@ -904,14 +827,13 @@ const ScheduleDisplay: React.FC = () => {
         // Recalculate metrics
         const metrics = recalculateMetrics(
           updatedVisits,
-          homeAddress,
-          desiredEndTimes[date]
+          homeAddress
         );
 
         return {
           ...d,
-          visits: updatedVisits,
           ...metrics,
+          visits: updatedVisits,
         };
       })
     );
@@ -959,6 +881,7 @@ const ScheduleDisplay: React.FC = () => {
     // Take the top N visits based on visitsPerDay
     const newVisits = potentialVisits.slice(0, visitsPerDay).map((visit) => ({
       ...visit,
+      Priority: visit.Priority || formatPriorityLabel(visit as any),
       mileageToNext: 0,
       driveTimeToNext: 30,
     }));
@@ -976,14 +899,13 @@ const ScheduleDisplay: React.FC = () => {
         // Recalculate metrics
         const metrics = recalculateMetrics(
           newVisits,
-          homeAddress,
-          desiredEndTimes[date]
+          homeAddress
         );
 
         return {
           ...d,
-          visits: newVisits,
           ...metrics,
+          visits: newVisits,
         };
       })
     );
@@ -1148,14 +1070,6 @@ const ScheduleDisplay: React.FC = () => {
           <div className="mt-4 space-y-4">
             <DriveTimeBar
               visits={visits}
-              totalDriveTime={day.totalDriveTime || 0}
-              startDriveTime={day.startDriveTime || 0}
-              endDriveTime={day.endDriveTime || 0}
-              targetVisitsPerDay={visitsPerDay}
-              desiredEndTime={desiredEndTimes[day.date || ""]}
-              // onDesiredEndTimeChange={(time) =>
-              //   handleDesiredEndTimeChange(day.date || "", time)
-              // }
             />
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-eggplant-800/30">
@@ -1365,9 +1279,12 @@ const ScheduleDisplay: React.FC = () => {
             </div>
             <div className="mt-4">
               <RouteMap
-                day={day as any}
-                homeAddress={homeAddress}
-                className="h-[400px] rounded-lg animated-border"
+                route={{
+                  visits: visits.map(visit => ({
+                    name: visit.pub,
+                    address: visit.zip
+                  }))
+                }}
               />
             </div>
           </div>

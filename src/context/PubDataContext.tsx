@@ -45,6 +45,10 @@ export interface Pub {
   visitNotes?: string;
   Priority?: string;
   
+  // Source lists and scheduling mode (for clarity)
+  sourceLists?: string[]; // unique list names (e.g., "Masterfile", "TNT Hitlist.xlsx", ...)
+  schedulingMode?: 'priority' | 'deadline' | 'followup';
+  
   // Lineage and effective plan fields (optional for backward compatibility)
   sources?: SourceRef[];
   fieldValuesBySource?: Record<string, Array<{ sourceId: string; value: string }>>;
