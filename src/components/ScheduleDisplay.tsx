@@ -76,10 +76,10 @@ const getPriorityDisplay = (visit: Visit) => {
 
 // Helper function to get RTM display
 const getRTMDisplay = (visit: Visit) => {
-  // Check if we have field values by source
-  if (visit.fieldValuesBySource?.rtm && visit.fieldValuesBySource.rtm.length > 0) {
+  // Check if we have RTM in merged extras
+  if (visit.mergedExtras?.rtm && visit.mergedExtras.rtm.length > 0) {
     // Show the first RTM value (could be enhanced to show all)
-    return visit.fieldValuesBySource.rtm[0].value;
+    return visit.mergedExtras.rtm[0].value;
   }
   
   // Fallback to direct RTM field

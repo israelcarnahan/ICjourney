@@ -351,7 +351,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             const mappedValues: Record<string, string> = {
               pub: incomingPub.pub,
               zip: incomingPub.zip,
-              rtm: incomingPub.rtm || '',
               landlord: incomingPub.landlord || '',
               notes: incomingPub.notes || '',
             };
@@ -363,6 +362,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                   extras[key] = String(value);
                 }
               });
+            }
+            
+            // Add RTM to extras if it exists
+            if (incomingPub.rtm) {
+              extras['rtm'] = incomingPub.rtm;
             }
             
             // Merge into canonical using append-only lineage

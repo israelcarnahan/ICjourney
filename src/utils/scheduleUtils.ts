@@ -194,8 +194,12 @@ export async function planVisits(
       dayVisits.forEach((pub, index) => {
         if (index < dayVisits.length - 1) {
           const metrics = calculateDistance(pub.zip, dayVisits[index + 1].zip);
-          pub.mileageToNext = metrics.mileage;
-          pub.driveTimeToNext = metrics.driveTime;
+          // Create a new object to avoid modifying the original
+          dayVisits[index] = {
+            ...pub,
+            mileageToNext: metrics.mileage,
+            driveTimeToNext: metrics.driveTime
+          };
           totalMileage += metrics.mileage;
           totalDriveTime += metrics.driveTime;
         }
