@@ -71,26 +71,26 @@ function SourceDetailsPanel({ visitOrPub }: { visitOrPub: any }) {
         {details.map((d, i) => (
           <details key={`${d.fileName}-${i}`} className="rounded-lg bg-eggplant-900/50 border border-eggplant-700/50">
             <summary className="cursor-pointer px-3 py-2 text-eggplant-200 hover:text-white flex items-center gap-2">
-              <span className="font-medium">{d.fileName}</span>
-              {d.priorityLabel && <span className="text-xs text-eggplant-300">• {d.priorityLabel}</span>}
-              {d.listType && <span className="text-xs text-eggplant-300">• {d.listType}</span>}
+              <span className="font-medium truncate">{d.fileName}</span>
+              {d.priorityLabel && <span className="text-xs text-eggplant-300 flex-shrink-0">• {d.priorityLabel}</span>}
+              {d.listType && <span className="text-xs text-eggplant-300 flex-shrink-0">• {d.listType}</span>}
             </summary>
 
             <div className="px-3 pb-3 text-sm text-eggplant-100">
               {/* Common mapped bits, only show if present */}
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
-                {d.mapped.postcode && <li><span className="opacity-70">Postcode:</span> {d.mapped.postcode}</li>}
-                {d.mapped.rtm && <li><span className="opacity-70">RTM:</span> {d.mapped.rtm}</li>}
-                {d.mapped.address && <li><span className="opacity-70">Address:</span> {d.mapped.address}</li>}
-                {d.mapped.town && <li><span className="opacity-70">Town/City:</span> {d.mapped.town}</li>}
-                {d.mapped.phone && <li><span className="opacity-70">Phone:</span> {d.mapped.phone}</li>}
-                {d.mapped.email && <li><span className="opacity-70">Email:</span> {d.mapped.email}</li>}
+              <ul className="grid grid-cols-1 gap-x-6 gap-y-1">
+                {d.mapped.postcode && <li className="break-words"><span className="opacity-70">Postcode:</span> {d.mapped.postcode}</li>}
+                {d.mapped.rtm && <li className="break-words"><span className="opacity-70">RTM:</span> {d.mapped.rtm}</li>}
+                {d.mapped.address && <li className="break-words"><span className="opacity-70">Address:</span> {d.mapped.address}</li>}
+                {d.mapped.town && <li className="break-words"><span className="opacity-70">Town/City:</span> {d.mapped.town}</li>}
+                {d.mapped.phone && <li className="break-words"><span className="opacity-70">Phone:</span> {d.mapped.phone}</li>}
+                {d.mapped.email && <li className="break-words"><span className="opacity-70">Email:</span> {d.mapped.email}</li>}
               </ul>
 
               {d.mapped.notes && (
                 <div className="mt-2">
                   <div className="opacity-70 text-xs mb-0.5">Notes</div>
-                  <div className="p-2 rounded bg-eggplant-900 border border-eggplant-700/40 whitespace-pre-wrap">
+                  <div className="p-2 rounded bg-eggplant-900 border border-eggplant-700/40 whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
                     {d.mapped.notes}
                   </div>
                 </div>
@@ -100,10 +100,10 @@ function SourceDetailsPanel({ visitOrPub }: { visitOrPub: any }) {
               {d.extras && Object.keys(d.extras).length > 0 && (
                 <div className="mt-2">
                   <div className="opacity-70 text-xs mb-1">More from this file</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-1">
                     {Object.entries(d.extras).map(([k, v]) => (
-                      <div key={k}>
-                        <span className="opacity-70">{k}:</span> <span className="break-words">{String(v ?? '')}</span>
+                      <div key={k} className="break-words">
+                        <span className="opacity-70">{k}:</span> <span>{String(v ?? '')}</span>
                       </div>
                     ))}
                   </div>
@@ -261,10 +261,10 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
         <Dialog.Content
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md animated-border bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 rounded-lg p-6"
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md max-h-[90vh] animated-border bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 rounded-lg overflow-hidden flex flex-col"
           aria-describedby="visit-scheduler-description"
         >
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center p-6 pb-4">
             <Dialog.Title className="text-xl font-bold text-eggplant-100">
               {visit.scheduledTime ? "Edit Scheduled Visit" : "Schedule Visit"}
             </Dialog.Title>
@@ -281,7 +281,8 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
             </Dialog.Close>
           </div>
 
-          <div className="space-y-6">
+          <div className="flex-1 overflow-y-auto px-6">
+            <div className="space-y-6">
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="h-4 w-4 text-neon-purple" />
@@ -395,7 +396,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
             <SourceDetailsPanel visitOrPub={visit} />
           </div>
 
-          <div className="flex justify-end gap-3 mt-6">
+          <div className="flex justify-end gap-3 p-6 pt-4 border-t border-eggplant-700/50">
             <Dialog.Close className="px-4 py-2 rounded-lg text-eggplant-100 hover:bg-eggplant-800/50 transition-colors">
               Cancel
             </Dialog.Close>
