@@ -329,9 +329,13 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       const updatedPubs = [...prev.pubs];
       const newPubs: Pub[] = [];
       
+      // Track which incoming pubs have been processed
+      const processedIncomingIds = new Set<string>();
+      
       // Process each decision
       decisions.forEach(decision => {
         const [existingId, incomingId] = decision.id.split('::');
+        processedIncomingIds.add(incomingId);
         
         if (decision.action === 'merge') {
           // Find the canonical pub and incoming pub
@@ -378,6 +382,14 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           if (incomingPub) {
             newPubs.push(incomingPub);
           }
+        }
+      });
+      
+      // Add any remaining pubs that weren't in the deduplication decisions
+      // (these were ignored by the deduplication algorithm but should still be added)
+      pendingPubs.forEach(incomingPub => {
+        if (!processedIncomingIds.has(incomingPub.uuid)) {
+          newPubs.push(incomingPub);
         }
       });
       
