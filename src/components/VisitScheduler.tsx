@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Clock, Calendar, Clock4 } from "lucide-react";
+import { Clock, Calendar, Clock4, MapPin } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import { ExtendedPub } from "../context/PubDataContext";
@@ -191,6 +191,19 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
     }
   };
 
+  const getDirectionsUrl = (): string => {
+    if (businessData?.extras?.latitude && businessData?.extras?.longitude) {
+      // Use coordinates if available
+      const lat = businessData.extras.latitude;
+      const lng = businessData.extras.longitude;
+      return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    } else {
+      // Fallback to name and postcode
+      const query = [visit.pub, visit.zip].filter(Boolean).join(", ");
+      return `https://www.google.com/maps/search/${encodeURIComponent(query)}`;
+    }
+  };
+
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = e.target.value;
     setSelectedTime(newTime);
@@ -329,6 +342,17 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                       </span>
                     </div>
                   )}
+                  <div className="flex items-center gap-2 mt-2 text-sm">
+                    <MapPin className="h-4 w-4 text-neon-purple" />
+                    <a
+                      href={getDirectionsUrl()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-neon-blue hover:text-neon-purple transition-colors"
+                    >
+                      Get Directions
+                    </a>
+                  </div>
                 </div>
               )}
             </div>
