@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Clock, Calendar, Clock4, MapPin, Star, Globe } from "lucide-react";
+import { Clock, Calendar, Clock4, MapPin, Star } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import { ExtendedPub } from "../context/PubDataContext";
@@ -119,7 +119,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
   const businessData = useBusinessData(visit.pub || visit.uuid || 'unknown', seed);
 
   // Description ID for accessibility
-  const descId = 'visit-desc';
+  const descriptionId = 'visit-scheduler-desc';
 
   // Debug log when dialog opens
   React.useEffect(() => {
@@ -286,10 +286,10 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                  <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
                   <Dialog.Content
             className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md max-h-[90vh] animated-border bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 rounded-lg overflow-hidden flex flex-col"
-            aria-describedby={descId}
+            aria-describedby={descriptionId}
           >
-            <Dialog.Description id={descId}>
-              Choose a time for this visit. We'll validate against business hours when available.
+            <Dialog.Description id={descriptionId} className="sr-only">
+              Schedule a visit and review any available contact info and hours.
             </Dialog.Description>
           <div className="flex justify-between items-center p-6 pb-4">
                          <Dialog.Title className="text-xl font-bold text-eggplant-100">
@@ -309,116 +309,71 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                   {format(new Date(date), "MMMM d, yyyy")}
                 </h3>
               </div>
-              <p className="text-sm text-eggplant-200">
-                {visit.pub} - {visit.zip}
-              </p>
-                             {businessData && (
-                 <div className="mt-2 space-y-1 text-xs text-eggplant-300">
-                   {(() => {
-                     const prov = businessData.meta?.provenance || {};
-                     const showPhone = !!businessData?.phone && (prov.phone === 'google' || prov.phone === 'user');
-                     const website = businessData?.extras?.website as string | undefined;
-                     const showSite = !!website && (prov.website === 'google' || prov.website === 'user');
-                     const hoursText = businessData?.extras?.google_opening_hours_text as string[] | undefined;
-                     const showHours = Array.isArray(hoursText) && hoursText.length && (prov.openingHours === 'google' || prov.openingHours === 'user');
-                     const rating = businessData?.extras?.google_rating as number | undefined;
-                     const ratingCount = businessData?.extras?.google_ratings_count as number | undefined;
-                     
-                     return (
-                       <>
-                         {showPhone && (
-                           <div>
-                             <a
-                               href={`tel:${businessData.phone}`}
-                               className="hover:text-neon-blue transition-colors"
-                             >
-                               {businessData.phone}
-                             </a>
-                           </div>
-                         )}
-                         {businessData.email && (
-                           <div>
-                             <a
-                               href={`mailto:${businessData.email}`}
-                               className="hover:text-neon-pink transition-colors"
-                             >
-                               {businessData.email}
-                             </a>
-                           </div>
-                         )}
-                         {showSite && (
-                           <div>
-                             <a
-                               href={website}
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               className="hover:text-neon-green transition-colors flex items-center gap-1"
-                             >
-                               <Globe className="h-3 w-3" />
-                               Website
-                             </a>
-                           </div>
-                         )}
-                         {rating && (
-                           <div className="flex items-center gap-1">
-                             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                             <span>{String(rating)}</span>
-                             {ratingCount && (
-                               <span className="text-eggplant-400">
-                                 ({String(ratingCount)})
-                               </span>
-                             )}
-                           </div>
-                         )}
-                         {showHours && (
-                           <>
-                             {businessData.openingHours && (
-                               <div className="flex items-center gap-2 mt-2 text-sm">
-                                 <Clock className="h-4 w-4 text-neon-purple" />
-                                 <span className="text-eggplant-200">Business Hours:</span>
-                                 <span className="text-neon-purple">
-                                   {businessData.openingHours.weekly[1] ? 
-                                     `${businessData.openingHours.weekly[1][0]} - ${businessData.openingHours.weekly[1][1]}` : 
-                                     "Hours vary"
-                                   }
-                                 </span>
-                               </div>
-                             )}
-                             {hoursText && (
-                               <details className="mt-2">
-                                 <summary className="cursor-pointer text-xs text-eggplant-400 hover:text-eggplant-200">
-                                   Detailed hours
-                                 </summary>
-                                 <div className="mt-1 pl-2 text-xs text-eggplant-300">
-                                   {hoursText.map((day, i) => (
-                                     <div key={i}>{day}</div>
-                                   ))}
-                                 </div>
-                               </details>
-                             )}
-                           </>
-                         )}
-                         <div className="flex items-center gap-2 mt-2 text-sm">
-                           <MapPin className="h-4 w-4 text-neon-purple" />
-                           <a
-                             href={getDirectionsUrl()}
-                             target="_blank"
-                             rel="noopener noreferrer"
-                             className="text-neon-blue hover:text-neon-purple transition-colors"
-                           >
-                             Get Directions
-                           </a>
-                         </div>
-                         {prov.google && (
-                           <div className="text-xs text-eggplant-400 mt-2">
-                             Some info © Google
-                           </div>
-                         )}
-                       </>
-                     );
-                   })()}
-                 </div>
-               )}
+                             <p className="text-sm text-eggplant-200">
+                 {visit.pub} - {visit.zip}
+               </p>
+               
+               {/* Business contact info - only show when proven */}
+               {businessData && (() => {
+                 const prov = businessData.meta?.provenance || {};
+                 
+                 return (
+                   <div className="mt-3 space-y-2">
+                     {/* Website & phone */}
+                     {((prov.website === 'google' || prov.website === 'user') && businessData?.extras?.website) ? (
+                       <div className="text-eggplant-200">
+                         <a href={businessData.extras.website as string} target="_blank" rel="noreferrer" className="underline">
+                           Visit website
+                         </a>
+                       </div>
+                     ) : null}
+                     {((prov.phone === 'google' || prov.phone === 'user') && businessData?.phone) ? (
+                       <div className="text-eggplant-200">
+                         {businessData.phone}
+                       </div>
+                     ) : null}
+
+                     {/* Hours (Google text list in extras) */}
+                     {(prov.openingHours === 'google' && Array.isArray(businessData?.extras?.google_opening_hours_text)) ? (
+                       <details className="mt-3">
+                         <summary className="cursor-pointer text-eggplant-100">Business hours</summary>
+                         <ul className="mt-2 text-eggplant-200 text-sm space-y-1">
+                           {(businessData.extras.google_opening_hours_text as string[]).map((line:string, i:number) => (
+                             <li key={`hrs-${i}`}>{line}</li>
+                           ))}
+                         </ul>
+                         <div className="mt-2 text-[11px] text-eggplant-400">Some info © Google</div>
+                       </details>
+                     ) : null}
+
+                     {/* Rating (always show if available) */}
+                     {businessData?.extras?.google_rating ? (
+                       <div className="flex items-center gap-1">
+                         <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                         <span className="text-eggplant-200">{String(businessData.extras.google_rating)}</span>
+                         {(businessData?.extras?.google_ratings_count as number) ? (
+                           <span className="text-eggplant-400">
+                             ({String(businessData.extras.google_ratings_count as number)})
+                           </span>
+                         ) : null}
+                       </div>
+                     ) : null}
+
+                     {/* Directions */}
+                     <div className="flex items-center gap-2 mt-2 text-sm">
+                       <MapPin className="h-4 w-4 text-neon-purple" />
+                       <a
+                         href={getDirectionsUrl()}
+                         target="_blank"
+                         rel="noopener noreferrer"
+                         className="text-neon-blue hover:text-neon-purple transition-colors"
+                       >
+                         Get Directions
+                       </a>
+                     </div>
+                   </div>
+                 );
+               })()}
             </div>
 
             <div>

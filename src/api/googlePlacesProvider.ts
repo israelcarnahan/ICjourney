@@ -33,54 +33,64 @@ export class GooglePlacesProvider implements BusinessDataProvider {
       const r = await detRes.json();
       console.debug('[places] details payload', detRes);
 
-      // Map fields — only fill if empty; record provenance
-      (out as any).meta ||= {}; (out as any).meta.provenance ||= {};
-      const prov = (out as any).meta.provenance;
+      // after we fetch details JSON into `r`
+      const phone =
+        r.nationalPhoneNumber ||
+        r.internationalPhoneNumber ||
+        undefined;
 
-      // Phone
-      if (!out.phone && r.formattedPhoneNumber) {
-        out.phone = r.formattedPhoneNumber;
-        prov.phone = 'google';
-        prov.google = true;
-      }
+      const website = r.websiteUri || undefined;
 
-      // Website
-      const website = r.websiteUri;
-      if (website) {
-        out.extras ||= {};
-        if (!out.extras['website']) out.extras['website'] = website;
-        prov.website = 'google';
-        prov.google = true;
-      }
+      // v1 "weekdayDescriptions" is an array of strings like
+      // ["Monday: 9:00 AM – 5:00 PM", ...]
+      const hoursText: string[] = r.currentOpeningHours?.weekdayDescriptions ?? [];
 
-      // Opening hours (keep the text; do NOT fabricate)
-      const weekday = r.currentOpeningHours?.weekdayDescriptions;
-      if (Array.isArray(weekday) && weekday.length) {
-        out.extras ||= {};
-        out.extras['google_opening_hours_text'] = weekday;
-        prov.openingHours = 'google';
-        prov.google = true;
-      }
-
-      // Rating
-      if (r.rating != null) {
-        out.extras ||= {};
-        out.extras['google_rating'] = r.rating;
-      }
-      if (r.userRatingCount != null) {
-        out.extras ||= {};
-        out.extras['google_ratings_count'] = r.userRatingCount;
-      }
-
-      // Coordinates (prefer precise)
       const lat = r.location?.latitude;
       const lng = r.location?.longitude;
-      if (lat != null && lng != null) {
-        out.extras ||= {};
-        if (out.extras['lat'] == null) out.extras['lat'] = lat;
-        if (out.extras['lng'] == null) out.extras['lng'] = lng;
-        prov.google = true;
+
+      const patch: Partial<BusinessData> = { extras: { ...seed.extras } };
+
+      if (phone) {
+        patch.phone = seed.phone || phone;
+        patch.meta = patch.meta ?? { provenance: {} as any };
+        patch.meta.provenance = { ...(patch.meta.provenance || {}), phone: 'google', google: true };
       }
+      if (website) {
+        patch.extras!.website = website;
+        patch.meta = patch.meta ?? { provenance: {} as any };
+        patch.meta.provenance = { ...(patch.meta.provenance || {}), website: 'google', google: true };
+      }
+      if (hoursText.length) {
+        // keep hours as text list; we only show it when provenance is google
+        patch.extras!.google_opening_hours_text = hoursText;
+        patch.meta = patch.meta ?? { provenance: {} as any };
+        patch.meta.provenance = { ...(patch.meta.provenance || {}), openingHours: 'google', google: true };
+      }
+      if (typeof lat === 'number' && typeof lng === 'number') {
+        patch.extras!.lat = lat;
+        patch.extras!.lng = lng;
+        patch.meta = patch.meta ?? { provenance: {} as any };
+        patch.meta.provenance = { ...(patch.meta.provenance || {}), google: true };
+      }
+
+      // rating is non-sensitive and just informational
+      if (typeof r.rating === 'number') {
+        patch.extras!.google_rating = r.rating;
+      }
+      if (typeof r.userRatingCount === 'number') {
+        patch.extras!.google_ratings_count = r.userRatingCount;
+      }
+
+      console.debug('[google] mapped', {
+        phone: patch.phone,
+        website: patch.extras?.website,
+        hours: patch.extras?.google_opening_hours_text,
+        lat: patch.extras?.lat, lng: patch.extras?.lng,
+        rating: patch.extras?.google_rating
+      });
+
+      // Merge the patch into the output
+      Object.assign(out, patch);
     } catch (e) {
       console.debug('[places] provider error', e);
     }

@@ -36,12 +36,13 @@ function placesProxy() {
               'id',
               'displayName',
               'formattedAddress',
-              'location',
-              'formattedPhoneNumber',
               'websiteUri',
-              'currentOpeningHours.weekdayDescriptions',
+              'nationalPhoneNumber',
+              'internationalPhoneNumber',
               'rating',
-              'userRatingCount'
+              'userRatingCount',
+              'currentOpeningHours.weekdayDescriptions',
+              'location'
             ].join(',')
           }
         });
