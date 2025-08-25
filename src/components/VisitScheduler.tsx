@@ -394,6 +394,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
             </div>
 
             <SourceDetailsPanel visitOrPub={visit} />
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 p-6 pt-4 border-t border-eggplant-700/50">
