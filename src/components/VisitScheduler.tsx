@@ -275,21 +275,17 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
 
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
-        <Dialog.Content
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md max-h-[90vh] animated-border bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 rounded-lg overflow-hidden flex flex-col"
-          aria-describedby="visit-scheduler-description"
-        >
+                 <Dialog.Content
+           className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md max-h-[90vh] animated-border bg-gradient-to-r from-eggplant-900/90 via-dark-900/95 to-eggplant-900/90 rounded-lg overflow-hidden flex flex-col"
+           aria-describedby="visit-desc"
+         >
+           <Dialog.Description id="visit-desc" className="sr-only">
+             Schedule a visit and add optional notes.
+           </Dialog.Description>
           <div className="flex justify-between items-center p-6 pb-4">
-            <Dialog.Title className="text-xl font-bold text-eggplant-100">
-              {visit.scheduledTime ? "Edit Scheduled Visit" : "Schedule Visit"}
-            </Dialog.Title>
-                         <Dialog.Description
-               id="visit-scheduler-description"
-               className="sr-only"
-             >
-               Schedule a visit and add optional notes for {visit.pub} on{" "}
-               {format(new Date(date), "MMMM d, yyyy")}.
-             </Dialog.Description>
+                         <Dialog.Title className="text-xl font-bold text-eggplant-100">
+               {visit.scheduledTime ? "Edit Scheduled Visit" : "Schedule Visit"}
+             </Dialog.Title>
             <Dialog.Close className="text-eggplant-400 hover:text-eggplant-100">
               <Clock className="h-5 w-5" />
             </Dialog.Close>
@@ -309,94 +305,99 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
               </p>
                              {businessData && (
                  <div className="mt-2 space-y-1 text-xs text-eggplant-300">
-                   {businessData.phone && businessData.meta?.provenance?.phone && (
-                     <div>
-                       <a
-                         href={`tel:${businessData.phone}`}
-                         className="hover:text-neon-blue transition-colors"
-                       >
-                         {businessData.phone}
-                       </a>
-
-                     </div>
-                   )}
-                   {businessData.email && (
-                     <div>
-                       <a
-                         href={`mailto:${businessData.email}`}
-                         className="hover:text-neon-pink transition-colors"
-                       >
-                         {businessData.email}
-                       </a>
-                     </div>
-                   )}
-                   {(businessData.extras?.website as string) && businessData.meta?.provenance?.website && (
-                     <div>
-                       <a
-                         href={businessData.extras.website as string}
-                         target="_blank"
-                         rel="noopener noreferrer"
-                         className="hover:text-neon-green transition-colors flex items-center gap-1"
-                       >
-                         <Globe className="h-3 w-3" />
-                         Website
-                       </a>
-
-                     </div>
-                   )}
-                   {(businessData.extras?.google_rating as number) && (
-                     <div className="flex items-center gap-1">
-                       <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                       <span>{String(businessData.extras.google_rating)}</span>
-                       {(businessData.extras?.google_ratings_count as number) && (
-                         <span className="text-eggplant-400">
-                           ({String(businessData.extras.google_ratings_count)})
-                         </span>
-                       )}
-                     </div>
-                   )}
-                   {businessData.openingHours && businessData.meta?.provenance?.openingHours && 
-                    (businessData.meta.provenance.openingHours === 'google' || businessData.meta.provenance.openingHours === 'user') && (
-                     <div className="flex items-center gap-2 mt-2 text-sm">
-                       <Clock className="h-4 w-4 text-neon-purple" />
-                       <span className="text-eggplant-200">Business Hours:</span>
-                       <span className="text-neon-purple">
-                         {businessData.openingHours.weekly[1] ? 
-                           `${businessData.openingHours.weekly[1][0]} - ${businessData.openingHours.weekly[1][1]}` : 
-                           "Hours vary"
-                         }
-                       </span>
-
-                     </div>
-                   )}
-                   {(businessData.extras?.google_opening_hours_text as string[]) && (
-                     <details className="mt-2">
-                       <summary className="cursor-pointer text-xs text-eggplant-400 hover:text-eggplant-200">
-                         Detailed hours
-                       </summary>
-                       <div className="mt-1 pl-2 text-xs text-eggplant-300">
-                         {(businessData.extras.google_opening_hours_text as string[]).map((day, i) => (
-                           <div key={i}>{day}</div>
-                         ))}
-                       </div>
-                     </details>
-                   )}
-                   <div className="flex items-center gap-2 mt-2 text-sm">
-                     <MapPin className="h-4 w-4 text-neon-purple" />
-                     <a
-                       href={getDirectionsUrl()}
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       className="text-neon-blue hover:text-neon-purple transition-colors"
-                     >
-                       Get Directions
-                     </a>
-                   </div>
-                   {businessData.meta?.provenance?.google && (
-                     <div className="text-xs text-eggplant-400 mt-2">
-                       Some info © Google
-                     </div>
-                   )}
+                   {(() => {
+                     const prov = businessData.meta?.provenance || {};
+                     
+                     return (
+                       <>
+                         {businessData.phone && prov.phone && (
+                           <div>
+                             <a
+                               href={`tel:${businessData.phone}`}
+                               className="hover:text-neon-blue transition-colors"
+                             >
+                               {businessData.phone}
+                             </a>
+                           </div>
+                         )}
+                         {businessData.email && (
+                           <div>
+                             <a
+                               href={`mailto:${businessData.email}`}
+                               className="hover:text-neon-pink transition-colors"
+                             >
+                               {businessData.email}
+                             </a>
+                           </div>
+                         )}
+                         {(businessData.extras?.website as string) && prov.website && (
+                           <div>
+                             <a
+                               href={businessData.extras.website as string}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="hover:text-neon-green transition-colors flex items-center gap-1"
+                             >
+                               <Globe className="h-3 w-3" />
+                               Website
+                             </a>
+                           </div>
+                         )}
+                         {(businessData.extras?.google_rating as number) && (
+                           <div className="flex items-center gap-1">
+                             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                             <span>{String(businessData.extras.google_rating)}</span>
+                             {(businessData.extras?.google_ratings_count as number) && (
+                               <span className="text-eggplant-400">
+                                 ({String(businessData.extras.google_ratings_count)})
+                               </span>
+                             )}
+                           </div>
+                         )}
+                         {businessData.openingHours && prov.openingHours && 
+                          (prov.openingHours === 'google' || prov.openingHours === 'user') && (
+                           <div className="flex items-center gap-2 mt-2 text-sm">
+                             <Clock className="h-4 w-4 text-neon-purple" />
+                             <span className="text-eggplant-200">Business Hours:</span>
+                             <span className="text-neon-purple">
+                               {businessData.openingHours.weekly[1] ? 
+                                 `${businessData.openingHours.weekly[1][0]} - ${businessData.openingHours.weekly[1][1]}` : 
+                                 "Hours vary"
+                               }
+                             </span>
+                           </div>
+                         )}
+                         {(businessData.extras?.google_opening_hours_text as string[]) && (
+                           <details className="mt-2">
+                             <summary className="cursor-pointer text-xs text-eggplant-400 hover:text-eggplant-200">
+                               Detailed hours
+                             </summary>
+                             <div className="mt-1 pl-2 text-xs text-eggplant-300">
+                               {(businessData.extras.google_opening_hours_text as string[]).map((day, i) => (
+                                 <div key={i}>{day}</div>
+                               ))}
+                             </div>
+                           </details>
+                         )}
+                         <div className="flex items-center gap-2 mt-2 text-sm">
+                           <MapPin className="h-4 w-4 text-neon-purple" />
+                           <a
+                             href={getDirectionsUrl()}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="text-neon-blue hover:text-neon-purple transition-colors"
+                           >
+                             Get Directions
+                           </a>
+                         </div>
+                         {prov.google && (
+                           <div className="text-xs text-eggplant-400 mt-2">
+                             Some info © Google
+                           </div>
+                         )}
+                       </>
+                     );
+                   })()}
                  </div>
                )}
             </div>
@@ -436,8 +437,10 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                   Currently scheduled for:{" "}
                   {formatTimeDisplay(visit.scheduledTime)}
                 </p>
-                                 {!isAnytime && selectedTime && businessData?.meta?.provenance?.openingHours && 
-                  (businessData.meta.provenance.openingHours === 'google' || businessData.meta.provenance.openingHours === 'user') && (
+                                 {!isAnytime && selectedTime && (() => {
+                   const prov = businessData?.meta?.provenance || {};
+                   return prov.openingHours && (prov.openingHours === 'google' || prov.openingHours === 'user');
+                 })() && (
                    <p
                      className={clsx(
                        "text-xs",

@@ -2,57 +2,61 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import type { Plugin } from "vite";
 
-function googlePlacesProxy(): Plugin {
-  return {
-    name: "google-places-proxy",
-    configureServer(server) {
-      server.middlewares.use("/api/places", async (req, res) => {
-        try {
-          const key = process.env.GOOGLE_PLACES_KEY || '';
-          console.log('[places-proxy] key present:', key ? 'yes: …' + key.slice(-4) : 'no');
-          if (!key) {
-            res.statusCode = 501;
-            res.setHeader("Content-Type", "application/json");
-            res.end(JSON.stringify({ ok:false, error:"GOOGLE_PLACES_KEY not set" }));
-            return;
-          }
+const placesProxy = (): Plugin => ({
+  name: 'places-proxy',
+  configureServer(server) {
+    const key = process.env.GOOGLE_PLACES_KEY || '';
+    console.log('[places-proxy] key present:', key ? 'yes: …' + key.slice(-4) : 'no');
 
-          const url = new URL(req.url!, "http://local");
-          const path = url.pathname.replace(/^\/api\/places/, "");
+    // POST /api/places/find?q=<textQuery>
+    server.middlewares.use('/api/places/find', async (req, res) => {
+      if (!key) { res.statusCode = 501; res.end('GOOGLE_PLACES_KEY missing'); return; }
+      const url = new URL(req.url || '', 'http://local');
+      const q = url.searchParams.get('q') || '';
+      const r = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': key,
+          'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress'
+        },
+        body: JSON.stringify({ textQuery: q })
+      });
+      const body = await r.text();
+      res.setHeader('content-type', 'application/json');
+      res.end(body);
+    });
 
-          // Routes:
-          //  /find?q=Text    -> Places Find Place from Text
-          //  /details?place_id=... -> Places Details
-          const base = "https://maps.googleapis.com/maps/api/place";
-          let target = "";
-          if (path === "/find") {
-            const q = url.searchParams.get("q") || "";
-            target = `${base}/findplacefromtext/json?inputtype=textquery&input=${encodeURIComponent(q)}&fields=${encodeURIComponent(process.env.GP_FIELDS_FIND || "place_id")}&key=${key}`;
-          } else if (path === "/details") {
-            const pid = url.searchParams.get("place_id") || "";
-            const fields = process.env.GP_FIELDS_DETAILS || "formatted_phone_number,website,opening_hours,rating,user_ratings_total,geometry";
-            target = `${base}/details/json?place_id=${encodeURIComponent(pid)}&fields=${encodeURIComponent(fields)}&key=${key}`;
-          } else {
-            res.statusCode = 404; res.end("Not found"); return;
-          }
-
-          const r = await fetch(target);
-          const text = await r.text();
-          res.statusCode = r.status;
-          res.setHeader("Content-Type", "application/json");
-          res.end(text);
-        } catch (e:any) {
-          res.statusCode = 500;
-          res.setHeader("Content-Type", "application/json");
-          res.end(JSON.stringify({ ok:false, error:String(e?.message || e) }));
+    // GET /api/places/details?id=<placeId>
+    server.middlewares.use('/api/places/details', async (req, res) => {
+      if (!key) { res.statusCode = 501; res.end('GOOGLE_PLACES_KEY missing'); return; }
+      const url = new URL(req.url || '', 'http://local');
+      const id = url.searchParams.get('id') || '';
+      const r = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(id)}?languageCode=en`, {
+        headers: {
+          'X-Goog-Api-Key': key,
+          'X-Goog-FieldMask': [
+            'id',
+            'displayName',
+            'formattedAddress',
+            'location',
+            'formattedPhoneNumber',
+            'websiteUri',
+            'currentOpeningHours',
+            'rating',
+            'userRatingCount'
+          ].join(',')
         }
       });
-    }
-  };
-}
+      const body = await r.text();
+      res.setHeader('content-type', 'application/json');
+      res.end(body);
+    });
+  }
+});
 
 export default defineConfig({
-  plugins: [react(), googlePlacesProxy()],
+  plugins: [react(), placesProxy()],
   envDir: ".",
   base: "/",
   preview: {

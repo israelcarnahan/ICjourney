@@ -15,37 +15,37 @@ export class GooglePlacesProvider implements BusinessDataProvider {
 
     // If the dev proxy is disabled (no key), the endpoint returns 501 → we just no-op.
     try {
-      // 1) Find place_id by text ("Name, Postcode")
+      // 1) Find place by text ("Name, Postcode")
       const q = makeQuery(name, seed.postcode ?? undefined);
       const find = await getJson(`/api/places/find?q=${encodeURIComponent(q)}`);
-      if (find?.status !== "OK" || !find?.candidates?.[0]?.place_id) return out;
-      const pid = find.candidates[0].place_id as string;
+      if (!find?.places?.[0]?.id) return out;
+      const placeId = find.places[0].id as string;
 
       // 2) Details: phone, website, opening_hours, rating, count (+ geometry lat/lng)
-      const det = await getJson(`/api/places/details?place_id=${encodeURIComponent(pid)}`);
-      if (det?.status !== "OK" || !det?.result) return out;
-      const r = det.result;
+      const det = await getJson(`/api/places/details?id=${encodeURIComponent(placeId)}`);
+      if (!det) return out;
+      const r = det;
 
       // Non-clobbering fills:
-      if (!out.phone && r.formatted_phone_number) {
-        out.phone = r.formatted_phone_number;
+      if (!out.phone && r.formattedPhoneNumber) {
+        out.phone = r.formattedPhoneNumber;
         out.meta ||= {};
         out.meta.provenance ||= {};
         out.meta.provenance.phone = 'google';
       }
       out.email ||= null; // Google typically doesn't provide email
       out.extras ||= {};
-      if (r.website && !out.extras["website"]) {
-        out.extras["website"] = r.website;
+      if (r.websiteUri && !out.extras["website"]) {
+        out.extras["website"] = r.websiteUri;
         out.meta ||= {};
         out.meta.provenance ||= {};
         out.meta.provenance.website = 'google';
       }
 
       // Opening hours
-      if (!out.openingHours && r.opening_hours?.weekday_text) {
-        // Google returns verbose weekday_text; keep as-is in extras and approximate
-        out.extras["google_opening_hours_text"] = r.opening_hours.weekday_text;
+      if (!out.openingHours && r.currentOpeningHours?.weekdayDescriptions) {
+        // Google returns verbose weekday descriptions; keep as-is in extras
+        out.extras["google_opening_hours_text"] = r.currentOpeningHours.weekdayDescriptions;
         out.meta ||= {};
         out.meta.provenance ||= {};
         out.meta.provenance.openingHours = 'google';
@@ -53,11 +53,11 @@ export class GooglePlacesProvider implements BusinessDataProvider {
 
       // Rating
       if (r.rating != null)  out.extras["google_rating"] = r.rating;
-      if (r.user_ratings_total != null) out.extras["google_ratings_count"] = r.user_ratings_total;
+      if (r.userRatingCount != null) out.extras["google_ratings_count"] = r.userRatingCount;
 
       // Geometry (better than postcode centroid if present)
-      const lat = r.geometry?.location?.lat;
-      const lng = r.geometry?.location?.lng;
+      const lat = r.location?.latitude;
+      const lng = r.location?.longitude;
       if (lat != null && lng != null) {
         if (out.extras["lat"] == null) out.extras["lat"] = lat;
         if (out.extras["lng"] == null) out.extras["lng"] = lng;
