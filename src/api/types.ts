@@ -36,6 +36,15 @@ export type BusinessData = {
   // meta
   sources: SourceTag[];         // every list this pub merged from
   extras: Record<string, unknown>; // extra columns across lists (merged, arrays where needed)
+  meta?: {
+    provenance?: {
+      openingHours?: 'google' | 'user' | 'fallback';
+      phone?: 'google' | 'user';
+      email?: 'google' | 'user';
+      website?: 'google' | 'user';
+      google?: boolean;
+    };
+  };
 };
 
 export interface BusinessDataProvider {

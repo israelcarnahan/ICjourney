@@ -8,7 +8,8 @@ function googlePlacesProxy(): Plugin {
     configureServer(server) {
       server.middlewares.use("/api/places", async (req, res) => {
         try {
-          const key = process.env.GOOGLE_PLACES_KEY;
+          const key = process.env.GOOGLE_PLACES_KEY || '';
+          console.log('[places-proxy] key present:', key ? 'yes: …' + key.slice(-4) : 'no');
           if (!key) {
             res.statusCode = 501;
             res.setHeader("Content-Type", "application/json");

@@ -9,8 +9,21 @@ export class PostcodesProvider implements BusinessDataProvider {
     if (!postcode) return out;
 
     try {
-      const url = `${API_CFG.endpoints.postcodes}/${encodeURIComponent(postcode)}`;
-      const data = await getJson(url) as any;
+      const encodedPostcode = encodeURIComponent(postcode.trim().toUpperCase());
+      let url = `${API_CFG.endpoints.postcodes}/${encodedPostcode}`;
+      let data = await getJson(url) as any;
+      
+      // If 404, try the query endpoint as fallback
+      if (!data?.result) {
+        try {
+          url = `${API_CFG.endpoints.postcodes}?query=${encodedPostcode}`;
+          data = await getJson(url) as any;
+          // Use first result if available
+          if (data?.result && Array.isArray(data.result) && data.result.length > 0) {
+            data = { result: data.result[0] };
+          }
+        } catch {}
+      }
       
       if (data?.result) {
         const result = data.result;

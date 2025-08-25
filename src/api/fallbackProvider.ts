@@ -53,6 +53,13 @@ export class FallbackProvider implements BusinessDataProvider {
     const oh = base.openingHours ?? defaultHours(name);
     base.openingHours = oh;
     base.isOpenAt = makeIsOpenAt(oh);
+    
+    // Mark provenance for fallback hours
+    if (!seed.openingHours) {
+      base.meta ||= {};
+      base.meta.provenance ||= {};
+      base.meta.provenance.openingHours = 'fallback';
+    }
 
     // 3) Merge extras from all sources that might have been attached in seed.extras
     // (seed.extras is already multi-list. Keep it as-is.)

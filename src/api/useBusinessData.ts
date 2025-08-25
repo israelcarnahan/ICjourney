@@ -11,7 +11,7 @@ const cache = new Map<string, BusinessData>();
 export function useBusinessData(pubId: string, seed: Partial<BusinessData>, chain?: ProviderChain) {
   const [data, setData] = useState<BusinessData | null>(null);
 
-  const providers = useMemo(() => chain?.providers ?? [postcodesProvider, nominatimProvider, fallbackProvider, googlePlacesProvider], [chain]);
+  const providers = useMemo(() => chain?.providers ?? [postcodesProvider, googlePlacesProvider, nominatimProvider, fallbackProvider], [chain]);
 
   useEffect(() => {
     let alive = true;

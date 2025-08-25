@@ -283,14 +283,13 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
             <Dialog.Title className="text-xl font-bold text-eggplant-100">
               {visit.scheduledTime ? "Edit Scheduled Visit" : "Schedule Visit"}
             </Dialog.Title>
-            <Dialog.Description
-              id="visit-scheduler-description"
-              className="sr-only"
-            >
-              {visit.scheduledTime ? "Edit scheduled" : "Schedule"} visit time
-              and add notes for {visit.pub} on{" "}
-              {format(new Date(date), "MMMM d, yyyy")}.
-            </Dialog.Description>
+                         <Dialog.Description
+               id="visit-scheduler-description"
+               className="sr-only"
+             >
+               Schedule a visit and add optional notes for {visit.pub} on{" "}
+               {format(new Date(date), "MMMM d, yyyy")}.
+             </Dialog.Description>
             <Dialog.Close className="text-eggplant-400 hover:text-eggplant-100">
               <Clock className="h-5 w-5" />
             </Dialog.Close>
@@ -310,7 +309,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
               </p>
                              {businessData && (
                  <div className="mt-2 space-y-1 text-xs text-eggplant-300">
-                   {businessData.phone && (
+                   {businessData.phone && businessData.meta?.provenance?.phone && (
                      <div>
                        <a
                          href={`tel:${businessData.phone}`}
@@ -318,6 +317,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                        >
                          {businessData.phone}
                        </a>
+
                      </div>
                    )}
                    {businessData.email && (
@@ -330,7 +330,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                        </a>
                      </div>
                    )}
-                   {(businessData.extras?.website as string) && (
+                   {(businessData.extras?.website as string) && businessData.meta?.provenance?.website && (
                      <div>
                        <a
                          href={businessData.extras.website as string}
@@ -341,6 +341,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                          <Globe className="h-3 w-3" />
                          Website
                        </a>
+
                      </div>
                    )}
                    {(businessData.extras?.google_rating as number) && (
@@ -354,7 +355,8 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                        )}
                      </div>
                    )}
-                   {businessData.openingHours && (
+                   {businessData.openingHours && businessData.meta?.provenance?.openingHours && 
+                    (businessData.meta.provenance.openingHours === 'google' || businessData.meta.provenance.openingHours === 'user') && (
                      <div className="flex items-center gap-2 mt-2 text-sm">
                        <Clock className="h-4 w-4 text-neon-purple" />
                        <span className="text-eggplant-200">Business Hours:</span>
@@ -364,6 +366,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                            "Hours vary"
                          }
                        </span>
+
                      </div>
                    )}
                    {(businessData.extras?.google_opening_hours_text as string[]) && (
@@ -389,7 +392,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                        Get Directions
                      </a>
                    </div>
-                   {(businessData.extras?.google_places as boolean) && (
+                   {businessData.meta?.provenance?.google && (
                      <div className="text-xs text-eggplant-400 mt-2">
                        Some info © Google
                      </div>
@@ -433,20 +436,21 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                   Currently scheduled for:{" "}
                   {formatTimeDisplay(visit.scheduledTime)}
                 </p>
-                {!isAnytime && selectedTime && (
-                  <p
-                    className={clsx(
-                      "text-xs",
-                      isOutsideBusinessHours(selectedTime)
-                        ? "text-red-400"
-                        : "text-green-400"
-                    )}
-                  >
-                    {isOutsideBusinessHours(selectedTime)
-                      ? "⚠️ Selected time is outside business hours (9 AM - 5 PM)"
-                      : "✓ Selected time is within business hours"}
-                  </p>
-                )}
+                                 {!isAnytime && selectedTime && businessData?.meta?.provenance?.openingHours && 
+                  (businessData.meta.provenance.openingHours === 'google' || businessData.meta.provenance.openingHours === 'user') && (
+                   <p
+                     className={clsx(
+                       "text-xs",
+                       isOutsideBusinessHours(selectedTime)
+                         ? "text-red-400"
+                         : "text-green-400"
+                     )}
+                   >
+                     {isOutsideBusinessHours(selectedTime)
+                       ? "⚠️ Selected time is outside business hours"
+                       : "✓ Selected time is within business hours"}
+                   </p>
+                 )}
               </div>
             </div>
 

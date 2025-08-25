@@ -8,7 +8,16 @@ export function seedFromPub(pub: any): Partial<BusinessData> {
 
   // extras: merge arbitrary columns across lists if you kept them
   const extras = { ...(pub?.extras || {}) };
-
+  
+  // Mark user data provenance
+  const meta: BusinessData['meta'] = {};
+  if (pub?.phone || pub?.email || pub?.notes || pub?.openingHours) {
+    meta.provenance = {};
+    if (pub?.phone) meta.provenance.phone = 'user';
+    if (pub?.email) meta.provenance.email = 'user';
+    if (pub?.openingHours) meta.provenance.openingHours = 'user';
+  }
+  
   return {
     name: pub?.name ?? pub?.pub ?? "",
     postcode: pub?.postcode ?? pub?.zip ?? "",
@@ -20,5 +29,6 @@ export function seedFromPub(pub: any): Partial<BusinessData> {
     openingHours: pub?.openingHours ?? null,
     sources,
     extras,
+    meta,
   };
 }

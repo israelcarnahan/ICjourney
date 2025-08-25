@@ -27,15 +27,28 @@ export class GooglePlacesProvider implements BusinessDataProvider {
       const r = det.result;
 
       // Non-clobbering fills:
-      out.phone ||= r.formatted_phone_number ?? null;
+      if (!out.phone && r.formatted_phone_number) {
+        out.phone = r.formatted_phone_number;
+        out.meta ||= {};
+        out.meta.provenance ||= {};
+        out.meta.provenance.phone = 'google';
+      }
       out.email ||= null; // Google typically doesn't provide email
       out.extras ||= {};
-      if (r.website && !out.extras["website"]) out.extras["website"] = r.website;
+      if (r.website && !out.extras["website"]) {
+        out.extras["website"] = r.website;
+        out.meta ||= {};
+        out.meta.provenance ||= {};
+        out.meta.provenance.website = 'google';
+      }
 
       // Opening hours
       if (!out.openingHours && r.opening_hours?.weekday_text) {
         // Google returns verbose weekday_text; keep as-is in extras and approximate
         out.extras["google_opening_hours_text"] = r.opening_hours.weekday_text;
+        out.meta ||= {};
+        out.meta.provenance ||= {};
+        out.meta.provenance.openingHours = 'google';
       }
 
       // Rating
@@ -52,6 +65,9 @@ export class GooglePlacesProvider implements BusinessDataProvider {
 
       // mark provenance (for UI labels and non-export)
       out.extras["google_places"] = true;
+      out.meta ||= {};
+      out.meta.provenance ||= {};
+      out.meta.provenance.google = true;
     } catch {
       // swallow & stay graceful
     }
