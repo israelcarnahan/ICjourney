@@ -8,7 +8,7 @@ import { FLAGS } from "../config/flags";
 
 /** simple in-memory cache per session; later you can persist to localStorage */
 const cache = new Map<string, BusinessData>();
-const inflight = new Map<string, Promise<BusinessData>>();
+const inflight = new Map<string, Promise<BusinessData | null>>();
 
 function keyOf(seed: Partial<BusinessData>) {
   return `${(seed.name || '').toLowerCase()}|${(seed.postcode || '').toUpperCase()}`;
@@ -37,7 +37,9 @@ async function runProviders(pubId: string, seed: Partial<BusinessData>, chain?: 
     } else {
       // Use legacy get pattern
       const next = await p.get(pubId, current);
-      current = { ...current, ...mergePreferNonEmpty(current, next) };
+      if (next) {
+        current = { ...current, ...mergePreferNonEmpty(current, next) };
+      }
     }
   }
   

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Clock, Calendar, Clock4, MapPin, Star } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import clsx from "clsx";
@@ -63,15 +63,48 @@ function SourceDetailsPanel({ visitOrPub }: { visitOrPub: any }) {
             <span className="text-xs text-eggplant-300 flex-shrink-0">• {businessData.sources.length} sources</span>
           </summary>
 
-          <div className="px-3 pb-3 text-sm text-eggplant-100">
-            {/* Core business fields */}
-            <ul className="grid grid-cols-1 gap-x-6 gap-y-1">
-              {businessData.postcode && <li className="break-words"><span className="opacity-70">Postcode:</span> {businessData.postcode}</li>}
-              {businessData.address && <li className="break-words"><span className="opacity-70">Address:</span> {businessData.address}</li>}
-              {businessData.town && <li className="break-words"><span className="opacity-70">Town/City:</span> {businessData.town}</li>}
-              {businessData.phone && <li className="break-words"><span className="opacity-70">Phone:</span> {businessData.phone}</li>}
-              {businessData.email && <li className="break-words"><span className="opacity-70">Email:</span> {businessData.email}</li>}
-            </ul>
+                     <div className="px-3 pb-3 text-sm text-eggplant-100">
+             {/* Core business fields */}
+             <ul className="grid grid-cols-1 gap-x-6 gap-y-1">
+               {businessData.postcode && <li className="break-words"><span className="opacity-70">Postcode:</span> {businessData.postcode}</li>}
+               {businessData.address && <li className="break-words"><span className="opacity-70">Address:</span> {businessData.address}</li>}
+               {businessData.town && <li className="break-words"><span className="opacity-70">Town/City:</span> {businessData.town}</li>}
+               {businessData.phone && <li className="break-words"><span className="opacity-70">Phone:</span> {businessData.phone}</li>}
+               {businessData.email && <li className="break-words"><span className="opacity-70">Email:</span> {businessData.email}</li>}
+             </ul>
+
+             {/* Proven Google data - same as top section */}
+             {(() => {
+               const prov = businessData?.meta?.provenance ?? {};
+               const phone = prov.phone ? (businessData?.phone || businessData?.extras?.phone) : null;
+               const website = prov.website ? businessData?.extras?.website : null;
+               const hours = prov.openingHours ? businessData?.extras?.google_opening_hours_text : null;
+               const rating = businessData?.extras?.google_rating;
+               const ratingCount = businessData?.extras?.google_ratings_count;
+               
+               return (
+                 <>
+                   {phone && <li className="break-words"><span className="opacity-70">Phone:</span> {String(phone)}</li>}
+                   {website && <li className="break-words"><span className="opacity-70">Website:</span> <a href={website as string} target="_blank" rel="noreferrer" className="underline">{String(website)}</a></li>}
+                   {rating && <li className="break-words"><span className="opacity-70">Rating:</span> ⭐ {String(rating)}{ratingCount ? ` (${String(ratingCount)} reviews)` : ''}</li>}
+                   {hours && (
+                     <li className="break-words">
+                       <span className="opacity-70">Hours:</span>
+                       <ul className="mt-1 ml-4 space-y-0.5">
+                         {Array.isArray(hours) ? hours.map((line: string, i: number) => (
+                           <li key={`hrs-bottom-${i}`} className="text-xs">{line}</li>
+                         )) : (
+                           <li className="text-xs">{String(hours)}</li>
+                         )}
+                       </ul>
+                     </li>
+                   )}
+                   {(prov.phone || prov.website || prov.openingHours) && (
+                     <li className="text-xs text-eggplant-400 mt-2">Some info © Google</li>
+                   )}
+                 </>
+               );
+             })()}
 
             {businessData.notes && (
               <div className="mt-2">
@@ -114,18 +147,31 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
   const [isAnytime, setIsAnytime] = useState(visit.scheduledTime === "Anytime");
   const [notes, setNotes] = useState(visit.visitNotes || "");
 
-  // Get business data from API provider
+  // Get business data from API provider - only when dialog opens
   const seed = seedFromPub(visit);
-  const businessData = useBusinessData(visit.pub || visit.uuid || 'unknown', seed);
+  const [businessData, setBusinessData] = React.useState<any>(null);
+  const openRef = useRef(false);
 
   // Description ID for accessibility
   const descriptionId = 'visit-scheduler-desc';
 
-  // Debug log when dialog opens
-  React.useEffect(() => {
+  // Only fetch when dialog opens, and only once per pub
+  useEffect(() => {
     if (!isOpen) return;
+    if (openRef.current) return;
+    openRef.current = true;
+    
     console.debug('[dialog-open] fetching business data for', { name: visit?.pub, postcode: visit?.zip });
-  }, [isOpen, visit?.pub, visit?.zip]);
+    
+    // Use the hook to get data
+    const data = useBusinessData(visit.pub || visit.uuid || 'unknown', seed);
+    setBusinessData(data);
+  }, [isOpen, visit.pub, visit.uuid, seed]);
+
+  // Reset ref when pub changes
+  useEffect(() => {
+    openRef.current = false;
+  }, [visit.pub, visit.uuid]);
 
   const formatTimeDisplay = (timeStr: string | undefined): string => {
     if (!timeStr) return "Not scheduled";
@@ -315,10 +361,12 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                
                                {/* Business contact info - only show when proven */}
                 {businessData && (() => {
-                  const prov = businessData?.meta?.provenance || {};
-                  const phone = (prov.phone === 'google' || prov.phone === 'user') ? (businessData?.phone || businessData?.extras?.phone) : null;
-                  const website = (prov.website === 'google' || prov.website === 'user') ? businessData?.extras?.website : null;
-                  const hoursText = (prov.openingHours === 'google' || prov.openingHours === 'user') ? businessData?.extras?.google_opening_hours_text : null;
+                  const prov = businessData?.meta?.provenance ?? {};
+                  const phone = prov.phone ? (businessData?.phone || businessData?.extras?.phone) : null;
+                  const website = prov.website ? businessData?.extras?.website : null;
+                  const hours = prov.openingHours ? businessData?.extras?.google_opening_hours_text : null;
+                  const rating = businessData?.extras?.google_rating;
+                  const ratingCount = businessData?.extras?.google_ratings_count;
                   
                   return (
                     <div className="mt-3 space-y-2">
@@ -337,28 +385,28 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                       ) : null}
 
                       {/* Hours */}
-                      {hoursText ? (
+                      {hours ? (
                         <details className="mt-3">
                           <summary className="cursor-pointer text-eggplant-100">Business hours</summary>
                           <ul className="mt-2 text-eggplant-200 text-sm space-y-1">
-                            {Array.isArray(hoursText) ? hoursText.map((line: string, i: number) => (
+                            {Array.isArray(hours) ? hours.map((line: string, i: number) => (
                               <li key={`hrs-${i}`}>{line}</li>
                             )) : (
-                              <li>{String(hoursText)}</li>
+                              <li>{String(hours)}</li>
                             )}
                           </ul>
                           <div className="mt-2 text-[11px] text-eggplant-400">Some info © Google</div>
                         </details>
                       ) : null}
 
-                      {/* Rating (always show if available) */}
-                      {businessData?.extras?.google_rating ? (
+                      {/* Rating */}
+                      {rating ? (
                         <div className="flex items-center gap-1">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          <span className="text-eggplant-200">{String(businessData.extras.google_rating)}</span>
-                          {(businessData?.extras?.google_ratings_count as number) ? (
+                          <span className="text-eggplant-200">{String(rating)}</span>
+                          {ratingCount ? (
                             <span className="text-eggplant-400">
-                              ({String(businessData.extras.google_ratings_count as number)})
+                              ({String(ratingCount)})
                             </span>
                           ) : null}
                         </div>
@@ -416,12 +464,11 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                   Currently scheduled for:{" "}
                   {formatTimeDisplay(visit.scheduledTime)}
                 </p>
-                                 {!isAnytime && selectedTime && (() => {
-                   const prov = businessData?.meta?.provenance || {};
-                   const hoursText = businessData?.extras?.google_opening_hours_text as string[] | undefined;
-                   const showHours = Array.isArray(hoursText) && hoursText.length && (prov.openingHours === 'google' || prov.openingHours === 'user');
-                   return showHours;
-                 })() && (
+                                                                   {!isAnytime && selectedTime && (() => {
+                    const prov = businessData?.meta?.provenance ?? {};
+                    const hours = prov.openingHours ? businessData?.extras?.google_opening_hours_text : null;
+                    return hours && Array.isArray(hours) && hours.length > 0;
+                  })() && (
                    <p
                      className={clsx(
                        "text-xs",

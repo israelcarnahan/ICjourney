@@ -3,74 +3,76 @@ import type { BusinessData, BusinessDataProvider } from './types';
 export class GooglePlacesProvider implements BusinessDataProvider {
   name = 'GooglePlacesProvider';
 
-  async get(_pubId: string, seed: Partial<BusinessData>): Promise<BusinessData> {
+  async get(_pubId: string, seed: Partial<BusinessData>): Promise<BusinessData | null> {
     const name = seed?.name?.trim();
     const postcode = seed?.postcode?.trim();
-    if (!name || !postcode) return seed as BusinessData;
+    if (!name || !postcode) return null;
 
     const q = `${name}, ${postcode}, UK`;
     console.debug('[google] query:', q);
 
-    // 1) FIND
-    const findRes = await fetch(`/api/places/find?q=${encodeURIComponent(q)}`, { method: 'GET' });
-    if (!findRes.ok) {
-      console.debug('[google] find failed', findRes.status);
-      return seed as BusinessData;
-    }
-    const findJson: any = await findRes.json().catch(() => ({}));
-    console.debug('[google] find payload', findJson);
-
-    const fid: string | undefined = findJson?.places?.[0]?.id;
-    if (!fid) {
-      console.debug('[google] find result empty');
-      return seed as BusinessData;
-    }
-
-    // 2) DETAILS
-    const detRes = await fetch(`/api/places/details?id=${encodeURIComponent(fid)}`, { method: 'GET' });
-    if (!detRes.ok) {
-      console.debug('[google] details failed', detRes.status);
-      return seed as BusinessData;
-    }
-    const r: any = await detRes.json().catch(() => ({}));
-    console.debug('[google] details payload', r);
-
-    const phone = r.internationalPhoneNumber ?? r.nationalPhoneNumber ?? null;
-    const website = r.websiteUri ?? null;
-    const hoursText: string | null =
-      Array.isArray(r?.currentOpeningHours?.weekdayDescriptions)
-        ? r.currentOpeningHours.weekdayDescriptions.join(' · ')
-        : null;
-
-    const patch: Partial<BusinessData> = {
-      ...seed,
-      phone: phone ?? seed.phone,
-      extras: {
-        ...(seed.extras || {}),
-        ...(website ? { website } : {}),
-        ...(phone ? { phone } : {}),
-        ...(hoursText ? { google_opening_hours_text: hoursText } : {}),
-        ...(r?.location?.latitude && r?.location?.longitude
-          ? { lat: r.location.latitude, lng: r.location.longitude }
-          : {}),
-        google_rating: r?.rating ?? undefined,
-        google_ratings_count: r?.userRatingCount ?? undefined,
-      },
-      meta: {
-        ...(seed.meta || {}),
-        provenance: {
-          ...(seed.meta?.provenance || {}),
-          ...(phone || website || hoursText ? {
-            phone: phone ? 'google' : undefined,
-            website: website ? 'google' : undefined,
-            openingHours: hoursText ? 'google' : undefined,
-            google: true,
-          } : {})
-        }
+    try {
+      // 1) FIND
+      const r = await fetch(`/api/places/find?q=${encodeURIComponent(q)}`);
+      const payload = await r.json();
+      console.debug('[google] find payload', payload);
+      
+      if (payload?.error) {
+        console.debug('[google] find error:', payload.error);
+        return null; // bail; let other providers run
       }
-    };
+      
+      const place = payload?.places?.[0];
+      if (!place?.id) {
+        console.debug('[google] find result empty');
+        return null;
+      }
 
-    return patch as BusinessData;
+      // 2) DETAILS
+      const d = await fetch(`/api/places/details?id=${encodeURIComponent(place.id)}`);
+      const details = await d.json();
+      console.debug('[google] details payload', details);
+      
+      if (details?.error) {
+        console.debug('[google] details error:', details.error);
+        return null;
+      }
+
+      // Map fields
+      const phone = details.internationalPhoneNumber || details.nationalPhoneNumber || null;
+      const hours = details.currentOpeningHours?.weekdayDescriptions ?? null;
+      const website = details.websiteUri ?? null;
+      const lat = details.location?.latitude ?? null;
+      const lng = details.location?.longitude ?? null;
+
+      const patch: BusinessData = { 
+        ...seed,
+        phone: phone || undefined,
+        extras: {
+          ...(seed.extras || {}),
+          ...(website ? { website } : {}),
+          ...(hours ? { google_opening_hours_text: hours } : {}),
+          ...(lat && lng ? { lat, lng } : {}),
+          ...(details.rating ? { google_rating: details.rating } : {}),
+          ...(Number.isFinite(details.userRatingCount) ? { google_ratings_count: details.userRatingCount } : {}),
+        },
+        meta: {
+          ...(seed.meta || {}),
+          provenance: {
+            ...(seed.meta?.provenance || {}),
+            ...(phone ? { phone: 'google' } : {}),
+            ...(website ? { website: 'google' } : {}),
+            ...(hours ? { openingHours: 'google' } : {}),
+            google: true,
+          }
+        }
+      } as BusinessData;
+      
+      return patch;
+    } catch (error) {
+      console.debug('[google] provider error:', error);
+      return null; // Do not throw; return null on errors so other providers can try
+    }
   }
 }
 

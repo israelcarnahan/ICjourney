@@ -53,8 +53,8 @@ export interface ProviderContext {
 
 export interface BusinessDataProvider {
   /** Must never throw — return best-effort data quickly. */
-  get(pubId: string, seed: Partial<BusinessData>): Promise<BusinessData>;
-  
+  get(pubId: string, seed: Partial<BusinessData>): Promise<BusinessData | null>;
+
   /** Alternative enrichment pattern */
   name?: string;
   enrich?(seed: Partial<BusinessData>, prev: BusinessData, ctx: ProviderContext): Promise<BusinessData>;

@@ -12,46 +12,54 @@ function placesProxy() {
       server.middlewares.use('/api/places/find', async (req, res) => {
         if (!key) { res.statusCode = 501; res.end('GOOGLE_PLACES_KEY missing'); return; }
         const q = new URL(req.url || '', 'http://local').searchParams.get('q') || '';
-        const r = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        const url = 'https://places.googleapis.com/v1/places:searchText';
+        const body = JSON.stringify({ 
+          textQuery: q,
+          languageCode: 'en',
+          regionCode: 'GB'
+        });
+        
+        console.log(`[places-proxy] find: ${url}`, { q, key: '...' + key.slice(-4) });
+        
+        const r = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-Goog-Api-Key': key,
             'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress'
           },
-          body: JSON.stringify({ 
-            textQuery: q,
-            regionCode: 'GB',
-            languageCode: 'en'
-          })
+          body
         });
+        
+        const responseText = await r.text();
+        console.log(`[places-proxy] find response: ${r.status}`, responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''));
+        
+        res.statusCode = r.status;
         res.setHeader('content-type', 'application/json');
-        res.end(await r.text());
+        res.end(responseText);
       });
 
       // /api/places/details -> Google Places v1 details
       server.middlewares.use('/api/places/details', async (req, res) => {
         if (!key) { res.statusCode = 501; res.end('GOOGLE_PLACES_KEY missing'); return; }
         const id = new URL(req.url || '', 'http://local').searchParams.get('id') || '';
-        const r = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(id)}?languageCode=en`, {
+        const url = `https://places.googleapis.com/v1/places/${encodeURIComponent(id)}?languageCode=en&regionCode=GB`;
+        
+        console.log(`[places-proxy] details: ${url}`, { id, key: '...' + key.slice(-4) });
+        
+        const r = await fetch(url, {
           headers: {
             'X-Goog-Api-Key': key,
-            'X-Goog-FieldMask': [
-              'id',
-              'displayName',
-              'formattedAddress',
-              'location',
-              'rating',
-              'userRatingCount',
-              'currentOpeningHours.weekdayDescriptions',
-              'nationalPhoneNumber',
-              'internationalPhoneNumber',
-              'websiteUri'
-            ].join(',')
+            'X-Goog-FieldMask': 'id,displayName,formattedAddress,location,rating,userRatingCount,nationalPhoneNumber,internationalPhoneNumber,websiteUri,currentOpeningHours.weekdayDescriptions'
           }
         });
+        
+        const responseText = await r.text();
+        console.log(`[places-proxy] details response: ${r.status}`, responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''));
+        
+        res.statusCode = r.status;
         res.setHeader('content-type', 'application/json');
-        res.end(await r.text());
+        res.end(responseText);
       });
     }
   };
