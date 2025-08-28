@@ -316,31 +316,36 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
                                {/* Business contact info - only show when proven */}
                 {businessData && (() => {
                   const prov = businessData?.meta?.provenance || {};
+                  const phone = (prov.phone === 'google' || prov.phone === 'user') ? (businessData?.phone || businessData?.extras?.phone) : null;
+                  const website = (prov.website === 'google' || prov.website === 'user') ? businessData?.extras?.website : null;
+                  const hoursText = (prov.openingHours === 'google' || prov.openingHours === 'user') ? businessData?.extras?.google_opening_hours_text : null;
                   
                   return (
                     <div className="mt-3 space-y-2">
-                      {/* Phone: show if (biz.phone && biz.meta?.provenance?.phone) is 'google' or 'user' */}
-                      {businessData.phone && (prov.phone === 'google' || prov.phone === 'user') ? (
-                        <div className="text-eggplant-200">{String(businessData.phone)}</div>
+                      {/* Phone */}
+                      {phone ? (
+                        <div className="text-eggplant-200">{String(phone)}</div>
                       ) : null}
 
-                      {/* Website: show if (biz.extras?.website && provenance.website is 'google' or 'user') */}
-                      {businessData?.extras?.website && (prov.website === 'google' || prov.website === 'user') ? (
+                      {/* Website */}
+                      {website ? (
                         <div className="mt-2 text-eggplant-200">
-                          <a href={businessData.extras.website as string} target="_blank" rel="noreferrer" className="underline">
+                          <a href={website as string} target="_blank" rel="noreferrer" className="underline">
                             Visit website
                           </a>
                         </div>
                       ) : null}
 
-                      {/* Hours: show if (Array.isArray(biz.extras?.google_opening_hours_text) && provenance.openingHours is 'google' or 'user') */}
-                      {Array.isArray(businessData?.extras?.google_opening_hours_text) && (prov.openingHours === 'google' || prov.openingHours === 'user') ? (
+                      {/* Hours */}
+                      {hoursText ? (
                         <details className="mt-3">
                           <summary className="cursor-pointer text-eggplant-100">Business hours</summary>
                           <ul className="mt-2 text-eggplant-200 text-sm space-y-1">
-                            {businessData!.extras!.google_opening_hours_text.map((line: string, i: number) => (
+                            {Array.isArray(hoursText) ? hoursText.map((line: string, i: number) => (
                               <li key={`hrs-${i}`}>{line}</li>
-                            ))}
+                            )) : (
+                              <li>{String(hoursText)}</li>
+                            )}
                           </ul>
                           <div className="mt-2 text-[11px] text-eggplant-400">Some info © Google</div>
                         </details>

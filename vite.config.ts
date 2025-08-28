@@ -19,7 +19,11 @@ function placesProxy() {
             'X-Goog-Api-Key': key,
             'X-Goog-FieldMask': 'places.id,places.displayName,places.formattedAddress'
           },
-          body: JSON.stringify({ textQuery: q })
+          body: JSON.stringify({ 
+            textQuery: q,
+            regionCode: 'GB',
+            languageCode: 'en'
+          })
         });
         res.setHeader('content-type', 'application/json');
         res.end(await r.text());
