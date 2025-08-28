@@ -3,16 +3,24 @@ import { BusinessData, ProviderChain } from "./types";
 import { fallbackProvider } from "./fallbackProvider";
 import { nominatimProvider } from "./nominatimProvider";
 import { postcodesProvider } from "./postcodesProvider";
-import { googlePlacesProvider } from "./googlePlacesProvider";
+import { GooglePlacesProvider } from "./googlePlacesProvider";
 import { FLAGS } from "../config/flags";
 
 /** simple in-memory cache per session; later you can persist to localStorage */
 const cache = new Map<string, BusinessData>();
 
+// Expose cache clearing for dev testing
+if (typeof window !== 'undefined') {
+  (window as any).__clearBizCache = () => {
+    cache.clear();
+    console.debug('[cache] cleared');
+  };
+}
+
 export function useBusinessData(pubId: string, seed: Partial<BusinessData>, chain?: ProviderChain) {
   const [data, setData] = useState<BusinessData | null>(null);
 
-  const providers = useMemo(() => chain?.providers ?? [postcodesProvider, googlePlacesProvider, nominatimProvider, fallbackProvider], [chain]);
+  const providers = useMemo(() => chain?.providers ?? [postcodesProvider, GooglePlacesProvider, nominatimProvider, fallbackProvider], [chain]);
 
   useEffect(() => {
     let alive = true;
@@ -24,15 +32,28 @@ export function useBusinessData(pubId: string, seed: Partial<BusinessData>, chai
       console.debug('[providers] order Postcodes → Google → Nominatim → Fallback', FLAGS);
       
       // run providers in order
-      let current: Partial<BusinessData> = { ...seed };
+      let current: BusinessData = { 
+        ...seed,
+        sources: seed.sources || [],
+        extras: seed.extras || {},
+      } as BusinessData;
+      
       for (const p of providers) {
-        console.debug(`[provider] ${p.constructor.name} running for`, seed?.name, seed?.postcode);
-        const next = await p.get(pubId, current);
-        current = { ...current, ...mergePreferNonEmpty(current, next) };
+        const providerName = (p as any).name || p.constructor.name;
+        console.debug('[provider]', providerName, 'for', seed?.name, seed?.postcode);
+        
+        if ((p as any).enrich) {
+          // Use new enrichment pattern
+          current = await (p as any).enrich(seed, current, { pubId });
+        } else {
+          // Use legacy get pattern
+          const next = await p.get(pubId, current);
+          current = { ...current, ...mergePreferNonEmpty(current, next) };
+        }
       }
-      const final = current as BusinessData;
-      cache.set(pubId, final);
-      if (alive) setData(final);
+      
+      cache.set(pubId, current);
+      if (alive) setData(current);
     }
     run();
     return () => { alive = false; };

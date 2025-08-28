@@ -47,9 +47,17 @@ export type BusinessData = {
   };
 };
 
+export interface ProviderContext {
+  pubId: string;
+}
+
 export interface BusinessDataProvider {
   /** Must never throw — return best-effort data quickly. */
   get(pubId: string, seed: Partial<BusinessData>): Promise<BusinessData>;
+  
+  /** Alternative enrichment pattern */
+  name?: string;
+  enrich?(seed: Partial<BusinessData>, prev: BusinessData, ctx: ProviderContext): Promise<BusinessData>;
 }
 
 export type ProviderChain = {
