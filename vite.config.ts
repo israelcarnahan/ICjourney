@@ -28,9 +28,6 @@ export default defineConfig({
     fs: {
       strict: true,
     },
-    headers: {
-      Link: "</fetch.worker.js>; rel=preload; as=worker",
-    },
   },
   build: {
     outDir: "dist",

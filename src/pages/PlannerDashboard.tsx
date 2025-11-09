@@ -194,7 +194,7 @@ const PlannerDashboard: React.FC = () => {
       await generateOptimalSchedule();
       setActiveStep(5); // Update to step 5 since we added vehicle selection
     } catch (error) {
-      console.error("Error generating schedule:", error);
+      devLog("Error generating schedule:", error);
       setError("Failed to generate schedule. Please try again.");
     } finally {
       setIsGenerating(false);
@@ -202,18 +202,18 @@ const PlannerDashboard: React.FC = () => {
   };
 
   const handleScheduleAnyway = (pub: ExtendedPub) => {
-    console.debug("Adding pub to schedule:", pub);
+    devLog("Adding pub to schedule:", pub);
 
     // Validate pub data
     if (
       schedule.some((day) => toArray(day.visits).some((visit) => visit.pub === pub.pub))
     ) {
-      console.warn("Pub already scheduled:", pub.pub);
+      devLog("Pub already scheduled:", pub.pub);
       return;
     }
 
     if (!pub || !pub.zip) {
-      console.warn("Invalid pub data:", pub);
+      devLog("Invalid pub data:", pub);
       return;
     }
 
@@ -223,7 +223,7 @@ const PlannerDashboard: React.FC = () => {
       : schedule.findIndex((day) => toArray(day.visits).length < visitsPerDay);
 
     if (dayIndex === -1) {
-      console.warn("No days with available space");
+      devLog("No days with available space");
       setError("No available space in schedule");
       return;
     }
@@ -232,7 +232,7 @@ const PlannerDashboard: React.FC = () => {
 
     // Check if day is already at capacity
     if (toArray(dayWithSpace.visits).length >= visitsPerDay) {
-      console.warn("Day is at capacity:", dayWithSpace.date);
+      devLog("Day is at capacity:", dayWithSpace.date);
       setError(
         `Cannot add more visits to ${dayWithSpace.date} - day is at capacity`
       );
@@ -295,12 +295,12 @@ const PlannerDashboard: React.FC = () => {
         await mapsService.initialize();
         setIsLoading(false);
       } catch (err) {
-        console.error("Maps initialization error:", err);
+        devLog("Maps initialization error:", err);
         const errorMessage =
           err instanceof Error
             ? err.message
             : "Failed to initialize maps service";
-        console.error("Detailed error:", errorMessage);
+        devLog("Detailed error:", errorMessage);
         setError(errorMessage);
         setIsLoading(false);
       }

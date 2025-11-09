@@ -18,6 +18,7 @@ import { planVisits } from "../utils/scheduleUtils";
 import validatePostcode from "uk-postcode-validator";
 import clsx from "clsx";
 import { toArray } from "../utils/typeGuards";
+import { devLog } from "../utils/devLog";
 
 interface RescheduleDialogProps {
   day: ScheduleDay;
@@ -116,7 +117,7 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
   const handleReschedule = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    console.debug("Starting reschedule process");
+    devLog("Starting reschedule process");
 
     if (!postcode) {
       setPostcodeError("Please enter a postcode");
@@ -237,7 +238,7 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
         })),
       };
 
-      console.debug("Schedule generated successfully:", {
+      devLog("Schedule generated successfully:", {
         pubCount: newDaySchedule.visits.length,
         totalMileage: newDaySchedule.totalMileage,
       });
@@ -246,7 +247,7 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
       setError(null);
       setShowConfirmation(false);
     } catch (error) {
-      console.error("Schedule generation error:", error);
+      devLog("Schedule generation error:", error);
       const message =
         error instanceof Error ? error.message : "Failed to generate schedule";
       setError(message);
@@ -335,12 +336,12 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
     try {
       const date = parseISO(dateString);
       if (!isValid(date)) {
-        console.warn("Invalid date string:", dateString);
+        devLog("Invalid date string:", dateString);
         return "Invalid Date";
       }
       return format(date, "MMMM d, yyyy");
     } catch (error) {
-      console.error("Date formatting error:", error);
+      devLog("Date formatting error:", error);
       return "Invalid Date";
     }
   };

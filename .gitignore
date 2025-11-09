@@ -71,3 +71,8 @@ logs
 
 # Bolt
 .bolt/
+
+# Environment files
+.env
+.env.*
+!.env.example
