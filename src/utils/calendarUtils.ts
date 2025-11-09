@@ -1,5 +1,6 @@
 import { ScheduleDay } from '../context/PubDataContext';
 import { createEvents } from 'ics';
+import { devLog } from './devLog';
 import { parseISO, addHours, format } from 'date-fns';
 import { toArray } from './typeGuards';
 import { formatPriorityForUser } from './sourceDetails';
@@ -60,7 +61,7 @@ export const downloadICSFile = async (schedule: ScheduleDay[]) => {
     link.click();
     document.body.removeChild(link);
   } catch (error) {
-    console.error('Error generating calendar file:', error);
+    devLog('Error generating calendar file:', error);
     throw error;
   }
 };

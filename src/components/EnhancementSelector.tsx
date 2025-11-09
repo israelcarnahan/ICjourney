@@ -1,6 +1,7 @@
 import React from "react";
 import { Plus, Star, Target, AlertTriangle, Clock, X } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { devLog } from "../utils/devLog";
 import * as Switch from "@radix-ui/react-switch";
 import clsx from "clsx";
 import { useDropzone } from "react-dropzone";
@@ -227,7 +228,7 @@ const EnhancementSelector: React.FC<EnhancementSelectorProps> = ({
       onFileLoaded(selectedOption.id, enhancedPubs);
       handleClose();
     } catch (error) {
-      console.error("Error processing file:", error);
+      devLog("Error processing file:", error);
       setError("Failed to process file. Please try again.");
     }
   };

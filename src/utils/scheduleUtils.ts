@@ -1,6 +1,7 @@
 import { Pub, ScheduleDay } from "../context/PubDataContext";
 import { format, addBusinessDays } from "date-fns";
 import { Visit } from "../types";
+import { devLog } from "./devLog";
 
 export const extractNumericPart = (postcode: string): [string, number] => {
   // Extract the first part of the postcode (letters + number)
@@ -86,7 +87,7 @@ export async function planVisits(
   visitsPerDay: number,
   searchRadius: number = 15
 ): Promise<DaySchedule[]> {
-  console.debug("Starting schedule planning:", {
+  devLog("Starting schedule planning:", {
     pubsCount: pubs.length,
     startDate,
     businessDays,
@@ -95,7 +96,7 @@ export async function planVisits(
   });
 
   if (businessDays <= 0) {
-    console.warn("Invalid business days requested:", businessDays);
+    devLog("Invalid business days requested:", businessDays);
     return [];
   }
 
@@ -289,7 +290,7 @@ export async function planVisits(
     if (remainingDays <= 0) break;
   }
 
-  console.debug("Schedule planning complete:", {
+  devLog("Schedule planning complete:", {
     daysRequested: businessDays,
     daysGenerated: schedule.length,
     totalVisits: schedule.reduce((acc, day) => acc + day.visits.length, 0),

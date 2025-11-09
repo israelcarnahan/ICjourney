@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { devLog } from "../utils/devLog";
 import { AlertTriangle, Calendar, Star } from "lucide-react";
 import { Button } from "./ui/button";
 // import { Input } from "./ui/input";
@@ -34,7 +35,7 @@ export function ListCriteriaDialog({
   // Only log when the dialog is actually opened
   React.useEffect(() => {
     if (isOpen) {
-      console.log("⚙️ List Criteria Dialog opened", {
+  devLog("⚙️ List Criteria Dialog opened", {
         listType,
         currentFileName,
         usedPriorityLevels,
@@ -68,29 +69,29 @@ export function ListCriteriaDialog({
 
   // Handlers
   const handleScheduleTypeChange = useCallback((type: ScheduleType) => {
-    console.log("📅 Schedule type changed:", { type });
+    devLog("📅 Schedule type changed:", { type });
     setScheduleType(type);
   }, []);
 
   const handlePrioritySelect = useCallback((level: number) => {
-    console.log("⭐ Priority level selected:", { level });
+    devLog("⭐ Priority level selected:", { level });
     setPriorityLevel(level);
   }, []);
 
   const handleDeadlineChange = useCallback((date: string) => {
-    console.log("📅 Deadline changed:", { date });
+    devLog("📅 Deadline changed:", { date });
     setDeadline(date);
   }, []);
 
   const handleFollowUpDaysChange = useCallback((days: number) => {
-    console.log("🕒 Follow-up days changed:", { days });
+    devLog("🕒 Follow-up days changed:", { days });
     if (days >= 1 && days <= 90) {
       setFollowUpDays(days);
     }
   }, []);
 
   const handleSubmit = useCallback(() => {
-    console.log("💾 Submitting list criteria:", {
+    devLog("💾 Submitting list criteria:", {
       listType,
       scheduleType,
       deadline,

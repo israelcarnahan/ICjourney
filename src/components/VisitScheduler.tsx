@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Clock, Calendar, Clock4, MapPin } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import clsx from "clsx";
+import { devLog } from "../utils/devLog";
 import { ExtendedPub } from "../context/PubDataContext";
 import { format } from "date-fns";
 
@@ -139,7 +140,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
 
       return format(time, "HH:mm");
     } catch (error) {
-      console.warn("Time parsing error:", error);
+      devLog("Time parsing error:", error);
       return "Not scheduled";
     }
   };
@@ -162,7 +163,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
         minutes < 60
       );
     } catch (error) {
-      console.warn("Time validation error:", error);
+      devLog("Time validation error:", error);
       return false;
     }
   };
@@ -175,7 +176,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
         const totalMinutes = hours * 60 + minutes;
         return totalMinutes < 9 * 60 || totalMinutes >= 17 * 60;
       } catch (error) {
-        console.warn("Time validation error:", error);
+        devLog("Time validation error:", error);
         return true;
       }
     }
@@ -186,7 +187,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
       testDate.setHours(hours, minutes, 0, 0);
       return !businessData.isOpenAt(testDate);
     } catch (error) {
-      console.warn("Time validation error:", error);
+      devLog("Time validation error:", error);
       return true;
     }
   };
@@ -211,11 +212,11 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
 
   const handleSchedule = () => {
     try {
-      console.log("handleSchedule called", { selectedTime, isAnytime, notes });
+      devLog("handleSchedule called", { selectedTime, isAnytime, notes });
 
       if (!isAnytime) {
         if (!validateTimeInput(selectedTime)) {
-          console.warn("Invalid time selected:", selectedTime);
+          devLog("Invalid time selected:", selectedTime);
           return;
         }
 
@@ -230,15 +231,15 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
         }
       }
 
-      console.log("Validation passed, closing dialog");
+      devLog("Validation passed, closing dialog");
       // Close the dialog first
       setIsOpen(false);
 
-      console.log("Setting up schedule update");
+      devLog("Setting up schedule update");
       // Use setTimeout to ensure the dialog is closed before updating the schedule
       setTimeout(() => {
         const finalTime = isAnytime ? "Anytime" : selectedTime;
-        console.log("Executing schedule update", {
+        devLog("Executing schedule update", {
           date,
           visitId: visit.pub,
           time: finalTime,
@@ -247,7 +248,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
         onSchedule(date, visit.pub, finalTime, notes);
       }, 0);
     } catch (error) {
-      console.error("Error in handleSchedule:", error);
+      devLog("Error in handleSchedule:", error);
     }
   };
 

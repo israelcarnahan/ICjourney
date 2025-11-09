@@ -194,7 +194,7 @@ const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
     const item = localStorage.getItem(key);
     return item ? JSON.parse(item) : defaultValue;
   } catch (error) {
-    console.warn(`Error loading ${key} from storage:`, error);
+    devLog(`Error loading ${key} from storage:`, error);
     return defaultValue;
   }
 };
@@ -203,7 +203,7 @@ const saveToStorage = <T,>(key: string, value: T): void => {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
-    console.warn(`Error saving ${key} to storage:`, error);
+    devLog(`Error saving ${key} to storage:`, error);
   }
 };
 
@@ -332,7 +332,7 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
         setIsInitialized(true);
         setInitializationError(null);
       } catch (error) {
-        console.error("Error initializing context:", error);
+        devLog("Error initializing context:", error);
         setInitializationError(
           error instanceof Error
             ? error.message
@@ -433,7 +433,7 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
         localStorage.removeItem(key);
       });
     } catch (error) {
-      console.error("Error resetting data:", error);
+      devLog("Error resetting data:", error);
       setInitializationError("Failed to reset application data");
     }
   }, []);
