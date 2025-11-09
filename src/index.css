@@ -8,8 +8,8 @@
     background-attachment: fixed;
   }
 
-  .backdrop-blur-card { 
-    backdrop-filter: blur(6px); 
+  .backdrop-blur-card {
+    backdrop-filter: blur(6px);
   }
 
   .animated-border {
