@@ -3,6 +3,8 @@ import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { mapsService } from "../config/maps";
 import { planVisits, calculateDistance } from "../utils/scheduleUtils";
 import FilePreview from "../components/FilePreview";
+import GenerateControls from "../components/planner/GenerateControls";
+import UploadedFilesPanel from "../components/planner/UploadedFilesPanel";
 import FileUploader from "../components/FileUploader";
 import ScheduleSettings from "../components/ScheduleSettings";
 import ScheduleDisplay from "../components/ScheduleDisplay";
@@ -918,20 +920,12 @@ const PlannerDashboard: React.FC = () => {
                     </div>
 
                     {activeStep === 4 ? (
-                      <div>
-                        <VehicleSelector />
-                        <div className="mt-4 flex justify-end">
-                          <button
-                            onClick={async () => {
-                              await generateSchedule();
-                              setIsQuickStartExpanded(false);
-                            }}
-                            className="px-3 py-1 text-xs rounded-md bg-gradient-to-r from-neon-purple to-neon-blue text-white hover:shadow-neon-purple transition-all"
-                          >
-                            Generate Schedule
-                          </button>
-                        </div>
-                      </div>
+                      <GenerateControls
+                        onGenerate={async () => {
+                          await generateSchedule();
+                          setIsQuickStartExpanded(false);
+                        }}
+                      />
                     ) : (
                       <p className="text-[10px] text-eggplant-200 mb-2">
                         {selectedVehicle && selectedVehicleColor
@@ -942,7 +936,7 @@ const PlannerDashboard: React.FC = () => {
                   </div>
 
                   <div className="mt-6">
-                    <FilePreview
+                    <UploadedFilesPanel
                       files={uploadedFiles}
                       onEdit={handleFileEdit}
                       onDelete={activeStep <= 2 ? handleFileDelete : undefined}
