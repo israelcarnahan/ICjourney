@@ -25,7 +25,12 @@ class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Gate noisy logs in production
-    try { (await import("../utils/devLog")).devLog("Uncaught error:", error, errorInfo); } catch {}
+    try {
+      (async () => {
+        const { devLog } = await import("../utils/devLog");
+        devLog("Uncaught error:", error, errorInfo);
+      })();
+    } catch {}
   }
 
   public render() {
