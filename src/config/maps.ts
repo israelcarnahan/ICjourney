@@ -1,4 +1,6 @@
 // Placeholder Maps Service
+import { devLog } from "../utils/devLog";
+
 class MapsService {
   private static instance: MapsService;
   private initialized = false;
@@ -17,7 +19,7 @@ class MapsService {
   }
 
   async initialize(): Promise<void> {
-    console.log("Maps service initialization placeholder");
+    devLog("Maps service initialization placeholder");
     this.initialized = true;
     return Promise.resolve();
   }

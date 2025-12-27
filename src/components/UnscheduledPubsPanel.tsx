@@ -1,4 +1,5 @@
 import React from 'react';
+import { devLog } from "../utils/devLog";
 import { Clock, Calendar, Users, ListChecks, Plus, Phone, Mail, Star } from 'lucide-react';
 import { Pub } from '../context/PubDataContext';
 import { findNearestPubs } from '../utils/scheduleUtils';
@@ -84,7 +85,7 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
           }
         }));
       } catch (error) {
-        console.error('Error fetching place details:', error);
+        devLog('Error fetching place details:', error);
       }
     };
 
@@ -99,14 +100,14 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
   }, [selectedPub, nearbyPubs, placeDetails]);
 
   const handleAddPub = async (pub: Pub) => {
-    console.debug('Adding pub from nearby list:', pub);
+    devLog('Adding pub from nearby list:', pub);
     setAddingPub(pub.pub);
     try {
       // Call parent handler
       await onScheduleAnyway(pub);
       setAddingPub(null);
     } catch (error) {
-      console.error('Failed to add pub:', error);
+      devLog('Failed to add pub:', error);
       setAddingPub(null);
     }
   };

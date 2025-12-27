@@ -1,5 +1,6 @@
 import { format } from 'date-fns';
 import { mapsService } from '../config/maps';
+import { devLog } from './devLog';
 
 export const checkPubOpeningHours = async (pubName: string): Promise<{
   isOpen: boolean;
@@ -31,12 +32,12 @@ export const checkPubOpeningHours = async (pubName: string): Promise<{
     
     // Construct a cleaner search query
     const searchQuery = `${cleanPubName} pub UK`;
-    console.debug('Searching for pub:', { query: searchQuery });
+    devLog('Searching for pub:', { query: searchQuery });
 
     const placeDetails = await mapsService.getPlaceDetails(searchQuery);
 
     if ((placeDetails as any).error) {
-      console.debug('Place details error:', (placeDetails as any).error);
+      devLog('Place details error:', (placeDetails as any).error);
       return {
         isOpen: false,
         hours: 'Hours not available',
@@ -44,7 +45,7 @@ export const checkPubOpeningHours = async (pubName: string): Promise<{
       };
     }
 
-    console.debug('Place details received:', placeDetails);
+    devLog('Place details received:', placeDetails);
 
     // Use current period if available
     if (placeDetails.currentPeriod) {
@@ -88,7 +89,7 @@ export const checkPubOpeningHours = async (pubName: string): Promise<{
       error: 'Opening hours not available'
     };
   } catch (error) {
-    console.error('Error checking pub opening hours:', error);
+    devLog('Error checking pub opening hours:', error);
     return {
       isOpen: false,
       hours: 'Hours not available',
