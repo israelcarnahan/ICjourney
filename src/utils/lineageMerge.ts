@@ -133,6 +133,8 @@ export function mergeIntoCanonical(
   // Return updated canonical pub
   return {
     ...canonicalPub,
+    // Prefer newest row for rawRow context; keep canonical fallback if missing.
+    rawRow: incomingPub.rawRow ?? canonicalPub.rawRow,
     sources,
     fieldValuesBySource,
     mergedExtras,

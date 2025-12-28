@@ -36,6 +36,8 @@ export interface Pub {
   // Legacy field: "zip" is the historical postcode field in this codebase.
   // We keep it for compatibility and store normalized data in postcodeMeta.
   zip: string;
+  // Full source row from import; used for pending-fix review and future audits.
+  rawRow?: Record<string, any>;
   postcodeMeta?: {
     raw: string;
     normalized: string | null;

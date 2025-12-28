@@ -1,4 +1,4 @@
-import React from "react";
+import { useMemo, useState } from "react";
 import { usePubData } from "../context/PubDataContext";
 import {
   TrendingUp,
@@ -13,6 +13,10 @@ import { differenceInBusinessDays, format } from "date-fns";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { Pub } from "../context/PubDataContext";
 import { toArray } from "../utils/typeGuards";
+import { parsePostcode } from "../utils/postcodeUtils";
+import PostcodeFixesDialog, {
+  type PostcodeFixUpdate,
+} from "./PostcodeFixesDialog";
 
 interface StatInfo {
   total: number;
@@ -30,8 +34,56 @@ interface StatInfo {
 }
 
 const RepStatsPanel: React.FC = () => {
-  const { schedule, visitsPerDay, userFiles, schedulingDebug } = usePubData();
+  const { schedule, visitsPerDay, userFiles, schedulingDebug, setUserFiles } =
+    usePubData();
   const showDebug = import.meta.env.DEV && schedulingDebug;
+  const [showPostcodeFixes, setShowPostcodeFixes] = useState(false);
+
+  const pendingFixes = useMemo(
+    () =>
+      (userFiles?.pubs || []).filter(
+        (pub) => pub.postcodeMeta?.status && pub.postcodeMeta.status !== "OK"
+      ),
+    [userFiles]
+  );
+
+  const pendingInvalid = pendingFixes.filter(
+    (pub) => pub.postcodeMeta?.status === "INVALID"
+  );
+  const pendingOddball = pendingFixes.filter(
+    (pub) => pub.postcodeMeta?.status === "ODDBALL"
+  );
+
+  const applyPostcodeUpdates = (updates: PostcodeFixUpdate[]) => {
+    setUserFiles((prev) => ({
+      ...prev,
+      pubs: prev.pubs.map((pub) => {
+        const update = updates.find((u) => u.uuid === pub.uuid);
+        if (!update) return pub;
+        const parsed = update.parsed ?? parsePostcode(update.postcode);
+        const normalized = parsed.normalized ?? update.postcode;
+
+        // Keep the stored raw row aligned with the corrected postcode.
+        const nextRawRow = pub.rawRow ? { ...pub.rawRow } : undefined;
+        if (nextRawRow) {
+          Object.keys(nextRawRow).forEach((key) => {
+            const normalizedKey = key.trim().toLowerCase();
+            if (["postcode", "post code", "post_code", "zip"].includes(normalizedKey)) {
+              nextRawRow[key] = normalized;
+            }
+          });
+        }
+
+        return {
+          ...pub,
+          zip: normalized,
+          postcodeMeta: parsed,
+          rawRow: nextRawRow ?? pub.rawRow,
+        };
+      }),
+    }));
+    setShowPostcodeFixes(false);
+  };
 
   // If no schedule exists or it's empty, show the placeholder
   if (
@@ -50,6 +102,36 @@ const RepStatsPanel: React.FC = () => {
         <p className="text-sm text-eggplant-300">
           Generate a schedule to see statistics and insights.
         </p>
+
+        {pendingFixes.length > 0 && (
+          <div className="mt-4 bg-eggplant-800/30 rounded-lg border border-eggplant-700/40 p-3">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-sm font-medium text-eggplant-100">
+                  Pending Postcode Fixes
+                </div>
+                <div className="text-xs text-eggplant-300 mt-1">
+                  {pendingInvalid.length} invalid, {pendingOddball.length} oddball
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPostcodeFixes(true)}
+                className="px-3 py-1.5 text-xs font-medium text-white bg-neon-purple rounded-lg hover:bg-neon-purple/90"
+              >
+                Review fixes
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showPostcodeFixes && pendingFixes.length > 0 && (
+          <PostcodeFixesDialog
+            isOpen={showPostcodeFixes}
+            issues={pendingFixes}
+            onCancel={() => setShowPostcodeFixes(false)}
+            onConfirm={applyPostcodeUpdates}
+          />
+        )}
       </div>
     );
   }
@@ -319,6 +401,27 @@ const RepStatsPanel: React.FC = () => {
             </div>
           )}
 
+        {pendingFixes.length > 0 && (
+          <div className="bg-eggplant-800/30 rounded-lg border border-eggplant-700/40 p-3">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-sm font-medium text-eggplant-100">
+                  Pending Postcode Fixes
+                </div>
+                <div className="text-xs text-eggplant-300 mt-1">
+                  {pendingInvalid.length} invalid (excluded), {pendingOddball.length} oddball (still schedulable)
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPostcodeFixes(true)}
+                className="px-3 py-1.5 text-xs font-medium text-white bg-neon-purple rounded-lg hover:bg-neon-purple/90"
+              >
+                Review fixes
+              </button>
+            </div>
+          </div>
+        )}
+
         {showDebug && (
           <details className="bg-eggplant-800/30 rounded-lg p-3 border border-eggplant-700/40">
             <summary className="text-sm text-eggplant-200 cursor-pointer">
@@ -353,7 +456,7 @@ const RepStatsPanel: React.FC = () => {
               <div>
                 <span className="text-eggplant-200">Reasons:</span>{" "}
                 radius {schedulingDebug.exclusionReasons.radiusConstrained},{" "}
-                invalid geo {schedulingDebug.exclusionReasons.invalidGeo},{" "}
+                invalid postcode {schedulingDebug.exclusionReasons.invalidGeo},{" "}
                 capacity {schedulingDebug.exclusionReasons.capacityLimit},{" "}
                 already scheduled{" "}
                 {schedulingDebug.exclusionReasons.alreadyScheduled}
@@ -371,6 +474,15 @@ const RepStatsPanel: React.FC = () => {
               )}
             </div>
           </details>
+        )}
+
+        {showPostcodeFixes && pendingFixes.length > 0 && (
+          <PostcodeFixesDialog
+            isOpen={showPostcodeFixes}
+            issues={pendingFixes}
+            onCancel={() => setShowPostcodeFixes(false)}
+            onConfirm={applyPostcodeUpdates}
+          />
         )}
 
         {Array.from(stats.entries()).map(

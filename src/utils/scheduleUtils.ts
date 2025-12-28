@@ -87,8 +87,14 @@ export async function planVisits(
   visitsPerDay: number,
   searchRadius: number = 15
 ): Promise<DaySchedule[]> {
+  // Invalid postcodes are excluded from scheduling until fixed by the user.
+  const eligiblePubs = pubs.filter((pub) => pub.postcodeMeta?.status !== "INVALID");
+  const invalidPubs = pubs.filter((pub) => pub.postcodeMeta?.status === "INVALID");
+
   devLog("Starting schedule planning:", {
     pubsCount: pubs.length,
+    eligibleCount: eligiblePubs.length,
+    invalidCount: invalidPubs.length,
     startDate,
     businessDays,
     visitsPerDay,
@@ -121,7 +127,7 @@ export async function planVisits(
   };
 
   // Sort pubs into priority groups
-  pubs.forEach((pub) => {
+  eligiblePubs.forEach((pub) => {
     if (pub.deadline) {
       priorityGroups.deadline.push(pub);
     } else if (pub.Priority === "RecentWin") {
@@ -357,6 +363,10 @@ export function buildSchedulingDebugSummary(
   );
   const totalPubs = pubs.length;
   const excludedTotal = Math.max(0, totalPubs - totalScheduled);
+  const invalidPostcodes = pubs.filter(
+    (pub) => pub.postcodeMeta?.status === "INVALID"
+  ).length;
+  const capacityExcluded = Math.max(0, excludedTotal - invalidPostcodes);
 
   return {
     bucketTotals,
@@ -364,8 +374,8 @@ export function buildSchedulingDebugSummary(
     bucketExcluded,
     exclusionReasons: {
       radiusConstrained: 0,
-      invalidGeo: 0,
-      capacityLimit: excludedTotal,
+      invalidGeo: invalidPostcodes,
+      capacityLimit: capacityExcluded,
       alreadyScheduled: 0,
     },
     anchorMode:
@@ -375,7 +385,7 @@ export function buildSchedulingDebugSummary(
     totalPubs,
     totalScheduled,
     notes:
-      "Exclusion reasons are placeholders until radius/geo filters are applied.",
+      "Exclusion reasons use invalid postcode counts; radius/geo filters are still placeholders.",
   };
 }
 

@@ -251,7 +251,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       const fileId = crypto.randomUUID();
       const uploadTime = Date.now();
 
-      const enhanced: Pub[] = rows.map((r) => {
+      const enhanced: Pub[] = rows.map((r, index) => {
         // Normalize + parse postcode once at import for deterministic mock distance and UI display.
         // Legacy "zip" remains for compatibility; parsed parts live in postcodeMeta.
         const postcodeMeta = parsePostcode(r.zip);
@@ -265,6 +265,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           priorityLevel: undefined,
           followUpDays: undefined,
           zip: postcodeValue,
+          rawRow: processed.rawRows[index] ?? {},
           postcodeMeta,
           pub: r.pub,
           last_visited: r.last_visited ?? undefined,
@@ -302,7 +303,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       meta.deadline ? "deadline" :
       (Number.isFinite(meta.followUpDays) && (meta.followUpDays as number) > 0 ? "followup" : "priority");
 
-    const enriched: Pub[] = rows.map((r) => {
+    const enriched: Pub[] = rows.map((r, index) => {
       // Normalize + parse postcode once at import for deterministic mock distance and UI display.
       // Legacy "zip" remains for compatibility; parsed parts live in postcodeMeta.
       const postcodeMeta = parsePostcode(r.zip);
@@ -316,6 +317,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         priorityLevel: schedulingMode === "priority" ? meta.priorityLevel : undefined,
         followUpDays: schedulingMode === "followup" ? meta.followUpDays : undefined,
         zip: postcodeValue,
+        rawRow: processed.rawRows[index] ?? {},
         postcodeMeta,
         pub: r.pub,
         last_visited: r.last_visited ?? undefined,
