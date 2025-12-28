@@ -3,7 +3,6 @@ import { useDropzone } from "react-dropzone";
 import * as XLSX from "xlsx-js-style";
 import { Upload, AlertCircle, Info } from "lucide-react";
 import clsx from "clsx";
-import validatePostcode from "uk-postcode-validator";
 
 import type { ListType, Pub } from "../context/PubDataContext";
 import { usePubData } from "../context/PubDataContext";
@@ -18,6 +17,10 @@ import { suggest, convertToSuggestions } from "../utils/dedupe";
 import { DedupReviewDialog, type Suggestion } from "./DedupReviewDialog";
 import { mergeIntoCanonical } from "../utils/lineageMerge";
 import { parsePostcode } from "../utils/postcodeUtils";
+import PostcodeReviewDialog, {
+  type PostcodeIssueRow,
+  type PostcodeReviewDecision,
+} from "./PostcodeReviewDialog";
 
 // Minimal row returned from Excel (no ids/metadata yet)
 type ImportedRow = {
@@ -28,6 +31,22 @@ type ImportedRow = {
   install_date?: string | null;
   last_visited?: string | null;
   notes?: string;
+};
+
+type ProcessedImport = {
+  rows: ImportedRow[];
+  mappedRows: MappedRow[];
+  rawRows: Record<string, any>[];
+  headers: string[];
+};
+
+type PendingImportMeta = {
+  fileType: ListType;
+  fileName: string;
+  schedulingMode?: "priority" | "deadline" | "followup";
+  priorityLevel?: number;
+  deadline?: string;
+  followUpDays?: number;
 };
 
 interface FileUploaderProps {
@@ -53,6 +72,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   const [showTypeDialog, setShowTypeDialog] = useState(false);
   const [currentFileName, setCurrentFileName] = useState<string>("");
   const [processedPubs, setProcessedPubs] = useState<ImportedRow[]>([]);
+  const [pendingImport, setPendingImport] = useState<ProcessedImport | null>(null);
+  const [pendingImportMeta, setPendingImportMeta] = useState<PendingImportMeta | null>(null);
+  const [postcodeIssues, setPostcodeIssues] = useState<PostcodeIssueRow[]>([]);
+  const [hasPendingPostcodeReview, setHasPendingPostcodeReview] = useState(false);
+  const [showPostcodeReviewDialog, setShowPostcodeReviewDialog] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [isFileLoaded, setIsFileLoaded] = useState(isLoaded);
 
@@ -129,20 +153,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     });
   }
 
-  const validatePostcodeFormat = (postcode: string): boolean => {
-    try {
-      const clean = postcode.replace(/\s+/g, "").toUpperCase();
-      return validatePostcode(postcode) || validatePostcode(clean);
-    } catch {
-      return false;
-    }
-  };
-
-  const validatePostcodes = async (rows: ImportedRow[]): Promise<void> => {
-    const invalid = rows.filter((p) => !validatePostcodeFormat(p.zip));
-    if (invalid.length) throw new Error(`Invalid postcode format in ${invalid.length} row(s).`);
-
-    // smoke test; do not block whole import
+  const runGeocoderSmokeTest = async (rows: ImportedRow[]): Promise<void> => {
+    // Optional smoke test; never blocks import.
     try {
       if (!mapsService.isInitialized()) await mapsService.initialize();
       const geocoder = mapsService.getGeocoder();
@@ -160,8 +172,292 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     }
   };
 
+  const collectPostcodeIssues = (processed: ProcessedImport): PostcodeIssueRow[] => {
+    return processed.rows
+      .map((row, index) => {
+        const parsed = parsePostcode(row.zip);
+        return {
+          id: `${index}`,
+          rowIndex: index,
+          rawRow: processed.rawRows[index],
+          postcode: row.zip,
+          parsed,
+        };
+      })
+      .filter((issue) => issue.parsed.status !== "OK");
+  };
+
+  const applyPostcodeDecisions = (
+    processed: ProcessedImport,
+    decisions: PostcodeReviewDecision[]
+  ): ProcessedImport => {
+    const decisionMap = new Map<number, PostcodeReviewDecision>();
+    decisions.forEach((decision) => decisionMap.set(decision.rowIndex, decision));
+
+    const nextRows: ImportedRow[] = [];
+    const nextMapped: MappedRow[] = [];
+    const nextRaw: Record<string, any>[] = [];
+
+    processed.rows.forEach((row, index) => {
+      const decision = decisionMap.get(index);
+      if (decision?.action === "remove") return;
+
+      const parsed = decision?.parsed ?? parsePostcode(row.zip);
+      const normalized = parsed.normalized ?? decision?.postcode ?? row.zip;
+
+      nextRows.push({
+        ...row,
+        zip: normalized,
+      });
+      nextMapped.push({
+        ...processed.mappedRows[index],
+        postcode: normalized,
+      });
+      nextRaw.push(processed.rawRows[index]);
+    });
+
+    return {
+      rows: nextRows,
+      mappedRows: nextMapped,
+      rawRows: nextRaw,
+      headers: processed.headers,
+    };
+  };
+
+  const buildIntentLabel = (meta: PendingImportMeta | null): { label: string; detail?: string } => {
+    if (!meta) return { label: "Unknown" };
+    if (meta.fileType === "masterhouse") return { label: "Masterfile" };
+    if (meta.schedulingMode === "deadline") {
+      return { label: "Visit By", detail: meta.deadline };
+    }
+    if (meta.schedulingMode === "followup") {
+      return { label: "Follow Up By", detail: meta.followUpDays ? `${meta.followUpDays} days` : undefined };
+    }
+    if (meta.schedulingMode === "priority") {
+      return { label: "Priority", detail: meta.priorityLevel ? `P${meta.priorityLevel}` : undefined };
+    }
+    return { label: "Additional List" };
+  };
+
+  const intentDisplay = pendingImportMeta ? buildIntentLabel(pendingImportMeta) : null;
+
+  const commitImport = (
+    processed: ProcessedImport,
+    meta: PendingImportMeta
+  ) => {
+    const rows = processed.rows;
+
+    if (meta.fileType === "masterhouse") {
+      const fileId = crypto.randomUUID();
+      const uploadTime = Date.now();
+
+      const enhanced: Pub[] = rows.map((r) => {
+        // Normalize + parse postcode once at import for deterministic mock distance and UI display.
+        // Legacy "zip" remains for compatibility; parsed parts live in postcodeMeta.
+        const postcodeMeta = parsePostcode(r.zip);
+        const postcodeValue = postcodeMeta.normalized ?? r.zip;
+        return {
+          uuid: crypto.randomUUID(),
+          fileId,
+          fileName: meta.fileName,
+          listType: "masterhouse",
+          deadline: undefined,
+          priorityLevel: undefined,
+          followUpDays: undefined,
+          zip: postcodeValue,
+          postcodeMeta,
+          pub: r.pub,
+          last_visited: r.last_visited ?? undefined,
+          rtm: r.rtm ?? undefined,
+          landlord: r.landlord ?? undefined,
+          notes: r.notes ?? undefined,
+          sourceLists: [meta.fileName], // Add source list
+          schedulingMode: undefined, // Masterfile doesn't have scheduling mode
+          Priority: "Masterfile",
+        };
+      });
+
+      setUserFiles((prev) => ({
+        files: [
+          ...prev.files,
+          {
+            fileId,
+            fileName: meta.fileName,
+            name: meta.fileName,
+            type: "masterhouse",
+            uploadTime,
+            count: enhanced.length,
+          },
+        ],
+        pubs: [...prev.pubs, ...enhanced],
+      }));
+      setIsFileLoaded(true);
+      return;
+    }
+
+    const fileId = crypto.randomUUID();
+    const uploadTime = Date.now();
+
+    const schedulingMode: "deadline" | "priority" | "followup" =
+      meta.deadline ? "deadline" :
+      (Number.isFinite(meta.followUpDays) && (meta.followUpDays as number) > 0 ? "followup" : "priority");
+
+    const enriched: Pub[] = rows.map((r) => {
+      // Normalize + parse postcode once at import for deterministic mock distance and UI display.
+      // Legacy "zip" remains for compatibility; parsed parts live in postcodeMeta.
+      const postcodeMeta = parsePostcode(r.zip);
+      const postcodeValue = postcodeMeta.normalized ?? r.zip;
+      return {
+        uuid: crypto.randomUUID(),
+        fileId,
+        fileName: meta.fileName,
+        listType: meta.fileType,
+        deadline: schedulingMode === "deadline" ? meta.deadline : undefined,
+        priorityLevel: schedulingMode === "priority" ? meta.priorityLevel : undefined,
+        followUpDays: schedulingMode === "followup" ? meta.followUpDays : undefined,
+        zip: postcodeValue,
+        postcodeMeta,
+        pub: r.pub,
+        last_visited: r.last_visited ?? undefined,
+        rtm: r.rtm ?? undefined,
+        landlord: r.landlord ?? undefined,
+        notes: r.notes ?? undefined,
+        sourceLists: [meta.fileName], // Add source list
+        schedulingMode, // Add scheduling mode
+        Priority:
+          meta.fileType === "wins"
+            ? "RepslyWin"
+            : meta.fileType === "hitlist"
+            ? "Wishlist"
+            : meta.fileType === "unvisited"
+            ? "Unvisited"
+            : "Masterfile",
+      };
+    });
+
+    setUserFiles((prev) => {
+      // For non-master files, check for duplicates
+      if (meta.fileType !== "masterhouse") {
+        // Convert Pub types for deduplication
+        const existingPubs = prev.pubs.map(pub => ({
+          uuid: pub.uuid,
+          name: pub.pub,
+          postcode: pub.zip,
+          address: undefined,
+          town: undefined,
+          phone: undefined,
+          email: undefined,
+          rtm: pub.rtm,
+        }));
+        
+        const incomingPubs = enriched.map(pub => ({
+          uuid: pub.uuid,
+          name: pub.pub,
+          postcode: pub.zip,
+          address: undefined,
+          town: undefined,
+          phone: undefined,
+          email: undefined,
+          rtm: pub.rtm,
+        }));
+        
+        const { autoMerge, needsReview } = suggest(existingPubs, incomingPubs);
+        
+        if (autoMerge.length > 0 || needsReview.length > 0) {
+          // Build row index mapping
+          const rowIndices: Record<string, number> = {};
+          enriched.forEach((pub, index) => {
+            rowIndices[pub.uuid] = index;
+          });
+          
+          // Convert to suggestions format
+          const autoMergeSuggestions = convertToSuggestions(autoMerge, existingPubs, incomingPubs, meta.fileName, rowIndices);
+          const needsReviewSuggestions = convertToSuggestions(needsReview, existingPubs, incomingPubs, meta.fileName, rowIndices);
+          
+          // Store pending data and show compact summary
+          setPendingPubs(enriched);
+          setPendingRowIndices(rowIndices);
+          setPendingFile({
+            fileId,
+            fileName: meta.fileName,
+            name: meta.fileName,
+            type: meta.fileType,
+            uploadTime,
+            count: enriched.length,
+            schedulingMode,
+            deadline: schedulingMode === "deadline" ? meta.deadline : undefined,
+            priority: schedulingMode === "priority" ? meta.priorityLevel : undefined,
+            followUpDays: schedulingMode === "followup" ? meta.followUpDays : undefined,
+          });
+          setDedupSuggestions({ autoMerge: autoMergeSuggestions, needsReview: needsReviewSuggestions });
+          setHasPendingDedup(true);
+          return prev; // Return unchanged state
+        }
+      }
+
+      // No duplicates or master file - add directly
+      return {
+        files: [
+          ...prev.files,
+          {
+            fileId,
+            fileName: meta.fileName,
+            name: meta.fileName,
+            type: meta.fileType,
+            uploadTime,
+            count: enriched.length,
+            schedulingMode,
+            deadline: schedulingMode === "deadline" ? meta.deadline : undefined,
+            priority: schedulingMode === "priority" ? meta.priorityLevel : undefined,
+            followUpDays: schedulingMode === "followup" ? meta.followUpDays : undefined,
+          },
+        ],
+        pubs: [...prev.pubs, ...enriched],
+      };
+    });
+
+    setIsFileLoaded(false);
+    setShowDetails(false);
+  };
+
+  const resetPendingImportState = () => {
+    setPendingImport(null);
+    setPendingImportMeta(null);
+    setPostcodeIssues([]);
+    setHasPendingPostcodeReview(false);
+    setShowPostcodeReviewDialog(false);
+    setProcessedPubs([]);
+    setCurrentFileName("");
+    setIsProcessing(false);
+  };
+
+  const handlePostcodeReviewConfirm = (decisions: PostcodeReviewDecision[]) => {
+    if (!pendingImport || !pendingImportMeta) {
+      setError("Missing import context. Please re-upload the file.");
+      resetPendingImportState();
+      return;
+    }
+
+    const updated = applyPostcodeDecisions(pendingImport, decisions);
+    if (updated.rows.length === 0) {
+      setError("All rows were removed during review. Please upload another file.");
+      resetPendingImportState();
+      return;
+    }
+
+    setProcessedPubs(updated.rows);
+    runGeocoderSmokeTest(updated.rows);
+    commitImport(updated, pendingImportMeta);
+    resetPendingImportState();
+  };
+
+  const handlePostcodeReviewCancel = () => {
+    resetPendingImportState();
+    setShowTypeDialog(false);
+  };
+
   // ---------- main parse + map flow ----------
-  const processExcelFile = async (buffer: ArrayBuffer): Promise<ImportedRow[]> => {
+  const processExcelFile = async (buffer: ArrayBuffer): Promise<ProcessedImport> => {
     const workbook = XLSX.read(buffer, { type: "array" });
     if (!workbook?.SheetNames?.length) throw new Error("Invalid Excel file format");
 
@@ -195,9 +491,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
     const mapping = await waitForMapping(safeHeaders);
 
-    const mapped: MappedRow[] = rowObjects
-      .map((r) => mapRowToCanonical(r, mapping))
-      .filter((r) => r.name && r.postcode);
+    const mappedWithIndex = rowObjects.map((r, index) => ({
+      rowIndex: index,
+      mapped: mapRowToCanonical(r, mapping),
+    }));
+    const filtered = mappedWithIndex.filter((r) => r.mapped.name && r.mapped.postcode);
+    const mapped: MappedRow[] = filtered.map((r) => r.mapped);
 
     if (mapped.length === 0) {
       throw new Error("No valid rows after mapping (name + postcode required).");
@@ -223,7 +522,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       setError(`Warning: ${dropped} row(s) were skipped. Check console for details.`);
     }
 
-    return rows;
+    return {
+      rows,
+      mappedRows: mapped,
+      rawRows: filtered.map((r) => rowObjects[r.rowIndex]),
+      headers: safeHeaders,
+    };
   };
 
   // ---------- drop handler ----------
@@ -252,56 +556,27 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         }
 
         try {
-          const rows = await processExcelFile(buffer);
-          await validatePostcodes(rows);
+          const processed = await processExcelFile(buffer);
+          setProcessedPubs(processed.rows);
+          setPendingImport(processed);
 
           if (fileType === "masterhouse") {
-            const fileId = crypto.randomUUID();
-            const uploadTime = Date.now();
-
-            const enhanced: Pub[] = rows.map((r) => {
-              // Normalize + parse postcode once at import for deterministic mock distance and UI display.
-              // Legacy "zip" remains for compatibility; parsed parts live in postcodeMeta.
-              const postcodeMeta = parsePostcode(r.zip);
-              const postcodeValue = postcodeMeta.normalized ?? r.zip;
-              return {
-              uuid: crypto.randomUUID(),
-              fileId,
+            const meta: PendingImportMeta = {
+              fileType: "masterhouse",
               fileName: file.name,
-              listType: "masterhouse",
-              deadline: undefined,
-              priorityLevel: undefined,
-              followUpDays: undefined,
-              zip: postcodeValue,
-              postcodeMeta,
-              pub: r.pub,
-              last_visited: r.last_visited ?? undefined,
-              rtm: r.rtm ?? undefined,
-              landlord: r.landlord ?? undefined,
-              notes: r.notes ?? undefined,
-              sourceLists: [file.name], // Add source list
-              schedulingMode: undefined, // Masterfile doesn't have scheduling mode
-              Priority: "Masterfile",
             };
-            });
-
-            setUserFiles((prev) => ({
-              files: [
-                ...prev.files,
-                {
-                  fileId,
-                  fileName: file.name,
-                  name: file.name,
-                  type: "masterhouse",
-                  uploadTime,
-                  count: enhanced.length,
-                },
-              ],
-              pubs: [...prev.pubs, ...enhanced],
-            }));
-            setIsFileLoaded(true);
+            setPendingImportMeta(meta);
+            const issues = collectPostcodeIssues(processed);
+            if (issues.length > 0) {
+              setPostcodeIssues(issues);
+              setHasPendingPostcodeReview(true);
+              setShowPostcodeReviewDialog(true);
+            } else {
+              await runGeocoderSmokeTest(processed.rows);
+              commitImport(processed, meta);
+              resetPendingImportState();
+            }
           } else {
-            setProcessedPubs(rows);
             setShowTypeDialog(true);
           }
         } catch (err) {
@@ -442,140 +717,40 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   ) => {
     devLog('[Submit additional]', { type, deadline, priorityLevel, followUpDays });
 
-    const fileId = crypto.randomUUID();
-    const uploadTime = Date.now();
-
-    // Determine scheduling mode
-    const schedulingMode: 'deadline' | 'priority' | 'followup' =
-      deadline ? 'deadline' :
-      (Number.isFinite(followUpDays) && (followUpDays as number) > 0 ? 'followup' : 'priority');
-
-    const enriched: Pub[] = processedPubs.map((r) => {
-      // Normalize + parse postcode once at import for deterministic mock distance and UI display.
-      // Legacy "zip" remains for compatibility; parsed parts live in postcodeMeta.
-      const postcodeMeta = parsePostcode(r.zip);
-      const postcodeValue = postcodeMeta.normalized ?? r.zip;
-      return {
-      uuid: crypto.randomUUID(),
-      fileId,
-      fileName: currentFileName,
-      listType: type,
-      deadline: schedulingMode === 'deadline' ? deadline : undefined,
-      priorityLevel: schedulingMode === 'priority' ? priorityLevel : undefined,
-      followUpDays: schedulingMode === 'followup' ? followUpDays : undefined,
-      zip: postcodeValue,
-      postcodeMeta,
-      pub: r.pub,
-      last_visited: r.last_visited ?? undefined,
-      rtm: r.rtm ?? undefined,
-      landlord: r.landlord ?? undefined,
-      notes: r.notes ?? undefined,
-      sourceLists: [currentFileName], // Add source list
-      schedulingMode, // Add scheduling mode
-      Priority:
-        type === "wins"
-          ? "RepslyWin"
-          : type === "hitlist"
-          ? "Wishlist"
-          : type === "unvisited"
-          ? "Unvisited"
-          : "Masterfile",
-    };
-    });
-
-    setUserFiles((prev) => {
-      // For non-master files, check for duplicates
-      if (type !== "masterhouse") {
-        // Convert Pub types for deduplication
-        const existingPubs = prev.pubs.map(pub => ({
-          uuid: pub.uuid,
-          name: pub.pub,
-          postcode: pub.zip,
-          address: undefined,
-          town: undefined,
-          phone: undefined,
-          email: undefined,
-          rtm: pub.rtm,
-        }));
-        
-        const incomingPubs = enriched.map(pub => ({
-          uuid: pub.uuid,
-          name: pub.pub,
-          postcode: pub.zip,
-          address: undefined,
-          town: undefined,
-          phone: undefined,
-          email: undefined,
-          rtm: pub.rtm,
-        }));
-        
-                 const { autoMerge, needsReview } = suggest(existingPubs, incomingPubs);
-         
-         if (autoMerge.length > 0 || needsReview.length > 0) {
-           // Build row index mapping
-           const rowIndices: Record<string, number> = {};
-           enriched.forEach((pub, index) => {
-             rowIndices[pub.uuid] = index;
-           });
-           
-           // Convert to suggestions format
-           const autoMergeSuggestions = convertToSuggestions(autoMerge, existingPubs, incomingPubs, currentFileName, rowIndices);
-           const needsReviewSuggestions = convertToSuggestions(needsReview, existingPubs, incomingPubs, currentFileName, rowIndices);
-           
-           // Store pending data and show compact summary
-           setPendingPubs(enriched);
-           setPendingRowIndices(rowIndices);
-           setPendingFile({
-             fileId,
-             fileName: currentFileName,
-             name: currentFileName,
-             type,
-             uploadTime,
-             count: enriched.length,
-             schedulingMode,
-             deadline: schedulingMode === 'deadline' ? deadline : undefined,
-             priority: schedulingMode === 'priority' ? priorityLevel : undefined,
-             followUpDays: schedulingMode === 'followup' ? followUpDays : undefined,
-           });
-           setDedupSuggestions({ autoMerge: autoMergeSuggestions, needsReview: needsReviewSuggestions });
-           setHasPendingDedup(true);
-           return prev; // Return unchanged state
-         }
-      }
-
-      // No duplicates or master file - add directly
-            return {
-        files: [
-          ...prev.files,
-          {
-            fileId,
-            fileName: currentFileName,
-            name: currentFileName,
-            type,
-            uploadTime,
-            count: enriched.length,
-            schedulingMode,
-            deadline: schedulingMode === 'deadline' ? deadline : undefined,
-            priority: schedulingMode === 'priority' ? priorityLevel : undefined,
-            followUpDays: schedulingMode === 'followup' ? followUpDays : undefined,
-          },
-        ],
-        pubs: [...prev.pubs, ...enriched],
-      };
-    });
-
-    if (fileType === "masterhouse") {
-      // Keep Step 1 locked once loaded for masterhouse
-      setIsFileLoaded(true);
-    } else {
-      // Re-enable the dropzone for additional lists so users can add more
-      setIsFileLoaded(false);
-      setShowDetails(false);
+    if (!pendingImport) {
+      setError("Missing import data. Please re-upload the file.");
+      return;
     }
+
+    const schedulingMode: "deadline" | "priority" | "followup" =
+      deadline ? "deadline" :
+      (Number.isFinite(followUpDays) && (followUpDays as number) > 0 ? "followup" : "priority");
+
+    const meta: PendingImportMeta = {
+      fileType: type,
+      fileName: currentFileName,
+      schedulingMode,
+      deadline,
+      priorityLevel,
+      followUpDays,
+    };
+
+    setPendingImportMeta(meta);
+    const issues = collectPostcodeIssues(pendingImport);
+    if (issues.length > 0) {
+      setPostcodeIssues(issues);
+      setHasPendingPostcodeReview(true);
+      setShowPostcodeReviewDialog(true);
+      setShowTypeDialog(false);
+      return;
+    }
+
+    runGeocoderSmokeTest(pendingImport.rows);
+    commitImport(pendingImport, meta);
+
+    // Cleanup local state for next upload
     setShowTypeDialog(false);
-    setProcessedPubs([]);
-    setCurrentFileName("");
-    setIsProcessing(false);
+    resetPendingImportState();
   };
 
   // Log uploader flags in useEffect to prevent spam
@@ -693,9 +868,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         isOpen={showTypeDialog}
         onClose={() => {
           setShowTypeDialog(false);
-          setProcessedPubs([]);
-          setCurrentFileName("");
-          setIsProcessing(false);
+          resetPendingImportState();
           setIsFileLoaded(false);
           setShowDetails(false);
         }}
@@ -706,6 +879,28 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         currentFileName={currentFileName}
         usedPriorities={usedPriorities}
       />
+
+      {/* Postcode Issues Summary Card */}
+      {hasPendingPostcodeReview && pendingImportMeta && (
+        <div className="mt-4 p-4 bg-gradient-to-r from-eggplant-900/90 via-eggplant-800/95 to-eggplant-900/90 backdrop-blur-sm rounded-lg border border-eggplant-700/60">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-neon-purple mb-1">
+                Postcode Issues Found
+              </h3>
+              <p className="text-xs text-eggplant-200">
+                {postcodeIssues.length} row(s) need review for {pendingImportMeta.fileName}.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowPostcodeReviewDialog(true)}
+              className="px-4 py-2 text-sm font-medium text-white bg-neon-purple border border-transparent rounded-lg hover:bg-neon-purple/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neon-purple"
+            >
+              Review rows
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Deduplication Summary Card */}
       {hasPendingDedup && (
@@ -752,8 +947,21 @@ const FileUploader: React.FC<FileUploaderProps> = ({
              setIsFileLoaded(false);
              setShowDetails(false);
            }}
-         />
-       )}
+       />
+     )}
+
+      {showPostcodeReviewDialog && pendingImportMeta && pendingImport && (
+        <PostcodeReviewDialog
+          isOpen={showPostcodeReviewDialog}
+          fileName={pendingImportMeta.fileName}
+          intentLabel={intentDisplay?.label ?? "Unknown"}
+          intentDetail={intentDisplay?.detail}
+          headers={pendingImport.headers}
+          issues={postcodeIssues}
+          onConfirm={handlePostcodeReviewConfirm}
+          onCancel={handlePostcodeReviewCancel}
+        />
+      )}
 
       {showMapping && (
         <ColumnMappingWizard
