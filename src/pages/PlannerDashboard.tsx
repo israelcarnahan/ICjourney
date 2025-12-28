@@ -6,7 +6,7 @@ import {
   calculateDistance,
   buildSchedulingDebugSummary,
 } from "../utils/scheduleUtils";
-import FilePreview from "../components/FilePreview";
+// import FilePreview from "../components/FilePreview"; // Unused for now; retained for planned review/cleanup.
 import GenerateControls from "../components/planner/GenerateControls";
 import UploadedFilesPanel from "../components/planner/UploadedFilesPanel";
 import FileUploader from "../components/FileUploader";
@@ -15,7 +15,7 @@ import ScheduleDisplay from "../components/ScheduleDisplay";
 import UnscheduledPubsPanel from "../components/UnscheduledPubsPanel";
 import RepStatsPanel from "../components/RepStatsPanel";
 import FileTypeDialog from "../components/FileTypeDialog";
-import VehicleSelector from "../components/VehicleSelector";
+// import VehicleSelector from "../components/VehicleSelector"; // Unused for now; retained for planned review/cleanup.
 import {
   usePubData,
   Pub,
