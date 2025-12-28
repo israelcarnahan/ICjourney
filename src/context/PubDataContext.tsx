@@ -33,7 +33,26 @@ export interface Pub {
   deadline?: string;
   priorityLevel?: number;
   followUpDays?: number;
+  // Legacy field: "zip" is the historical postcode field in this codebase.
+  // We keep it for compatibility and store normalized data in postcodeMeta.
   zip: string;
+  postcodeMeta?: {
+    raw: string;
+    normalized: string | null;
+    areaLetters: string | null;
+    outwardDistrict: number | null;
+    outwardFull: string | null;
+    inwardSector: string | null;
+    inwardUnit: string | null;
+    status: "OK" | "ODDBALL" | "INVALID";
+    fallbackReason:
+      | "UNKNOWN_MACRO"
+      | "UNKNOWN_SUBREGION"
+      | "PARSE_FAILED"
+      | "SPECIAL_CASE"
+      | "USER_DEFERRED_REVIEW"
+      | null;
+  };
   pub: string;
   mileageToNext?: number;
   driveTimeToNext?: number;

@@ -17,6 +17,7 @@ import { devLog } from "../utils/devLog";
 import { suggest, convertToSuggestions } from "../utils/dedupe";
 import { DedupReviewDialog, type Suggestion } from "./DedupReviewDialog";
 import { mergeIntoCanonical } from "../utils/lineageMerge";
+import { parsePostcode } from "../utils/postcodeUtils";
 
 // Minimal row returned from Excel (no ids/metadata yet)
 type ImportedRow = {
@@ -258,7 +259,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             const fileId = crypto.randomUUID();
             const uploadTime = Date.now();
 
-            const enhanced: Pub[] = rows.map((r) => ({
+            const enhanced: Pub[] = rows.map((r) => {
+              // Normalize + parse postcode once at import for deterministic mock distance and UI display.
+              // Legacy "zip" remains for compatibility; parsed parts live in postcodeMeta.
+              const postcodeMeta = parsePostcode(r.zip);
+              const postcodeValue = postcodeMeta.normalized ?? r.zip;
+              return {
               uuid: crypto.randomUUID(),
               fileId,
               fileName: file.name,
@@ -266,7 +272,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               deadline: undefined,
               priorityLevel: undefined,
               followUpDays: undefined,
-              zip: r.zip,
+              zip: postcodeValue,
+              postcodeMeta,
               pub: r.pub,
               last_visited: r.last_visited ?? undefined,
               rtm: r.rtm ?? undefined,
@@ -275,7 +282,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               sourceLists: [file.name], // Add source list
               schedulingMode: undefined, // Masterfile doesn't have scheduling mode
               Priority: "Masterfile",
-            }));
+            };
+            });
 
             setUserFiles((prev) => ({
               files: [
@@ -442,7 +450,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       deadline ? 'deadline' :
       (Number.isFinite(followUpDays) && (followUpDays as number) > 0 ? 'followup' : 'priority');
 
-    const enriched: Pub[] = processedPubs.map((r) => ({
+    const enriched: Pub[] = processedPubs.map((r) => {
+      // Normalize + parse postcode once at import for deterministic mock distance and UI display.
+      // Legacy "zip" remains for compatibility; parsed parts live in postcodeMeta.
+      const postcodeMeta = parsePostcode(r.zip);
+      const postcodeValue = postcodeMeta.normalized ?? r.zip;
+      return {
       uuid: crypto.randomUUID(),
       fileId,
       fileName: currentFileName,
@@ -450,7 +463,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       deadline: schedulingMode === 'deadline' ? deadline : undefined,
       priorityLevel: schedulingMode === 'priority' ? priorityLevel : undefined,
       followUpDays: schedulingMode === 'followup' ? followUpDays : undefined,
-      zip: r.zip,
+      zip: postcodeValue,
+      postcodeMeta,
       pub: r.pub,
       last_visited: r.last_visited ?? undefined,
       rtm: r.rtm ?? undefined,
@@ -466,7 +480,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           : type === "unvisited"
           ? "Unvisited"
           : "Masterfile",
-    }));
+    };
+    });
 
     setUserFiles((prev) => {
       // For non-master files, check for duplicates
