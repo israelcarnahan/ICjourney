@@ -1,4 +1,4 @@
-import { Pub, ScheduleDay } from "../context/PubDataContext";
+import { Pub, ScheduleDay, SchedulingDebugSummary } from "../context/PubDataContext";
 import { format, addBusinessDays } from "date-fns";
 import { Visit } from "../types";
 import { devLog } from "./devLog";
@@ -104,6 +104,7 @@ export async function planVisits(
   const schedule: DaySchedule[] = [];
   let remainingDays = businessDays;
   let currentDate = startDate;
+  const hasHome = Boolean(homeAddress && homeAddress.trim().length > 0);
 
   // const [homePrefix] = extractNumericPart(homeAddress); // TODO: Use for distance calculations
 
@@ -187,7 +188,9 @@ export async function planVisits(
       // Calculate metrics for the day
       let totalMileage = 0;
       let totalDriveTime = 0;
-      const firstPubMetrics = calculateDistance(homeAddress, dayVisits[0].zip);
+      const firstPubMetrics = hasHome
+        ? calculateDistance(homeAddress, dayVisits[0].zip)
+        : { mileage: 0, driveTime: 0 };
       totalMileage += firstPubMetrics.mileage;
       totalDriveTime += firstPubMetrics.driveTime;
 
@@ -209,10 +212,12 @@ export async function planVisits(
       // Add return journey
       const lastPubMetrics = calculateDistance(
         dayVisits[dayVisits.length - 1].zip,
-        homeAddress
+        hasHome ? homeAddress : dayVisits[0].zip
       );
-      totalMileage += lastPubMetrics.mileage;
-      totalDriveTime += lastPubMetrics.driveTime;
+      if (hasHome) {
+        totalMileage += lastPubMetrics.mileage;
+        totalDriveTime += lastPubMetrics.driveTime;
+      }
 
       const schedulingErrors: string[] = [];
       if (dayVisits.length < visitsPerDay) {
@@ -297,6 +302,81 @@ export async function planVisits(
   });
 
   return schedule;
+}
+
+type BucketKey = "deadline" | "followUp" | "priority" | "master";
+
+const classifyBucket = (pub: Pub): BucketKey => {
+  if (pub.deadline) return "deadline";
+  if (pub.followUpDays) return "followUp";
+  if (pub.priorityLevel) return "priority";
+  return "master";
+};
+
+export function buildSchedulingDebugSummary(
+  pubs: Pub[],
+  schedule: DaySchedule[],
+  visitsPerDay: number,
+  homeAddress: string
+): SchedulingDebugSummary {
+  const bucketTotals = {
+    deadline: 0,
+    followUp: 0,
+    priority: 0,
+    master: 0,
+  };
+  const bucketScheduled = {
+    deadline: 0,
+    followUp: 0,
+    priority: 0,
+    master: 0,
+  };
+
+  pubs.forEach((pub) => {
+    const bucket = classifyBucket(pub);
+    bucketTotals[bucket] += 1;
+  });
+
+  schedule.forEach((day) => {
+    (day.visits || []).forEach((visit) => {
+      const bucket = classifyBucket(visit);
+      bucketScheduled[bucket] += 1;
+    });
+  });
+
+  const bucketExcluded = {
+    deadline: Math.max(0, bucketTotals.deadline - bucketScheduled.deadline),
+    followUp: Math.max(0, bucketTotals.followUp - bucketScheduled.followUp),
+    priority: Math.max(0, bucketTotals.priority - bucketScheduled.priority),
+    master: Math.max(0, bucketTotals.master - bucketScheduled.master),
+  };
+
+  const totalScheduled = Object.values(bucketScheduled).reduce(
+    (acc, n) => acc + n,
+    0
+  );
+  const totalPubs = pubs.length;
+  const excludedTotal = Math.max(0, totalPubs - totalScheduled);
+
+  return {
+    bucketTotals,
+    bucketScheduled,
+    bucketExcluded,
+    exclusionReasons: {
+      radiusConstrained: 0,
+      invalidGeo: 0,
+      capacityLimit: excludedTotal,
+      alreadyScheduled: 0,
+    },
+    anchorMode:
+      homeAddress && homeAddress.trim().length > 0 ? "home" : "fallback",
+    scheduledDays: schedule.length,
+    visitsPerDay,
+    totalPubs,
+    totalScheduled,
+    notes:
+      "Exclusion reasons are placeholders until radius/geo filters are applied.",
+  };
 }
 
 export const optimizeRoute = (

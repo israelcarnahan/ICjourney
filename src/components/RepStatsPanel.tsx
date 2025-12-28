@@ -30,7 +30,8 @@ interface StatInfo {
 }
 
 const RepStatsPanel: React.FC = () => {
-  const { schedule, visitsPerDay, userFiles } = usePubData();
+  const { schedule, visitsPerDay, userFiles, schedulingDebug } = usePubData();
+  const showDebug = import.meta.env.DEV && schedulingDebug;
 
   // If no schedule exists or it's empty, show the placeholder
   if (
@@ -317,6 +318,60 @@ const RepStatsPanel: React.FC = () => {
               </p>
             </div>
           )}
+
+        {showDebug && (
+          <details className="bg-eggplant-800/30 rounded-lg p-3 border border-eggplant-700/40">
+            <summary className="text-sm text-eggplant-200 cursor-pointer">
+              Debug Summary (dev only)
+            </summary>
+            <div className="mt-2 text-xs text-eggplant-300 space-y-2">
+              <div>
+                <span className="text-eggplant-200">Anchor:</span>{" "}
+                {schedulingDebug.anchorMode}
+              </div>
+              <div>
+                <span className="text-eggplant-200">Buckets:</span>{" "}
+                deadline {schedulingDebug.bucketTotals.deadline}, follow-up{" "}
+                {schedulingDebug.bucketTotals.followUp}, priority{" "}
+                {schedulingDebug.bucketTotals.priority}, master{" "}
+                {schedulingDebug.bucketTotals.master}
+              </div>
+              <div>
+                <span className="text-eggplant-200">Scheduled:</span>{" "}
+                deadline {schedulingDebug.bucketScheduled.deadline}, follow-up{" "}
+                {schedulingDebug.bucketScheduled.followUp}, priority{" "}
+                {schedulingDebug.bucketScheduled.priority}, master{" "}
+                {schedulingDebug.bucketScheduled.master}
+              </div>
+              <div>
+                <span className="text-eggplant-200">Excluded:</span>{" "}
+                deadline {schedulingDebug.bucketExcluded.deadline}, follow-up{" "}
+                {schedulingDebug.bucketExcluded.followUp}, priority{" "}
+                {schedulingDebug.bucketExcluded.priority}, master{" "}
+                {schedulingDebug.bucketExcluded.master}
+              </div>
+              <div>
+                <span className="text-eggplant-200">Reasons:</span>{" "}
+                radius {schedulingDebug.exclusionReasons.radiusConstrained},{" "}
+                invalid geo {schedulingDebug.exclusionReasons.invalidGeo},{" "}
+                capacity {schedulingDebug.exclusionReasons.capacityLimit},{" "}
+                already scheduled{" "}
+                {schedulingDebug.exclusionReasons.alreadyScheduled}
+              </div>
+              <div>
+                <span className="text-eggplant-200">Totals:</span>{" "}
+                {schedulingDebug.totalScheduled}/{schedulingDebug.totalPubs}{" "}
+                visits across {schedulingDebug.scheduledDays} days at{" "}
+                {schedulingDebug.visitsPerDay}/day
+              </div>
+              {schedulingDebug.notes && (
+                <div className="text-[10px] text-eggplant-400">
+                  {schedulingDebug.notes}
+                </div>
+              )}
+            </div>
+          </details>
+        )}
 
         {Array.from(stats.entries()).map(
           ([fileId, stat]) =>

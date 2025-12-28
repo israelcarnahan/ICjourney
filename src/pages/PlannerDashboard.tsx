@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { mapsService } from "../config/maps";
-import { planVisits, calculateDistance } from "../utils/scheduleUtils";
+import {
+  planVisits,
+  calculateDistance,
+  buildSchedulingDebugSummary,
+} from "../utils/scheduleUtils";
 import FilePreview from "../components/FilePreview";
 import GenerateControls from "../components/planner/GenerateControls";
 import UploadedFilesPanel from "../components/planner/UploadedFilesPanel";
@@ -50,6 +54,7 @@ const PlannerDashboard: React.FC = () => {
   const clearSchedule = () => {
     devLog("Clearing previous schedule");
     setSchedule([]);
+    setSchedulingDebug(null);
     setUnscheduledPubs([]);
     setSelectedPub(null);
     setSelectedDay(null);
@@ -67,6 +72,7 @@ const PlannerDashboard: React.FC = () => {
     searchRadius,
     selectedVehicle,
     selectedVehicleColor,
+    setSchedulingDebug,
   } = usePubData();
 
   // Extract pubs by type from userFiles
@@ -184,6 +190,14 @@ const PlannerDashboard: React.FC = () => {
 
     devLog("Generated schedule:", newSchedule);
     setSchedule(toScheduleDays(newSchedule));
+    setSchedulingDebug(
+      buildSchedulingDebugSummary(
+        allPubs,
+        newSchedule,
+        visitsPerDay,
+        homeAddress
+      )
+    );
     return newSchedule;
   };
 

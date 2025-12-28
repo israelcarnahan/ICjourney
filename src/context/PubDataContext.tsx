@@ -109,6 +109,39 @@ export interface ScheduleDay {
   schedulingErrors?: string[];
 }
 
+export type SchedulingDebugSummary = {
+  bucketTotals: {
+    deadline: number;
+    followUp: number;
+    priority: number;
+    master: number;
+  };
+  bucketScheduled: {
+    deadline: number;
+    followUp: number;
+    priority: number;
+    master: number;
+  };
+  bucketExcluded: {
+    deadline: number;
+    followUp: number;
+    priority: number;
+    master: number;
+  };
+  exclusionReasons: {
+    radiusConstrained: number;
+    invalidGeo: number;
+    capacityLimit: number;
+    alreadyScheduled: number;
+  };
+  anchorMode: "home" | "fallback";
+  scheduledDays: number;
+  visitsPerDay: number;
+  totalPubs: number;
+  totalScheduled: number;
+  notes?: string;
+};
+
 export interface FileMetadata {
   fileId: string;
   fileName: string;
@@ -161,8 +194,10 @@ export interface PubDataContextType {
   selectedVehicle: VehicleType;
   selectedVehicleColor: VehicleColor;
   selectedDate: Date;
+  schedulingDebug: SchedulingDebugSummary | null;
   setUserFiles: (files: UserFiles | ((prev: UserFiles) => UserFiles)) => void;
   setSchedule: (schedule: ScheduleDay[]) => void;
+  setSchedulingDebug: (summary: SchedulingDebugSummary | null) => void;
   setBusinessDays: (days: number) => void;
   setVisitsPerDay: (visits: number) => void;
   setHomeAddress: (address: string) => void;
@@ -217,8 +252,10 @@ const defaultContext: PubDataContextType = {
   selectedVehicle: "car",
   selectedVehicleColor: "purple",
   selectedDate: new Date(),
+  schedulingDebug: null,
   setUserFiles: () => {},
   setSchedule: () => {},
+  setSchedulingDebug: () => {},
   setBusinessDays: () => {},
   setVisitsPerDay: () => {},
   setHomeAddress: () => {},
@@ -285,6 +322,8 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
   const [selectedDate, setSelectedDate] = useState<Date>(() =>
     loadFromStorage(STORAGE_KEYS.SELECTED_DATE, new Date())
   );
+  const [schedulingDebug, setSchedulingDebug] =
+    useState<SchedulingDebugSummary | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [initializationError, setInitializationError] = useState<string | null>(
     null
@@ -468,8 +507,10 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
     selectedVehicle,
     selectedVehicleColor,
     selectedDate,
+    schedulingDebug,
     setUserFiles,
     setSchedule,
+    setSchedulingDebug,
     setBusinessDays,
     setVisitsPerDay,
     setHomeAddress,
