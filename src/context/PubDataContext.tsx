@@ -156,6 +156,7 @@ export type SchedulingDebugSummary = {
     alreadyScheduled: number;
   };
   anchorMode: "home" | "fallback";
+  daysRequested: number;
   scheduledDays: number;
   visitsPerDay: number;
   totalPubs: number;

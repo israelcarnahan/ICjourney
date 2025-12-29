@@ -195,7 +195,8 @@ const PlannerDashboard: React.FC = () => {
         allPubs,
         newSchedule,
         visitsPerDay,
-        homeAddress
+        homeAddress,
+        businessDays
       )
     );
     return newSchedule;

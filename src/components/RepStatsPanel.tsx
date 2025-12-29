@@ -475,6 +475,10 @@ const RepStatsPanel: React.FC = () => {
                 visits across {schedulingDebug.scheduledDays} days at{" "}
                 {schedulingDebug.visitsPerDay}/day
               </div>
+              <div>
+                <span className="text-eggplant-200">Days requested:</span>{" "}
+                {schedulingDebug.daysRequested}
+              </div>
               {schedulingDebug.notes && (
                 <div className="text-[10px] text-eggplant-400">
                   {schedulingDebug.notes}

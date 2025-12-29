@@ -323,7 +323,8 @@ export function buildSchedulingDebugSummary(
   pubs: Pub[],
   schedule: DaySchedule[],
   visitsPerDay: number,
-  homeAddress: string
+  homeAddress: string,
+  daysRequested: number
 ): SchedulingDebugSummary {
   const bucketTotals = {
     deadline: 0,
@@ -380,6 +381,7 @@ export function buildSchedulingDebugSummary(
     },
     anchorMode:
       homeAddress && homeAddress.trim().length > 0 ? "home" : "fallback",
+    daysRequested,
     scheduledDays: schedule.length,
     visitsPerDay,
     totalPubs,
