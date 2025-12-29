@@ -359,7 +359,7 @@ const RepStatsPanel: React.FC = () => {
               visits
             </div>
             <div className="text-xs text-eggplant-300 mt-1">
-              Target efficiency
+              Target: {visitsPerDay} visits/day
             </div>
           </div>
         </div>
