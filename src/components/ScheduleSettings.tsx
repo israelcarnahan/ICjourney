@@ -34,17 +34,18 @@ const ScheduleSettings: React.FC<ScheduleSettingsProps> = ({
 
   const handleEndDateChange = (date: Date) => {
     setEndDate(date);
-    const days = differenceInBusinessDays(date, startDate);
-    const businessDays = days <= 0 ? 1 : days + 1;
-    setBusinessDays(businessDays);
   };
 
   const handleStartDateChange = (date: Date) => {
     setStartDate(date);
-    const days = differenceInBusinessDays(endDate, date);
-    const businessDays = days <= 0 ? 1 : days + 1;
-    setBusinessDays(businessDays);
   };
+
+  React.useEffect(() => {
+    // Keep businessDays in sync with the visible date range (inclusive).
+    const days = differenceInBusinessDays(endDate, startDate);
+    const inclusiveDays = days <= 0 ? 1 : days + 1;
+    setBusinessDays(inclusiveDays);
+  }, [endDate, startDate, setBusinessDays]);
 
   const handleVisitsPerDayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const visits = parseInt(e.target.value);
