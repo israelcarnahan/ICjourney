@@ -143,10 +143,9 @@ const PlannerDashboard: React.FC = () => {
 
     const processedRepslyWins = repslyWins.map((pub) => ({
       ...pub,
-      Priority: "RecentWin",
       followUpDays: pub.fileId
         ? userFiles.files?.find((f) => f.fileId === pub.fileId)?.followUpDays
-        : undefined,
+        : pub.followUpDays,
     }));
 
     const wishlistPubs = userFiles.pubs.filter(
@@ -161,9 +160,9 @@ const PlannerDashboard: React.FC = () => {
 
     const allPubs = [
       ...processedRepslyWins,
-      ...wishlistPubs.map((pub) => ({ ...pub, Priority: "Wishlist" })),
-      ...unvisitedPubs.map((pub) => ({ ...pub, Priority: "Unvisited" })),
-      ...masterfilePubs.map((pub) => ({ ...pub, Priority: "Masterfile" })),
+      ...wishlistPubs,
+      ...unvisitedPubs,
+      ...masterfilePubs,
     ];
 
     if (allPubs.length === 0) {

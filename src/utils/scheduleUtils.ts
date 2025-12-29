@@ -117,188 +117,165 @@ export async function planVisits(
   // Track scheduled pubs to prevent duplicates
   const scheduledPubs = new Set<string>();
 
-  // Group pubs by priority level
-  const priorityGroups: Record<string, Pub[]> = {
+  type BucketKey = "deadline" | "followUp" | "priority" | "master";
+  const bucketOrder: BucketKey[] = [
+    "deadline",
+    "followUp",
+    "priority",
+    "master",
+  ];
+  const bucketPubs: Record<BucketKey, Pub[]> = {
     deadline: [],
-    recentWin: [],
-    wishlist: [],
-    unvisited: [],
-    other: [],
+    followUp: [],
+    priority: [],
+    master: [],
   };
 
-  // Sort pubs into priority groups
+  const getBucket = (pub: Pub): BucketKey => {
+    if (pub.deadline) return "deadline";
+    if (pub.followUpDays && pub.followUpDays > 0) return "followUp";
+    if (pub.priorityLevel && pub.priorityLevel > 0) return "priority";
+    return "master";
+  };
+
   eligiblePubs.forEach((pub) => {
-    if (pub.deadline) {
-      priorityGroups.deadline.push(pub);
-    } else if (pub.Priority === "RecentWin") {
-      priorityGroups.recentWin.push(pub);
-    } else if (pub.Priority === "Wishlist") {
-      priorityGroups.wishlist.push(pub);
-    } else if (pub.Priority === "Unvisited") {
-      priorityGroups.unvisited.push(pub);
-    } else {
-      priorityGroups.other.push(pub);
-    }
+    bucketPubs[getBucket(pub)].push(pub);
   });
 
-  // Sort deadline pubs by date
-  priorityGroups.deadline.sort((a, b) => {
-    const dateA = new Date(a.deadline!).getTime();
-    const dateB = new Date(b.deadline!).getTime();
-    return dateA - dateB;
-  });
-
-  // Process each priority group
-  const processGroup = async (
-    pubs: Pub[],
-    currentDate: Date,
-    daysRemaining: number
-  ): Promise<[DaySchedule[], Date]> => {
-    const groupSchedule: DaySchedule[] = [];
-    let currentPubs = [...pubs];
-    let daysUsed = 0;
-
-    while (currentPubs.length > 0 && daysUsed < daysRemaining) {
-      // Get pubs for this day based on location proximity
-      const dayVisits: Pub[] = [];
-      let lastLocation = homeAddress;
-
-      // Try to fill up to visitsPerDay
-      while (dayVisits.length < visitsPerDay && currentPubs.length > 0) {
-        // Find the nearest unscheduled pub to the last location
-        const nearestPubIndex = currentPubs.reduce(
-          (nearest, pub, index) => {
-            if (scheduledPubs.has(pub.pub)) return nearest;
-
-            const distance = calculateDistance(lastLocation, pub.zip);
-            const currentDistance = nearest.distance;
-
-            return distance.mileage < currentDistance.mileage
-              ? { index, distance: distance }
-              : nearest;
-          },
-          { index: -1, distance: { mileage: Infinity, driveTime: Infinity } }
-        );
-
-        if (nearestPubIndex.index === -1) break;
-
-        const selectedPub = currentPubs[nearestPubIndex.index];
-        dayVisits.push(selectedPub);
-        scheduledPubs.add(selectedPub.pub);
-        lastLocation = selectedPub.zip;
-        currentPubs.splice(nearestPubIndex.index, 1);
-      }
-
-      if (dayVisits.length === 0) break;
-
-      // Calculate metrics for the day
-      let totalMileage = 0;
-      let totalDriveTime = 0;
-      const firstPubMetrics = hasHome
-        ? calculateDistance(homeAddress, dayVisits[0].zip)
-        : { mileage: 0, driveTime: 0 };
-      totalMileage += firstPubMetrics.mileage;
-      totalDriveTime += firstPubMetrics.driveTime;
-
-      // Calculate distances between visits
-      dayVisits.forEach((pub, index) => {
-        if (index < dayVisits.length - 1) {
-          const metrics = calculateDistance(pub.zip, dayVisits[index + 1].zip);
-          // Create a new object to avoid modifying the original
-          dayVisits[index] = {
-            ...pub,
-            mileageToNext: metrics.mileage,
-            driveTimeToNext: metrics.driveTime
-          };
-          totalMileage += metrics.mileage;
-          totalDriveTime += metrics.driveTime;
-        }
-      });
-
-      // Add return journey
-      const lastPubMetrics = calculateDistance(
-        dayVisits[dayVisits.length - 1].zip,
-        hasHome ? homeAddress : dayVisits[0].zip
-      );
-      if (hasHome) {
-        totalMileage += lastPubMetrics.mileage;
-        totalDriveTime += lastPubMetrics.driveTime;
-      }
-
-      const schedulingErrors: string[] = [];
-      if (dayVisits.length < visitsPerDay) {
-        schedulingErrors.push(
-          `Only ${dayVisits.length} visits scheduled (target: ${visitsPerDay})`
-        );
-      }
-
-      // Check deadlines
-      dayVisits.forEach((visit) => {
-        if (visit.deadline) {
-          const deadlineDate = new Date(visit.deadline);
-          const visitDate = new Date(currentDate);
-          if (visitDate > deadlineDate) {
-            schedulingErrors.push(
-              `${visit.pub} scheduled after deadline (${format(
-                deadlineDate,
-                "MMM d, yyyy"
-              )})`
-            );
-          }
-        }
-      });
-
-      groupSchedule.push({
-        date: format(currentDate, "yyyy-MM-dd"),
-        visits: dayVisits,
-        totalMileage,
-        totalDriveTime,
-        startMileage: firstPubMetrics.mileage,
-        startDriveTime: firstPubMetrics.driveTime,
-        endMileage: lastPubMetrics.mileage,
-        endDriveTime: lastPubMetrics.driveTime,
-        schedulingErrors:
-          schedulingErrors.length > 0 ? schedulingErrors : undefined,
-      });
-
-      currentDate = addBusinessDays(currentDate, 1);
-      daysUsed++;
+  const getPrimaryValue = (bucket: BucketKey, pub: Pub): number => {
+    if (bucket === "deadline") {
+      return pub.deadline ? new Date(pub.deadline).getTime() : Infinity;
     }
-
-    return [groupSchedule, currentDate];
+    if (bucket === "followUp") {
+      return typeof pub.followUpDays === "number" ? pub.followUpDays : Infinity;
+    }
+    if (bucket === "priority") {
+      return typeof pub.priorityLevel === "number"
+        ? pub.priorityLevel
+        : Infinity;
+    }
+    return 0;
   };
 
-  // Process deadline pubs first
-  if (priorityGroups.deadline.length > 0) {
-    const [deadlineSchedule, newDate] = await processGroup(
-      priorityGroups.deadline,
-      currentDate,
-      remainingDays
+  const pickNextFromBucket = (
+    bucket: BucketKey,
+    lastLocation: string
+  ): { pub: Pub; index: number } | null => {
+    const candidates = bucketPubs[bucket];
+    let bestIndex = -1;
+    let bestPrimary = Infinity;
+    let bestDistance = Infinity;
+
+    candidates.forEach((pub, index) => {
+      if (scheduledPubs.has(pub.pub)) return;
+      const primary = getPrimaryValue(bucket, pub);
+      const distance = calculateDistance(lastLocation, pub.zip).mileage;
+
+      if (
+        primary < bestPrimary ||
+        (primary === bestPrimary && distance < bestDistance)
+      ) {
+        bestPrimary = primary;
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    });
+
+    if (bestIndex === -1) return null;
+    return { pub: candidates[bestIndex], index: bestIndex };
+  };
+
+  while (remainingDays > 0) {
+    const dayVisits: Pub[] = [];
+    let lastLocation = hasHome ? homeAddress : "";
+
+    for (const bucket of bucketOrder) {
+      while (dayVisits.length < visitsPerDay) {
+        const selection = pickNextFromBucket(bucket, lastLocation);
+        if (!selection) break;
+
+        dayVisits.push(selection.pub);
+        scheduledPubs.add(selection.pub.pub);
+        lastLocation = selection.pub.zip;
+        bucketPubs[bucket].splice(selection.index, 1);
+      }
+      if (dayVisits.length >= visitsPerDay) break;
+    }
+
+    if (dayVisits.length === 0) break;
+
+    // Calculate metrics for the day
+    let totalMileage = 0;
+    let totalDriveTime = 0;
+    const firstPubMetrics = hasHome
+      ? calculateDistance(homeAddress, dayVisits[0].zip)
+      : { mileage: 0, driveTime: 0 };
+    totalMileage += firstPubMetrics.mileage;
+    totalDriveTime += firstPubMetrics.driveTime;
+
+    // Calculate distances between visits
+    dayVisits.forEach((pub, index) => {
+      if (index < dayVisits.length - 1) {
+        const metrics = calculateDistance(pub.zip, dayVisits[index + 1].zip);
+        // Create a new object to avoid modifying the original
+        dayVisits[index] = {
+          ...pub,
+          mileageToNext: metrics.mileage,
+          driveTimeToNext: metrics.driveTime,
+        };
+        totalMileage += metrics.mileage;
+        totalDriveTime += metrics.driveTime;
+      }
+    });
+
+    // Add return journey
+    const lastPubMetrics = calculateDistance(
+      dayVisits[dayVisits.length - 1].zip,
+      hasHome ? homeAddress : dayVisits[0].zip
     );
-    schedule.push(...deadlineSchedule);
-    currentDate = newDate;
-    remainingDays -= deadlineSchedule.length;
-  }
+    if (hasHome) {
+      totalMileage += lastPubMetrics.mileage;
+      totalDriveTime += lastPubMetrics.driveTime;
+    }
 
-  // Process remaining groups
-  for (const group of ["recentWin", "wishlist", "unvisited", "other"]) {
-    if (remainingDays <= 0) break;
+    const schedulingErrors: string[] = [];
+    if (dayVisits.length < visitsPerDay) {
+      schedulingErrors.push(
+        `Only ${dayVisits.length} visits scheduled (target: ${visitsPerDay})`
+      );
+    }
 
-    const groupPubs = priorityGroups[group as keyof typeof priorityGroups];
-    if (groupPubs.length === 0) continue;
+    // Check deadlines
+    dayVisits.forEach((visit) => {
+      if (visit.deadline) {
+        const deadlineDate = new Date(visit.deadline);
+        const visitDate = new Date(currentDate);
+        if (visitDate > deadlineDate) {
+          schedulingErrors.push(
+            `${visit.pub} scheduled after deadline (${format(
+              deadlineDate,
+              "MMM d, yyyy"
+            )})`
+          );
+        }
+      }
+    });
 
-    const [groupSchedule, newDate] = await processGroup(
-      groupPubs,
-      currentDate,
-      remainingDays
-    );
+    schedule.push({
+      date: format(currentDate, "yyyy-MM-dd"),
+      visits: dayVisits,
+      totalMileage,
+      totalDriveTime,
+      startMileage: firstPubMetrics.mileage,
+      startDriveTime: firstPubMetrics.driveTime,
+      endMileage: lastPubMetrics.mileage,
+      endDriveTime: lastPubMetrics.driveTime,
+      schedulingErrors:
+        schedulingErrors.length > 0 ? schedulingErrors : undefined,
+    });
 
-    const daysToTake = Math.min(groupSchedule.length, remainingDays);
-    schedule.push(...groupSchedule.slice(0, daysToTake));
-    remainingDays -= daysToTake;
-    currentDate = newDate;
-
-    if (remainingDays <= 0) break;
+    currentDate = addBusinessDays(currentDate, 1);
+    remainingDays -= 1;
   }
 
   devLog("Schedule planning complete:", {
