@@ -34,10 +34,28 @@ interface StatInfo {
 }
 
 const RepStatsPanel: React.FC = () => {
-  const { schedule, visitsPerDay, userFiles, schedulingDebug, setUserFiles } =
-    usePubData();
+  const {
+    schedule,
+    visitsPerDay,
+    businessDays,
+    userFiles,
+    schedulingDebug,
+    setUserFiles,
+  } = usePubData();
   const showDebug = import.meta.env.DEV && schedulingDebug;
   const [showPostcodeFixes, setShowPostcodeFixes] = useState(false);
+  const totalScheduledVisits = schedule.reduce(
+    (acc, day) => acc + toArray(day.visits).length,
+    0
+  );
+  const missingSlots = Math.max(
+    0,
+    businessDays * visitsPerDay - totalScheduledVisits
+  );
+  const unscheduledDays = Math.max(0, businessDays - schedule.length);
+  const scheduledDaysWithGaps = schedule.filter(
+    (day) => toArray(day.visits).length < visitsPerDay
+  ).length;
 
   const pendingFixes = useMemo(
     () =>
@@ -318,11 +336,12 @@ const RepStatsPanel: React.FC = () => {
               Total Scheduled
             </div>
             <div className="text-xl font-bold text-eggplant-100">
-              {schedule.reduce((acc, day) => acc + toArray(day.visits).length, 0)} visits
+              {totalScheduledVisits} visits
             </div>
             <div className="text-xs text-eggplant-300 mt-1">
-              {schedule.length}{" "}
-              {schedule.length === 1 ? "week day" : "week days"} planned
+              Requested {businessDays}{" "}
+              {businessDays === 1 ? "week day" : "week days"} • Scheduled{" "}
+              {schedule.length}
             </div>
           </div>
 
@@ -347,7 +366,7 @@ const RepStatsPanel: React.FC = () => {
 
         {/* Schedule Gaps Section - Only show if we have actual visits and gaps */}
         {schedule.some((day) => toArray(day.visits).length > 0) &&
-          schedule.some((day) => toArray(day.visits).length < visitsPerDay) && (
+          missingSlots > 0 && (
             <div className="bg-yellow-900/10 rounded-lg border border-yellow-700/30 p-3 mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="h-4 w-4 text-yellow-400" />
@@ -362,9 +381,9 @@ const RepStatsPanel: React.FC = () => {
                     Expected Visits
                   </div>
                   <div className="text-sm font-medium text-eggplant-100">
-                    {schedule.length * visitsPerDay} visits
+                    {businessDays * visitsPerDay} visits
                     <span className="text-xs text-eggplant-300 ml-1">
-                      ({schedule.length} days × {visitsPerDay}/day)
+                      ({businessDays} days x {visitsPerDay}/day)
                     </span>
                   </div>
                 </div>
@@ -374,20 +393,9 @@ const RepStatsPanel: React.FC = () => {
                     Missing Visits
                   </div>
                   <div className="text-sm font-medium text-yellow-200">
-                    {schedule.length * visitsPerDay -
-                      schedule.reduce(
-                        (acc, day) => acc + toArray(day.visits).length,
-                        0
-                      )}{" "}
-                    gaps
+                    {missingSlots} gaps
                     <span className="text-xs text-eggplant-300 ml-1">
-                      (
-                      {
-                        schedule.filter(
-                          (day) => toArray(day.visits).length < visitsPerDay
-                        ).length
-                      }{" "}
-                      days affected)
+                      ({scheduledDaysWithGaps} scheduled days affected{unscheduledDays > 0 ? `, ${unscheduledDays} unscheduled days` : ""})
                     </span>
                   </div>
                 </div>
