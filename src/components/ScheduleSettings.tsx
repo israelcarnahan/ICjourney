@@ -3,7 +3,7 @@ import { Calendar, Home, Users, Clock } from "lucide-react";
 import { usePubData } from "../context/PubDataContext";
 import SparkleWrapper from "./Sparkles";
 import CustomDatePicker from "./CustomDatePicker";
-import { differenceInBusinessDays } from "date-fns";
+import { differenceInBusinessDays, isWeekend } from "date-fns";
 import clsx from "clsx";
 
 interface ScheduleSettingsProps {
@@ -43,7 +43,8 @@ const ScheduleSettings: React.FC<ScheduleSettingsProps> = ({
   React.useEffect(() => {
     // Keep businessDays in sync with the visible date range (inclusive).
     const days = differenceInBusinessDays(endDate, startDate);
-    const inclusiveDays = days <= 0 ? 1 : days + 1;
+    const addEndDay = days >= 0 && !isWeekend(endDate) ? 1 : 0;
+    const inclusiveDays = Math.max(0, days + addEndDay);
     setBusinessDays(inclusiveDays);
   }, [endDate, startDate, setBusinessDays]);
 
