@@ -48,6 +48,10 @@ const RepStatsPanel: React.FC = () => {
     (acc, day) => acc + toArray(day.visits).length,
     0
   );
+  const averagePerDay =
+    schedule.length > 0 ? totalScheduledVisits / schedule.length : 0;
+  const averageMismatch =
+    schedule.length > 0 && Number(averagePerDay.toFixed(1)) !== visitsPerDay;
   const missingSlots = Math.max(
     0,
     businessDays * visitsPerDay - totalScheduledVisits
@@ -341,7 +345,15 @@ const RepStatsPanel: React.FC = () => {
             <div className="text-xs text-eggplant-300 mt-1">
               Requested {businessDays}{" "}
               {businessDays === 1 ? "week day" : "week days"} • Scheduled{" "}
-              {schedule.length}
+              <span
+                className={
+                  schedule.length !== businessDays
+                    ? "text-red-300"
+                    : "text-eggplant-300"
+                }
+              >
+                {schedule.length}
+              </span>
             </div>
           </div>
 
@@ -350,12 +362,9 @@ const RepStatsPanel: React.FC = () => {
               Average Per Day
             </div>
             <div className="text-xl font-bold text-eggplant-100">
-              {schedule.length > 0
-                ? (
-                    schedule.reduce((acc, day) => acc + toArray(day.visits).length, 0) /
-                    schedule.length
-                  ).toFixed(1)
-                : "0"}{" "}
+              <span className={averageMismatch ? "text-red-300" : "text-eggplant-100"}>
+                {schedule.length > 0 ? averagePerDay.toFixed(1) : "0"}
+              </span>{" "}
               visits
             </div>
             <div className="text-xs text-eggplant-300 mt-1">
