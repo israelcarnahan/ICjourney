@@ -2,6 +2,7 @@ import React from 'react';
 import { AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { usePubData } from '../context/PubDataContext';
 import * as Tooltip from '@radix-ui/react-tooltip';
+import { getPrimaryDriverLabel } from '../utils/sourceDetails';
 
 const ScheduleReport: React.FC = () => {
   const { 
@@ -9,36 +10,30 @@ const ScheduleReport: React.FC = () => {
     schedule 
   } = usePubData();
 
-  // Get all scheduled pubs
   const scheduledPubs = schedule.flatMap(day => day.visits);
+  const allPubs = userFiles.pubs || [];
 
-  // Calculate statistics for each priority level
-  const stats = {
-    RepslyWin: {
-      total: userFiles.pubs.filter(pub => pub.listType === 'wins').length,
-      scheduled: scheduledPubs.filter(pub => pub?.Priority === 'RepslyWin').length,
-      get remaining() { return this.total - this.scheduled },
-      get isExhausted() { return this.remaining === 0 && this.total > 0 }
-    },
-    Wishlist: {
-      total: userFiles.pubs.filter(pub => pub.listType === 'hitlist').length,
-      scheduled: scheduledPubs.filter(pub => pub?.Priority === 'Wishlist').length,
-      get remaining() { return this.total - this.scheduled },
-      get isExhausted() { return this.remaining === 0 && this.total > 0 }
-    },
-    Unvisited: {
-      total: userFiles.pubs.filter(pub => pub.listType === 'unvisited').length,
-      scheduled: scheduledPubs.filter(pub => pub?.Priority === 'Unvisited').length,
-      get remaining() { return this.total - this.scheduled },
-      get isExhausted() { return this.remaining === 0 && this.total > 0 }
-    },
-    Masterfile: {
-      total: userFiles.pubs.filter(pub => pub.listType === 'masterhouse').length,
-      scheduled: scheduledPubs.filter(pub => pub?.Priority === 'Masterfile').length,
-      get remaining() { return this.total - this.scheduled },
-      get isExhausted() { return this.remaining === 0 && this.total > 0 }
-    }
-  };
+  const bucketConfig = [
+    { key: 'visitBy', label: 'Visit By', match: (l: string) => l.startsWith('Visit by ') },
+    { key: 'followUp', label: 'Follow Up', match: (l: string) => l.startsWith('Follow-up ') },
+    { key: 'priority1', label: 'Priority 1', match: (l: string) => l === 'Priority 1' },
+    { key: 'priority2', label: 'Priority 2', match: (l: string) => l === 'Priority 2' },
+    { key: 'priority3', label: 'Priority 3', match: (l: string) => l === 'Priority 3' },
+    { key: 'master', label: 'Masterfile', match: (l: string) => l === 'Masterfile' },
+  ];
+
+  const stats = bucketConfig.reduce((acc, bucket) => {
+    const total = allPubs.filter(pub => bucket.match(getPrimaryDriverLabel(pub))).length;
+    const scheduled = scheduledPubs.filter(pub => bucket.match(getPrimaryDriverLabel(pub))).length;
+    acc[bucket.key] = {
+      total,
+      scheduled,
+      get remaining() { return this.total - this.scheduled; },
+      get isExhausted() { return this.remaining === 0 && this.total > 0; },
+      label: bucket.label
+    };
+    return acc;
+  }, {} as Record<string, { total: number; scheduled: number; remaining: number; isExhausted: boolean; label: string }>);
 
   const getStatusColor = (type: keyof typeof stats) => {
     const stat = stats[type];
@@ -61,24 +56,11 @@ const ScheduleReport: React.FC = () => {
     return `${stat.scheduled}/${stat.total} scheduled`;
   };
 
-  const getPriorityLabel = (type: keyof typeof stats) => {
-    switch (type) {
-      case 'RepslyWin':
-        return 'Recent Wins';
-      case 'Wishlist':
-        return 'Priority 1';
-      case 'Unvisited':
-        return 'Priority 2';
-      case 'Masterfile':
-        return 'Priority 3';
-    }
-  };
-
   if (!schedule.length) return null;
 
   return (
     <>
-      {(['RepslyWin', 'Wishlist', 'Unvisited', 'Masterfile'] as const).map(type => (
+      {(Object.keys(stats) as Array<keyof typeof stats>).map(type => (
         stats[type].total > 0 && (
           <Tooltip.Provider key={type}>
             <Tooltip.Root>
@@ -89,7 +71,7 @@ const ScheduleReport: React.FC = () => {
                   <div className="flex items-center gap-2">
                     {getStatusIcon(type)}
                     <span className="font-medium text-sm whitespace-nowrap">
-                      {getPriorityLabel(type)}
+                      {stats[type].label}
                     </span>
                   </div>
                   <span className="text-sm">
@@ -102,7 +84,7 @@ const ScheduleReport: React.FC = () => {
                   className="bg-dark-800 text-eggplant-100 px-3 py-2 rounded-lg text-sm shadow-lg max-w-xs"
                   sideOffset={5}
                 >
-                  <p className="font-medium mb-1">{type === 'RepslyWin' ? 'Recent Wins' : `${type} Pubs`}</p>
+                  <p className="font-medium mb-1">{stats[type].label}</p>
                   <p className="text-sm">
                     {stats[type].scheduled} scheduled, {stats[type].remaining} remaining
                     {stats[type].isExhausted && " - All pubs scheduled!"}

@@ -6,6 +6,7 @@ import clsx from "clsx";
 
 import type { Pub } from "../context/PubDataContext";
 import { parsePostcode, type ParsedPostcode } from "../utils/postcodeUtils";
+import { getPrimaryDriverLabel } from "../utils/sourceDetails";
 
 export type PostcodeFixUpdate = {
   uuid: string;
@@ -35,21 +36,6 @@ const statusStyles: Record<ParsedPostcode["status"], string> = {
   OK: "bg-green-500/20 text-green-200 border-green-500/40",
   ODDBALL: "bg-yellow-500/20 text-yellow-200 border-yellow-500/40",
   INVALID: "bg-red-500/20 text-red-200 border-red-500/40",
-};
-
-const labelForListType = (listType?: string) => {
-  switch (listType) {
-    case "masterhouse":
-      return "Masterfile";
-    case "wins":
-      return "Follow Up By";
-    case "hitlist":
-      return "Priority / Visit By";
-    case "unvisited":
-      return "Unvisited";
-    default:
-      return "List";
-  }
 };
 
 const PostcodeFixesDialog: FC<PostcodeFixesDialogProps> = ({
@@ -137,7 +123,7 @@ const PostcodeFixesDialog: FC<PostcodeFixesDialogProps> = ({
                         {issue.pub}
                       </div>
                       <div className="text-xs text-eggplant-300">
-                        {issue.fileName} • {labelForListType(issue.listType)}
+                        {issue.fileName} • {getPrimaryDriverLabel(issue)}
                       </div>
                     </div>
                     <span

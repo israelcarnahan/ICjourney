@@ -7,6 +7,7 @@ import { format, parseISO, isValid } from 'date-fns';
 import clsx from 'clsx';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { getMockPlaceData } from '../utils/mockData';
+import { getPrimaryDriverLabel } from '../utils/sourceDetails';
 
 interface UnscheduledPubsProps {
   pubs: Pub[];
@@ -149,16 +150,33 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
   };
 
   const getPriorityStyles = (priority: string): string => {
-    switch (priority) {
-      case 'RepslyWin':
-        return 'bg-purple-900/20 text-purple-200 border border-purple-700/50';
-      case 'Wishlist':
-        return 'bg-blue-900/20 text-blue-200 border border-blue-700/50';
-      case 'Unvisited':
-        return 'bg-green-900/20 text-green-200 border border-green-700/50';
-      default:
-        return 'bg-gray-900/20 text-gray-200 border border-gray-700/50';
+    if (priority.startsWith('Priority ')) {
+      const level = priority.split(' ')[1];
+      switch (level) {
+        case '1':
+          return 'bg-red-900/20 text-red-200 border border-red-700/50';
+        case '2':
+          return 'bg-orange-900/20 text-orange-200 border border-orange-700/50';
+        case '3':
+          return 'bg-yellow-900/20 text-yellow-200 border border-yellow-700/50';
+        default:
+          return 'bg-blue-900/20 text-blue-200 border border-blue-700/50';
+      }
     }
+
+    if (priority.startsWith('Visit by ')) {
+      return 'bg-green-900/20 text-green-200 border border-green-700/50';
+    }
+
+    if (priority.startsWith('Follow-up ')) {
+      return 'bg-blue-900/20 text-blue-200 border border-blue-700/50';
+    }
+
+    if (priority === 'Masterfile') {
+      return 'bg-purple-900/20 text-purple-200 border border-purple-700/50';
+    }
+
+    return 'bg-gray-900/20 text-gray-200 border border-gray-700/50';
   };
 
   return (
@@ -237,9 +255,9 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
                   <div className="flex flex-wrap gap-1 mb-1">
                     <span className={clsx(
                       'text-xs px-1.5 py-0.5 rounded-full',
-                      getPriorityStyles(pub.Priority || '')
+                      getPriorityStyles(getPrimaryDriverLabel(pub))
                     )}>
-                      {pub.Priority || 'Unassigned'}
+                      {getPrimaryDriverLabel(pub)}
                     </span>
                     {(pub as any).sources && (
                       <span className="text-xs px-1.5 py-0.5 rounded-full bg-eggplant-800/50 text-eggplant-200 border border-eggplant-700/50">

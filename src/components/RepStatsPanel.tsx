@@ -17,6 +17,7 @@ import { parsePostcode } from "../utils/postcodeUtils";
 import PostcodeFixesDialog, {
   type PostcodeFixUpdate,
 } from "./PostcodeFixesDialog";
+import { getPrimaryDriverLabel } from "../utils/sourceDetails";
 
 interface StatInfo {
   total: number;
@@ -171,37 +172,13 @@ const RepStatsPanel: React.FC = () => {
   const calculateStats = () => {
     const getListStats = (
       fileId: string,
-      pubs: Pub[],
-      type: string
+      pubs: Pub[]
     ): StatInfo | null => {
       if (!pubs?.length) return null;
 
       const firstPub = pubs[0];
 
-      // Determine priority display
-      let priority;
-      if (type === "RepslyWin") {
-        priority = "RepslyWin";
-      } else if (type === "Wishlist") {
-        if (firstPub.deadline) {
-          priority = "Deadline";
-        } else {
-          priority = `Priority ${firstPub.priorityLevel || 1}`;
-        }
-      } else if (type === "Unvisited") {
-        priority = "Priority 2";
-      } else if (type === "Masterfile") {
-        // Calculate highest priority level from other lists
-        const maxPriority = Math.max(
-          ...Array.from(stats.values())
-            .filter((s) => s?.priorityLevel && !s.deadline)
-            .map((s) => s.priorityLevel || 0),
-          2 // Minimum priority level for non-deadline lists
-        );
-        priority = `Priority ${maxPriority + 1}`;
-      } else {
-        priority = type;
-      }
+      const priority = getPrimaryDriverLabel(firstPub);
 
       // Find the last scheduled visit for this type
       let lastScheduledDate = null;
@@ -247,30 +224,10 @@ const RepStatsPanel: React.FC = () => {
 
     const stats = new Map<string, any>();
 
-    // Process each file group separately
     const allPubs = userFiles?.pubs || [];
-    [
-      {
-        pubs: allPubs.filter((pub) => pub.listType === "wins"),
-        type: "RepslyWin",
-      },
-      {
-        pubs: allPubs.filter((pub) => pub.listType === "hitlist"),
-        type: "Wishlist",
-      },
-      {
-        pubs: allPubs.filter((pub) => pub.listType === "unvisited"),
-        type: "Unvisited",
-      },
-      {
-        pubs: allPubs.filter((pub) => pub.listType === "masterhouse"),
-        type: "Masterfile",
-      },
-    ].forEach(({ pubs, type }) => {
-      const fileGroups = getPubsByFileId(pubs);
-      fileGroups.forEach((groupPubs, fileId) => {
-        stats.set(fileId, getListStats(fileId, groupPubs, type));
-      });
+    const fileGroups = getPubsByFileId(allPubs);
+    fileGroups.forEach((groupPubs, fileId) => {
+      stats.set(fileId, getListStats(fileId, groupPubs));
     });
 
     return stats;
@@ -311,17 +268,16 @@ const RepStatsPanel: React.FC = () => {
   const getPriorityInfo = (stat: any) => {
     if (!stat) return "";
 
-    if (stat.priority === "RepslyWin") {
-      return stat.followUpDays
-        ? `Follow-up: ${stat.followUpDays} days after install`
-        : "Recent Win";
-    } else if (stat.deadline) {
-      return `Deadline: ${format(stat.deadline, "MMM d, yyyy")}`;
-    } else if (stat.priority.startsWith("Priority ")) {
-      return stat.priority;
-    } else {
+    if (stat.priority.startsWith("Visit by ")) {
       return stat.priority;
     }
+    if (stat.priority.startsWith("Follow-up ")) {
+      return stat.priority;
+    }
+    if (stat.deadline) {
+      return `Deadline: ${format(stat.deadline, "MMM d, yyyy")}`;
+    }
+    return stat.priority;
   };
 
   return (
