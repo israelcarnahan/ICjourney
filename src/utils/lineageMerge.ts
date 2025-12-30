@@ -36,7 +36,7 @@ export function recomputeEffectivePlan(
   const allSources = [...(canonicalPub.sources || []), newSourceRef];
   const listNames = [...new Set(allSources.map(s => s.fileName))];
   
-  // Precedence: deadline → priority → followup
+  // Precedence for primary driver: deadline -> followup -> priority
   // For deadline: earliest wins
   // For priority: highest wins
   // For followup: earliest wins
@@ -72,10 +72,19 @@ export function recomputeEffectivePlan(
     effectiveFollowUpDays = followUps[0];
   }
   
+  const primaryMode = effectiveDeadline
+    ? 'deadline'
+    : effectiveFollowUpDays
+    ? 'followup'
+    : effectivePriority
+    ? 'priority'
+    : 'master';
+
   return {
     deadline: effectiveDeadline,
     priorityLevel: effectivePriority,
     followUpDays: effectiveFollowUpDays,
+    primaryMode,
     listNames
   };
 }
@@ -231,3 +240,4 @@ export function collectSources(visitsOrPubs: Array<Pub | Visit>): string[] {
   
   return sortedSources;
 }
+

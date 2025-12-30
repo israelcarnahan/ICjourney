@@ -43,6 +43,7 @@ export interface Visit {
     deadline?: string;
     priorityLevel?: number;
     followUpDays?: number;
+    primaryMode?: 'deadline' | 'followup' | 'priority' | 'master';
     listNames: string[];
   };
 }
