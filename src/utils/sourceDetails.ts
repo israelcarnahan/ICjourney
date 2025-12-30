@@ -13,6 +13,8 @@ export type SourceDetail = {
   extras: Record<string, string | number | boolean | null | undefined>;
 };
 
+export type DriverBucket = 'deadline' | 'followup' | 'priority' | 'master';
+
 export function formatPriorityForUser(meta: any): string | null {
   // Keep logic consistent with FileTypeDialog: priority|deadline|followup
   // Return human labels the user expects.
@@ -26,6 +28,61 @@ export function formatPriorityForUser(meta: any): string | null {
       return `Follow-up: ${meta.followUpDays} days`;
   } catch {}
   return null;
+}
+
+const formatPrimaryLabel = (bucket: DriverBucket, meta: any): string => {
+  if (bucket === 'deadline' && meta?.deadline) return `Visit by ${meta.deadline}`;
+  if (bucket === 'followup' && meta?.followUpDays != null) return `Follow-up ${meta.followUpDays}d`;
+  if (bucket === 'priority' && meta?.priorityLevel) return `Priority ${meta.priorityLevel}`;
+  return meta?.Priority || 'Masterfile';
+};
+
+export function getPrimaryDriverInfo(pubOrVisit: any): {
+  bucket: DriverBucket;
+  label: string;
+} {
+  const effective = pubOrVisit?.effectivePlan;
+  if (effective?.primaryMode) {
+    return {
+      bucket: effective.primaryMode,
+      label: formatPrimaryLabel(effective.primaryMode, effective),
+    };
+  }
+  if (effective?.deadline) {
+    return { bucket: 'deadline', label: formatPrimaryLabel('deadline', effective) };
+  }
+  if (effective?.followUpDays != null) {
+    return { bucket: 'followup', label: formatPrimaryLabel('followup', effective) };
+  }
+  if (effective?.priorityLevel) {
+    return { bucket: 'priority', label: formatPrimaryLabel('priority', effective) };
+  }
+
+  if (pubOrVisit?.schedulingMode === 'deadline' && pubOrVisit?.deadline) {
+    return { bucket: 'deadline', label: formatPrimaryLabel('deadline', pubOrVisit) };
+  }
+  if (pubOrVisit?.schedulingMode === 'followup' && pubOrVisit?.followUpDays != null) {
+    return { bucket: 'followup', label: formatPrimaryLabel('followup', pubOrVisit) };
+  }
+  if (pubOrVisit?.schedulingMode === 'priority' && pubOrVisit?.priorityLevel) {
+    return { bucket: 'priority', label: formatPrimaryLabel('priority', pubOrVisit) };
+  }
+
+  if (pubOrVisit?.deadline) {
+    return { bucket: 'deadline', label: formatPrimaryLabel('deadline', pubOrVisit) };
+  }
+  if (pubOrVisit?.followUpDays != null) {
+    return { bucket: 'followup', label: formatPrimaryLabel('followup', pubOrVisit) };
+  }
+  if (pubOrVisit?.priorityLevel) {
+    return { bucket: 'priority', label: formatPrimaryLabel('priority', pubOrVisit) };
+  }
+
+  return { bucket: 'master', label: formatPrimaryLabel('master', pubOrVisit) };
+}
+
+export function getPrimaryDriverLabel(pubOrVisit: any): string {
+  return getPrimaryDriverInfo(pubOrVisit).label;
 }
 
 /**

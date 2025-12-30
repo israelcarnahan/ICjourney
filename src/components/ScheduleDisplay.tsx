@@ -37,7 +37,10 @@ import DriveTimeBar from "./DriveTimeBar";
 import { SourceChips } from "./SourceChips";
 import { OriginalValues } from "./OriginalValues";
 import { SourceListChips } from "./SourceListChips";
-import { getSourceDetails, formatPriorityForUser } from "../utils/sourceDetails";
+import {
+  getPrimaryDriverLabel,
+  getSourceDetails
+} from "../utils/sourceDetails";
 import { checkPubOpeningHours } from "../utils/openingHours";
 import {
   Visit,
@@ -49,32 +52,7 @@ import {
 
 // Helper function to get proper priority display
 const getPriorityDisplay = (visit: Visit) => {
-  // Check if we have effective plan with priority info
-  if (visit.effectivePlan) {
-    if (visit.effectivePlan.deadline) {
-      return `Visit by ${visit.effectivePlan.deadline}`;
-    }
-    if (visit.effectivePlan.priorityLevel) {
-      return `Priority ${visit.effectivePlan.priorityLevel}`;
-    }
-    if (visit.effectivePlan.followUpDays) {
-      return `Follow-up ${visit.effectivePlan.followUpDays}d`;
-    }
-  }
-  
-  // Fallback to legacy priority field
-  if (visit.priorityLevel) {
-    return `Priority ${visit.priorityLevel}`;
-  }
-  if (visit.deadline) {
-    return `Visit by ${visit.deadline}`;
-  }
-  if (visit.followUpDays) {
-    return `Follow-up ${visit.followUpDays}d`;
-  }
-  
-  // Default fallback
-  return visit.Priority || "No priority";
+  return getPrimaryDriverLabel(visit);
 };
 
 // Helper function to get RTM display
@@ -91,10 +69,7 @@ const getRTMDisplay = (visit: Visit) => {
 
 // Helper function to format priority label
 function formatPriorityLabel(v: Visit): string {
-  if (v.schedulingMode === 'priority' && v.priorityLevel) return `Priority ${v.priorityLevel}`;
-  if (v.schedulingMode === 'deadline' && v.deadline) return `Visit by ${format(parseISO(v.deadline), 'yyyy-MM-dd')}`;
-  if (v.schedulingMode === 'followup' && v.followUpDays != null) return `Follow-up in ${v.followUpDays}d`;
-  return 'Masterfile';
+  return getPrimaryDriverLabel(v);
 }
 
 // const vehicleIcons: Record<VehicleType, LucideIcon | React.FC<any>> = {
@@ -582,7 +557,7 @@ const ScheduleDisplay: React.FC = () => {
         "Pub Name": visit.pub,
         "Post Code": visit.zip,
         "Last Visited": formatDate(visit.last_visited),
-        Priority: formatPriorityForUser(visit) || formatPriorityLabel(visit),
+        Priority: getPrimaryDriverLabel(visit),
         Lists: getSourceDetails(visit).fileNames.join('; '),
         RTM: visit.rtm || "",
         Landlord: visit.landlord || "",
@@ -881,7 +856,7 @@ const ScheduleDisplay: React.FC = () => {
     // Take the top N visits based on visitsPerDay
     const newVisits = potentialVisits.slice(0, visitsPerDay).map((visit) => ({
       ...visit,
-      Priority: visit.Priority || formatPriorityLabel(visit as any),
+      Priority: getPrimaryDriverLabel(visit as any),
       mileageToNext: 0,
       driveTimeToNext: 30,
     }));
