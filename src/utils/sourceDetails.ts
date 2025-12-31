@@ -24,9 +24,9 @@ export function formatPriorityForUser(meta: any): string | null {
     if (meta?.schedulingMode === 'priority' && priorityLevel)
       return `Priority ${priorityLevel}`;
     if (meta?.schedulingMode === 'deadline' && meta?.deadline)
-      return `Deadline: ${meta.deadline}`;
+      return `Visit by ${meta.deadline}`;
     if (meta?.schedulingMode === 'followup' && meta?.followUpDays)
-      return `Follow-up: ${meta.followUpDays} days`;
+      return `Follow-up ${meta.followUpDays}d`;
   } catch {}
   return null;
 }
