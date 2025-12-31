@@ -39,6 +39,8 @@ import { OriginalValues } from "./OriginalValues";
 import { SourceListChips } from "./SourceListChips";
 import {
   getPrimaryDriverLabel,
+  getDriverSummary,
+  getListSummary,
   getSourceDetails
 } from "../utils/sourceDetails";
 import { checkPubOpeningHours } from "../utils/openingHours";
@@ -1201,19 +1203,35 @@ const ScheduleDisplay: React.FC = () => {
                           {visit.zip}
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap">
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${getPriorityStyles(
-                              formatPriorityLabel(visit)
-                            )}`}
-                          >
-                            {formatPriorityLabel(visit)}
-                          </span>
-                        </td>
+                            {(() => {
+                              const driverSummary = getDriverSummary(visit);
+                              return (
+                                <span
+                                  className={`px-2 py-1 text-xs rounded-full ${getPriorityStyles(
+                                    driverSummary.primary
+                                  )}`}
+                                >
+                                  {driverSummary.primary}
+                                  {driverSummary.otherCount > 0 && (
+                                    <span className="ml-1 text-[10px] text-eggplant-300">
+                                      +{driverSummary.otherCount}
+                                    </span>
+                                  )}
+                                </span>
+                              );
+                            })()}
+                          </td>
                         <td className="px-4 py-2 whitespace-nowrap">
-                          <SourceListChips 
-                            sources={getSourceDetails(visit).fileNames} 
-                            className="text-xs" 
-                          />
+                          {(() => {
+                            const listSummary = getListSummary(visit);
+                            return (
+                              <SourceListChips 
+                                primary={listSummary.primary}
+                                extraCount={listSummary.otherCount}
+                                className="text-xs"
+                              />
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-2 whitespace-nowrap text-eggplant-100">
                           {getRTMDisplay(visit)}

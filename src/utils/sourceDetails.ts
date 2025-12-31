@@ -20,8 +20,9 @@ export function formatPriorityForUser(meta: any): string | null {
   // Return human labels the user expects.
   // Example fallbacks are OK if a given meta is missing.
   try {
-    if (meta?.schedulingMode === 'priority' && meta?.priorityLevel)
-      return `Priority ${meta.priorityLevel}`;
+    const priorityLevel = meta?.priorityLevel ?? meta?.priority;
+    if (meta?.schedulingMode === 'priority' && priorityLevel)
+      return `Priority ${priorityLevel}`;
     if (meta?.schedulingMode === 'deadline' && meta?.deadline)
       return `Deadline: ${meta.deadline}`;
     if (meta?.schedulingMode === 'followup' && meta?.followUpDays)
@@ -83,6 +84,88 @@ export function getPrimaryDriverInfo(pubOrVisit: any): {
 
 export function getPrimaryDriverLabel(pubOrVisit: any): string {
   return getPrimaryDriverInfo(pubOrVisit).label;
+}
+
+const normalizeLabel = (label?: string | null): string => label && label.length > 0 ? label : 'Masterfile';
+
+const getLabelOrder = (label: string): number => {
+  if (label.startsWith('Visit by ')) return 1;
+  if (label.startsWith('Follow-up ')) return 2;
+  if (label.startsWith('Priority ')) {
+    const parts = label.split(' ');
+    const level = Number(parts[1]);
+    return Number.isFinite(level) ? 3 + level : 99;
+  }
+  if (label === 'Masterfile') return 20;
+  return 99;
+};
+
+export function getDriverSummary(pubOrVisit: any): {
+  primary: string;
+  otherCount: number;
+  others: string[];
+} {
+  const primary = getPrimaryDriverLabel(pubOrVisit);
+  const details = getSourceDetails(pubOrVisit).details;
+  const labels = new Set<string>();
+
+  details.forEach((d) => {
+    labels.add(normalizeLabel(d.priorityLabel));
+  });
+  labels.add(normalizeLabel(primary));
+
+  const ordered = Array.from(labels).sort((a, b) => getLabelOrder(a) - getLabelOrder(b));
+  const others = ordered.filter((l) => l !== primary);
+
+  return {
+    primary,
+    otherCount: others.length,
+    others,
+  };
+}
+
+export function getListSummary(pubOrVisit: any): {
+  primary: string;
+  otherCount: number;
+  others: string[];
+  details: SourceDetail[];
+} {
+  const { details } = getSourceDetails(pubOrVisit);
+  if (details.length === 0) {
+    return { primary: '', otherCount: 0, others: [], details: [] };
+  }
+  const primaryLabel = getPrimaryDriverLabel(pubOrVisit);
+  const normalizedDetails = details.map((d) => ({
+    ...d,
+    priorityLabel: normalizeLabel(d.priorityLabel),
+  }));
+  const orderedDetails = [...normalizedDetails].sort((a, b) => {
+    const aOrder = getLabelOrder(a.priorityLabel || 'Masterfile');
+    const bOrder = getLabelOrder(b.priorityLabel || 'Masterfile');
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.fileName.localeCompare(b.fileName);
+  });
+
+  const primaryDetail =
+    normalizedDetails.find((d) => d.priorityLabel === primaryLabel) ||
+    orderedDetails[0];
+  const primary = primaryDetail?.fileName || 'Unknown list';
+
+  const seen = new Set<string>();
+  const others = orderedDetails
+    .map((d) => d.fileName)
+    .filter((name) => {
+      if (name === primary || seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+
+  return {
+    primary,
+    otherCount: others.length,
+    others,
+    details: orderedDetails,
+  };
 }
 
 /**

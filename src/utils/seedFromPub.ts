@@ -2,7 +2,7 @@ import { BusinessData, SourceTag } from "../api/types";
 
 export function seedFromPub(pub: any): Partial<BusinessData> {
   const sources: SourceTag[] = (pub?.sources || pub?.sourceLists || []).map((s: any) => ({
-    listName: String(s?.name ?? s ?? "Unknown"),
+    listName: String(s?.listName ?? s?.fileName ?? s?.name ?? s ?? "Unknown"),
     row: typeof s?.row === "number" ? s.row : null,
   }));
 

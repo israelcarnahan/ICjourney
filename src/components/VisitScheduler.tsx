@@ -6,6 +6,7 @@ import { devLog } from "../utils/devLog";
 import { ExtendedPub } from "../context/PubDataContext";
 import { format } from "date-fns";
 
+import { getListSummary } from "../utils/sourceDetails";
 
 import { useBusinessData } from "../api/useBusinessData";
 import { seedFromPub } from "../utils/seedFromPub";
@@ -32,6 +33,7 @@ interface VisitSchedulerProps {
 function SourceDetailsPanel({ visitOrPub }: { visitOrPub: any }) {
   const seed = seedFromPub(visitOrPub);
   const businessData = useBusinessData(visitOrPub.pub || visitOrPub.uuid || 'unknown', seed);
+  const listSummary = getListSummary(visitOrPub);
 
   if (!businessData) {
     return (
@@ -47,12 +49,18 @@ function SourceDetailsPanel({ visitOrPub }: { visitOrPub: any }) {
       <h4 className="text-sm font-semibold text-eggplant-100 mb-2">From your lists</h4>
       <p className="text-xs text-eggplant-300 mb-3">This section shows data imported from your files.</p>
 
-      {/* Row of list chips */}
-      <div className="flex flex-wrap gap-2 mb-3">
-        {businessData.sources.map((source, i) => (
-          <span key={`${source.listName}-${i}`} className="px-2 py-0.5 rounded-full bg-eggplant-800 text-eggplant-50 text-xs">
-            {source.listName}
-          </span>
+      {/* List + priority history */}
+      <div className="space-y-1 mb-3">
+        {listSummary.details.map((detail, i) => (
+          <div
+            key={`${detail.fileName}-${i}`}
+            className="flex items-center justify-between gap-2 text-xs text-eggplant-100"
+          >
+            <span className="truncate">{detail.fileName}</span>
+            <span className="text-eggplant-300 whitespace-nowrap">
+              {detail.priorityLabel}
+            </span>
+          </div>
         ))}
       </div>
 
@@ -61,7 +69,7 @@ function SourceDetailsPanel({ visitOrPub }: { visitOrPub: any }) {
         <details className="rounded-lg bg-eggplant-900/50 border border-eggplant-700/50">
           <summary className="cursor-pointer px-3 py-2 text-eggplant-200 hover:text-white flex items-center gap-2">
             <span className="font-medium">Business Information</span>
-            <span className="text-xs text-eggplant-300 flex-shrink-0">• {businessData.sources.length} sources</span>
+            <span className="text-xs text-eggplant-300 flex-shrink-0">• {listSummary.details.length} sources</span>
           </summary>
 
           <div className="px-3 pb-3 text-sm text-eggplant-100">
