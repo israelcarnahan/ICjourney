@@ -104,6 +104,21 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   }, [showMapping]);
 
   // ---------- helpers ----------
+  const labelForFileType = (value?: string) => {
+    switch (value) {
+      case "masterhouse":
+        return "Masterfile";
+      case "wins":
+        return "Follow-Up";
+      case "hitlist":
+        return "Priority";
+      case "unvisited":
+        return "Unvisited";
+      default:
+        return "List";
+    }
+  };
+
   function coerceNumber(val: any): number | null {
     const n = Number(String(val ?? "").replace(/[^\d.-]/g, ""));
     return Number.isFinite(n) ? n : null;
@@ -717,7 +732,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     priorityLevel?: number,
     followUpDays?: number
   ) => {
-    devLog('[Submit additional]', { type, deadline, priorityLevel, followUpDays });
+    devLog('[Submit additional]', {
+      typeLabel: labelForFileType(type),
+      deadline,
+      priorityLevel,
+      followUpDays,
+    });
 
     if (!pendingImport) {
       setError("Missing import data. Please re-upload the file.");
@@ -757,7 +777,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
   // Log uploader flags in useEffect to prevent spam
   useEffect(() => {
-    devLog('[Uploader flags]', { fileType, isDisabled, isProcessing, isFileLoaded });
+    devLog('[Uploader flags]', {
+      fileTypeLabel: fileType ? labelForFileType(fileType) : "List",
+      isDisabled,
+      isProcessing,
+      isFileLoaded,
+    });
   }, [fileType, isDisabled, isProcessing, isFileLoaded]);
 
   return (

@@ -50,6 +50,21 @@ const PlannerDashboard: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState(1);
 
+  const labelForListType = (type: ListType) => {
+    switch (type) {
+      case "masterhouse":
+        return "Masterfile";
+      case "wins":
+        return "Follow Up By";
+      case "hitlist":
+        return "Priority / Visit By";
+      case "unvisited":
+        return "Unvisited";
+      default:
+        return "List";
+    }
+  };
+
   // Clear schedule before generating new one
   const clearSchedule = () => {
     devLog("Clearing previous schedule");
@@ -106,7 +121,9 @@ const PlannerDashboard: React.FC = () => {
   // Log used priorities in useEffect to prevent spam
   useEffect(() => {
     devLog('[Used priorities]', usedPriorities, userFiles.files.map(f => ({
-      name: f.fileName, type: f.type, priority: f.priority
+      name: f.fileName,
+      typeLabel: labelForListType(f.type),
+      priority: f.priority,
     })));
   }, [usedPriorities, userFiles.files]);
 
@@ -329,15 +346,24 @@ const PlannerDashboard: React.FC = () => {
   useEffect(() => {
     if (!userFiles?.pubs?.length) return;
 
-    devLog("Updating uploaded files with:", {
-      masterfile: masterfilePubs.map((p) => ({
-        id: p.fileId,
-        name: p.fileName,
-      })),
-      wins: repslyWins.map((p) => ({ id: p.fileId, name: p.fileName })),
-      wishlist: wishlistPubs.map((p) => ({ id: p.fileId, name: p.fileName })),
-      unvisited: unvisitedPubs.map((p) => ({ id: p.fileId, name: p.fileName })),
-    });
+    devLog("Updating uploaded files with:", [
+      {
+        label: labelForListType("masterhouse"),
+        files: masterfilePubs.map((p) => ({ id: p.fileId, name: p.fileName })),
+      },
+      {
+        label: labelForListType("wins"),
+        files: repslyWins.map((p) => ({ id: p.fileId, name: p.fileName })),
+      },
+      {
+        label: labelForListType("hitlist"),
+        files: wishlistPubs.map((p) => ({ id: p.fileId, name: p.fileName })),
+      },
+      {
+        label: labelForListType("unvisited"),
+        files: unvisitedPubs.map((p) => ({ id: p.fileId, name: p.fileName })),
+      },
+    ]);
 
     const files = [];
 
@@ -358,7 +384,7 @@ const PlannerDashboard: React.FC = () => {
         groups.set(pub.fileId, [...group, pub]);
       });
 
-      devLog(`Grouped ${type} pubs:`, {
+      devLog(`Grouped ${labelForListType(type)} pubs:`, {
         totalPubs: pubs.length,
         groups: groups.size,
       });
@@ -455,7 +481,15 @@ const PlannerDashboard: React.FC = () => {
       return (a.priority || 4) - (b.priority || 4);
     });
 
-    devLog("Setting uploaded files:", sortedFiles);
+    devLog("Setting uploaded files:", sortedFiles.map((f) => ({
+      name: f.name,
+      typeLabel: labelForListType(f.type),
+      count: f.count,
+      fileId: f.fileId,
+      priority: f.priority,
+      deadline: f.deadline,
+      followUpDays: f.followUpDays,
+    })));
     setUploadedFiles(sortedFiles);
 
     // Update the files array in userFiles
@@ -472,7 +506,7 @@ const PlannerDashboard: React.FC = () => {
     devLog("Current uploaded files:", {
       files: uploadedFiles.map((f) => ({
         name: f.name,
-        type: f.type,
+        typeLabel: labelForListType(f.type),
         count: f.count,
         fileId: f.fileId,
       })),
@@ -583,7 +617,12 @@ const PlannerDashboard: React.FC = () => {
       return;
     }
 
-    devLog("Deleting file:", file);
+    devLog("Deleting file:", {
+      name: file.name,
+      fileId: file.fileId,
+      count: file.count,
+      typeLabel: labelForListType(file.type),
+    });
 
     switch (file.type) {
       case "masterhouse":
