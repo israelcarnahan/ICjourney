@@ -1206,18 +1206,20 @@ const ScheduleDisplay: React.FC = () => {
                             {(() => {
                               const driverSummary = getDriverSummary(visit);
                               return (
-                                <span
-                                  className={`px-2 py-1 text-xs rounded-full ${getPriorityStyles(
-                                    driverSummary.primary
-                                  )}`}
-                                >
-                                  {driverSummary.primary}
+                                <div className="flex items-center gap-1">
+                                  <span
+                                    className={`px-2 py-1 text-xs rounded-full ${getPriorityStyles(
+                                      driverSummary.primary
+                                    )}`}
+                                  >
+                                    {driverSummary.primary}
+                                  </span>
                                   {driverSummary.otherCount > 0 && (
-                                    <span className="ml-1 text-[10px] text-eggplant-300">
+                                    <span className="px-2 py-1 text-xs rounded-full bg-eggplant-600/30 text-eggplant-300 border border-eggplant-600/30">
                                       +{driverSummary.otherCount}
                                     </span>
                                   )}
-                                </span>
+                                </div>
                               );
                             })()}
                           </td>
