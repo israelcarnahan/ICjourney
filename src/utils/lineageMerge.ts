@@ -194,10 +194,16 @@ export function getAllExtras(pub: Pub): Record<string, string[]> {
  */
 export function getSourceInfo(pub: Pub): { count: number; fileNames: string[] } {
   const sources = pub.sources || [];
-  const fileNames = [...new Set(sources.map(s => s.fileName))];
+  const sourceLists = pub.sourceLists || [];
+  const fileNames = [
+    ...new Set([
+      ...sources.map(s => s.fileName),
+      ...sourceLists,
+    ]),
+  ];
   
   return {
-    count: sources.length,
+    count: fileNames.length,
     fileNames
   };
 }

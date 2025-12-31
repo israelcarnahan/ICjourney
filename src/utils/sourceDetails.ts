@@ -103,6 +103,22 @@ export function getSourceDetails(pubOrVisit: any): {
   // - A top-level `sources` array of {fileName, listType?, priorityLevel?, schedulingMode?, followUpDays?, deadline?, mapped?, extras?}
   // - Or a single `fileName` on the record, if only one.
   const sources = Array.isArray(pubOrVisit?.sources) ? pubOrVisit.sources : [];
+  const sourceLists = Array.isArray(pubOrVisit?.sourceLists) ? pubOrVisit.sourceLists : [];
+
+  if (sources.length === 0 && sourceLists.length > 0) {
+    sourceLists.forEach((fileName: string) => {
+      sources.push({
+        fileName,
+        listType: pubOrVisit.listType,
+        schedulingMode: pubOrVisit.schedulingMode,
+        priorityLevel: pubOrVisit.priorityLevel,
+        followUpDays: pubOrVisit.followUpDays,
+        deadline: pubOrVisit.deadline,
+        mapped: {},
+        extras: {},
+      });
+    });
+  }
 
   if (sources.length === 0 && pubOrVisit?.fileName) {
     sources.push({
