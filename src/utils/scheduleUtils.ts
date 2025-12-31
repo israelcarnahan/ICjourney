@@ -132,9 +132,19 @@ export async function planVisits(
   };
 
   const getBucket = (pub: Pub): BucketKey => {
-    if (pub.deadline) return "deadline";
-    if (pub.followUpDays && pub.followUpDays > 0) return "followUp";
-    if (pub.priorityLevel && pub.priorityLevel > 0) return "priority";
+    // Prefer effectivePlan when available so merged drivers control scheduling.
+    const effective = pub.effectivePlan;
+    if (effective?.primaryMode === "deadline") return "deadline";
+    if (effective?.primaryMode === "followup") return "followUp";
+    if (effective?.primaryMode === "priority") return "priority";
+
+    const deadline = effective?.deadline ?? pub.deadline;
+    const followUpDays = effective?.followUpDays ?? pub.followUpDays;
+    const priorityLevel = effective?.priorityLevel ?? pub.priorityLevel;
+
+    if (deadline) return "deadline";
+    if (followUpDays && followUpDays > 0) return "followUp";
+    if (priorityLevel && priorityLevel > 0) return "priority";
     return "master";
   };
 
@@ -143,15 +153,20 @@ export async function planVisits(
   });
 
   const getPrimaryValue = (bucket: BucketKey, pub: Pub): number => {
+    const effective = pub.effectivePlan;
+    const deadline = effective?.deadline ?? pub.deadline;
+    const followUpDays = effective?.followUpDays ?? pub.followUpDays;
+    const priorityLevel = effective?.priorityLevel ?? pub.priorityLevel;
+
     if (bucket === "deadline") {
-      return pub.deadline ? new Date(pub.deadline).getTime() : Infinity;
+      return deadline ? new Date(deadline).getTime() : Infinity;
     }
     if (bucket === "followUp") {
-      return typeof pub.followUpDays === "number" ? pub.followUpDays : Infinity;
+      return typeof followUpDays === "number" ? followUpDays : Infinity;
     }
     if (bucket === "priority") {
-      return typeof pub.priorityLevel === "number"
-        ? pub.priorityLevel
+      return typeof priorityLevel === "number"
+        ? priorityLevel
         : Infinity;
     }
     return 0;
