@@ -42,6 +42,40 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
 
   const { userFiles, visitsPerDay } = usePubData();
 
+  const getDriverRank = (label: string): number => {
+    if (label.startsWith("Visit by ")) return 1;
+    if (label.startsWith("Follow-up ")) return 2;
+    if (label.startsWith("Priority ")) {
+      const parts = label.split(" ");
+      const level = Number(parts[1]);
+      return Number.isFinite(level) ? 3 + level : 99;
+    }
+    if (label === "Masterfile") return 20;
+    return 99;
+  };
+
+  const getPriorityStyle = (label: string): string => {
+    if (label.startsWith("Visit by ")) {
+      return "bg-red-900/20 text-red-200 border border-red-700/50";
+    }
+    if (label.startsWith("Follow-up ")) {
+      return "bg-purple-900/20 text-purple-200 border border-purple-700/50";
+    }
+    if (label.startsWith("Priority ")) {
+      const level = label.split(" ")[1];
+      if (level === "1") {
+        return "bg-amber-900/20 text-amber-200 border border-amber-700/50";
+      }
+      if (level === "2") {
+        return "bg-blue-900/20 text-blue-200 border border-blue-700/50";
+      }
+      if (level === "3") {
+        return "bg-green-900/20 text-green-200 border border-green-700/50";
+      }
+    }
+    return "bg-gray-900/20 text-gray-200 border border-gray-700/50";
+  };
+
   // const MAX_VISITS_PER_DAY = 8;
 
   const validatePostcodeInput = (code: string) => {
@@ -135,40 +169,6 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
           15000
         );
       });
-
-      const getDriverRank = (label: string): number => {
-        if (label.startsWith("Visit by ")) return 1;
-        if (label.startsWith("Follow-up ")) return 2;
-        if (label.startsWith("Priority ")) {
-          const parts = label.split(" ");
-          const level = Number(parts[1]);
-          return Number.isFinite(level) ? 3 + level : 99;
-        }
-        if (label === "Masterfile") return 20;
-        return 99;
-      };
-
-      const getPriorityStyle = (label: string): string => {
-        if (label.startsWith("Visit by ")) {
-          return "bg-red-900/20 text-red-200 border border-red-700/50";
-        }
-        if (label.startsWith("Follow-up ")) {
-          return "bg-purple-900/20 text-purple-200 border border-purple-700/50";
-        }
-        if (label.startsWith("Priority ")) {
-          const level = label.split(" ")[1];
-          if (level === "1") {
-            return "bg-amber-900/20 text-amber-200 border border-amber-700/50";
-          }
-          if (level === "2") {
-            return "bg-blue-900/20 text-blue-200 border border-blue-700/50";
-          }
-          if (level === "3") {
-            return "bg-green-900/20 text-green-200 border border-green-700/50";
-          }
-        }
-        return "bg-gray-900/20 text-gray-200 border border-gray-700/50";
-      };
 
       // Get all pubs from userFiles and map their priorities
       const allPubs = userFiles.pubs.map((pub) => ({
