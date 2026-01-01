@@ -108,6 +108,64 @@ const RepStatsPanel: React.FC = () => {
     setShowPostcodeFixes(false);
   };
 
+  const getListEntries = (pub: Pub) => {
+    const sources: Array<{ fileName?: string; listName?: string }> = Array.isArray((pub as any).sources)
+      ? (pub as any).sources
+      : [];
+    if (sources.length > 0) {
+      return sources.map((source) => ({
+        fileName: source.fileName ?? source.listName ?? pub.fileName,
+      }));
+    }
+    return [{ fileName: pub.fileName }];
+  };
+
+  const getPubKey = (pub: Pub) =>
+    pub.uuid || `${pub.fileId}-${pub.pub}-${pub.zip}`;
+
+  const listMembershipDetails = useMemo(() => {
+    const membership = new Map<string, Map<string, Pub>>();
+    const scheduledKeys = new Set<string>();
+
+    schedule.forEach((day) => {
+      toArray(day.visits).forEach((visit) => {
+        scheduledKeys.add(getPubKey(visit as Pub));
+      });
+    });
+
+    (userFiles?.pubs || []).forEach((pub) => {
+      const pubKey = getPubKey(pub);
+      getListEntries(pub).forEach((source) => {
+        const listName = source.fileName || pub.fileName || "Unknown list";
+        const entries = membership.get(listName) || new Map<string, Pub>();
+        entries.set(String(pubKey), pub);
+        membership.set(listName, entries);
+      });
+    });
+
+    const details = new Map<
+      string,
+      {
+        unscheduled: Array<{ pub: Pub; reason: string }>;
+      }
+    >();
+
+    membership.forEach((entries, listName) => {
+      const unscheduled: Array<{ pub: Pub; reason: string }> = [];
+      entries.forEach((pub, pubKey) => {
+        if (scheduledKeys.has(pubKey)) return;
+        const reason =
+          pub.postcodeMeta?.status === "INVALID"
+            ? "Invalid postcode"
+            : "Capacity";
+        unscheduled.push({ pub, reason });
+      });
+      details.set(listName, { unscheduled });
+    });
+
+    return details;
+  }, [schedule, userFiles]);
+
   // If no schedule exists or it's empty, show the placeholder
   if (
     !schedule ||
@@ -158,21 +216,6 @@ const RepStatsPanel: React.FC = () => {
       </div>
     );
   }
-
-  const getListEntries = (pub: Pub) => {
-    const sources: Array<{ fileName?: string; listName?: string }> = Array.isArray((pub as any).sources)
-      ? (pub as any).sources
-      : [];
-    if (sources.length > 0) {
-      return sources.map((source) => ({
-        fileName: source.fileName ?? source.listName ?? pub.fileName,
-      }));
-    }
-    return [{ fileName: pub.fileName }];
-  };
-
-  const getPubKey = (pub: Pub) =>
-    pub.uuid || `${pub.fileId}-${pub.pub}-${pub.zip}`;
 
   const calculateDriverStats = () => {
     // Driver summary stays focused on scheduling drivers, not list membership.
@@ -262,48 +305,6 @@ const RepStatsPanel: React.FC = () => {
 
   const driverStats = calculateDriverStats();
   const listStats = calculateListMembershipStats();
-  const listMembershipDetails = useMemo(() => {
-    const membership = new Map<string, Map<string, Pub>>();
-    const scheduledKeys = new Set<string>();
-
-    schedule.forEach((day) => {
-      toArray(day.visits).forEach((visit) => {
-        scheduledKeys.add(getPubKey(visit as Pub));
-      });
-    });
-
-    (userFiles?.pubs || []).forEach((pub) => {
-      const pubKey = getPubKey(pub);
-      getListEntries(pub).forEach((source) => {
-        const listName = source.fileName || pub.fileName || "Unknown list";
-        const entries = membership.get(listName) || new Map<string, Pub>();
-        entries.set(String(pubKey), pub);
-        membership.set(listName, entries);
-      });
-    });
-
-    const details = new Map<
-      string,
-      {
-        unscheduled: Array<{ pub: Pub; reason: string }>;
-      }
-    >();
-
-    membership.forEach((entries, listName) => {
-      const unscheduled: Array<{ pub: Pub; reason: string }> = [];
-      entries.forEach((pub, pubKey) => {
-        if (scheduledKeys.has(pubKey)) return;
-        const reason =
-          pub.postcodeMeta?.status === "INVALID"
-            ? "Invalid postcode"
-            : "Capacity";
-        unscheduled.push({ pub, reason });
-      });
-      details.set(listName, { unscheduled });
-    });
-
-    return details;
-  }, [schedule, userFiles]);
 
   const getDriverRank = (label: string) => {
     if (label.startsWith("Visit by")) return 1;
