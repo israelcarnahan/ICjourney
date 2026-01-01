@@ -9,7 +9,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-import { differenceInBusinessDays, format } from "date-fns";
+import { format } from "date-fns";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { Pub } from "../context/PubDataContext";
 import { toArray } from "../utils/typeGuards";
@@ -159,81 +159,118 @@ const RepStatsPanel: React.FC = () => {
     );
   }
 
-  const getPubsByFileId = (pubs: Pub[] = []): Map<string, Pub[]> => {
-    const fileGroups = new Map<string, Pub[]>();
-    pubs.forEach((pub: Pub) => {
-      if (!pub.fileId) return;
-      const group = fileGroups.get(pub.fileId) || [];
-      fileGroups.set(pub.fileId, [...group, pub]);
-    });
-    return fileGroups;
+  const getListEntries = (pub: Pub) => {
+    const sources = Array.isArray((pub as any).sources) ? (pub as any).sources : [];
+    if (sources.length > 0) {
+      return sources.map((source: any) => ({
+        fileName: source.fileName ?? source.listName ?? pub.fileName,
+      }));
+    }
+    return [{ fileName: pub.fileName }];
   };
 
-  const calculateStats = () => {
-    const getListStats = (
-      fileId: string,
-      pubs: Pub[]
-    ): StatInfo | null => {
-      if (!pubs?.length) return null;
-
-      const firstPub = pubs[0];
-
-      const priority = getPrimaryDriverLabel(firstPub);
-
-      // Find the last scheduled visit for this type
-      let lastScheduledDate = null;
-      for (let i = schedule.length - 1; i >= 0; i--) {
-        const day = schedule[i];
-        if (toArray(day.visits).some((v) => v.fileId === fileId)) {
-          lastScheduledDate = day.date;
-          break;
-        }
-      }
-
-      const scheduledCount = schedule.reduce(
-        (acc, day) =>
-          acc + toArray(day.visits).filter((v) => v.fileId === fileId).length,
-        0
-      );
-
-      // Calculate completion date and days to deadline
-      const completionDate = lastScheduledDate
-        ? new Date(lastScheduledDate)
-        : null;
-      const deadline = firstPub?.deadline ? new Date(firstPub.deadline) : null;
-      const daysToDeadline =
-        deadline && completionDate
-          ? differenceInBusinessDays(deadline, completionDate)
-          : null;
-
-      return {
-        total: pubs.length,
-        scheduled: scheduledCount,
-        fileName: firstPub.fileName || "",
-        priority,
-        priorityLevel: firstPub.priorityLevel,
-        followUpDays: firstPub.followUpDays,
-        fileId: fileId,
-        remaining: pubs.length - scheduledCount,
-        isExhausted: scheduledCount === pubs.length && pubs.length > 0,
-        completionDate,
-        deadline,
-        daysToDeadline,
-      };
-    };
-
-    const stats = new Map<string, any>();
-
+  const calculateDriverStats = () => {
+    // Driver summary stays focused on scheduling drivers, not list membership.
+    const stats = new Map<string, StatInfo>();
     const allPubs = userFiles?.pubs || [];
-    const fileGroups = getPubsByFileId(allPubs);
-    fileGroups.forEach((groupPubs, fileId) => {
-      stats.set(fileId, getListStats(fileId, groupPubs));
+
+    allPubs.forEach((pub) => {
+      const label = getPrimaryDriverLabel(pub);
+      const current = stats.get(label) || {
+        total: 0,
+        scheduled: 0,
+        fileName: label,
+        priority: label,
+        fileId: label,
+        remaining: 0,
+        isExhausted: false,
+        completionDate: null,
+        deadline: null,
+        daysToDeadline: null,
+      };
+      current.total += 1;
+      stats.set(label, current);
+    });
+
+    schedule.forEach((day) => {
+      toArray(day.visits).forEach((visit) => {
+        const label = getPrimaryDriverLabel(visit as Pub);
+        const current = stats.get(label);
+        if (!current) return;
+        current.scheduled += 1;
+      });
+    });
+
+    stats.forEach((stat) => {
+      stat.remaining = Math.max(0, stat.total - stat.scheduled);
+      stat.isExhausted = stat.total > 0 && stat.scheduled >= stat.total;
     });
 
     return stats;
   };
 
-  const stats = calculateStats();
+  const calculateListMembershipStats = () => {
+    // List membership counts include merged pubs (counts can exceed unique pubs).
+    const stats = new Map<string, StatInfo>();
+    const totalsByList = new Map<string, number>();
+    const scheduledByList = new Map<string, number>();
+    const allPubs = userFiles?.pubs || [];
+
+    allPubs.forEach((pub) => {
+      getListEntries(pub).forEach((source) => {
+        const listName = source.fileName || pub.fileName || "Unknown list";
+        const current = stats.get(listName) || {
+          total: 0,
+          scheduled: 0,
+          fileName: listName,
+          priority: "",
+          fileId: listName,
+          remaining: 0,
+          isExhausted: false,
+          completionDate: null,
+          deadline: null,
+          daysToDeadline: null,
+        };
+        totalsByList.set(listName, (totalsByList.get(listName) || 0) + 1);
+        stats.set(listName, current);
+      });
+    });
+
+    schedule.forEach((day) => {
+      toArray(day.visits).forEach((visit) => {
+        getListEntries(visit as Pub).forEach((source) => {
+          const listName = source.fileName || (visit as Pub).fileName || "Unknown list";
+          scheduledByList.set(listName, (scheduledByList.get(listName) || 0) + 1);
+        });
+      });
+    });
+
+    stats.forEach((stat) => {
+      stat.total = totalsByList.get(stat.fileId) || 0;
+      stat.scheduled = scheduledByList.get(stat.fileId) || 0;
+      stat.remaining = Math.max(0, stat.total - stat.scheduled);
+      stat.isExhausted = stat.total > 0 && stat.scheduled >= stat.total;
+    });
+
+    return stats;
+  };
+
+  const driverStats = calculateDriverStats();
+  const listStats = calculateListMembershipStats();
+
+  const getDriverRank = (label: string) => {
+    if (label.startsWith("Visit by")) return 1;
+    if (label.startsWith("Follow-up")) return 2;
+    if (label.startsWith("Priority 1")) return 3;
+    if (label.startsWith("Priority 2")) return 4;
+    if (label.startsWith("Priority 3")) return 5;
+    if (label === "Masterfile") return 6;
+    return 99;
+  };
+
+  const sortedDriverStats = Array.from(driverStats.entries()).sort(
+    ([aLabel], [bLabel]) => getDriverRank(aLabel) - getDriverRank(bLabel)
+  );
 
   const getStatusColor = (stat: any) => {
     if (!stat) return "";
@@ -462,7 +499,7 @@ const RepStatsPanel: React.FC = () => {
           />
         )}
 
-        {Array.from(stats.entries()).map(
+        {sortedDriverStats.map(
           ([fileId, stat]) =>
             stat?.total > 0 && (
               <Tooltip.Provider key={`tooltip-${fileId}`}>
@@ -561,6 +598,27 @@ const RepStatsPanel: React.FC = () => {
               </Tooltip.Provider>
             )
         )}
+
+        <details className="bg-eggplant-800/30 rounded-lg p-3 border border-eggplant-700/40">
+          <summary className="text-sm text-eggplant-200 cursor-pointer">
+            List membership (expanded)
+          </summary>
+          <div className="mt-2 space-y-2">
+            {Array.from(listStats.values())
+              .sort((a, b) => a.fileName.localeCompare(b.fileName))
+              .map((stat) => (
+              <div
+                key={stat.fileId}
+                className="flex items-center justify-between text-xs text-eggplant-200"
+              >
+                <span className="font-medium">{stat.fileName}</span>
+                <span className="text-eggplant-300">
+                  {stat.scheduled}/{stat.total} scheduled
+                </span>
+              </div>
+            ))}
+          </div>
+        </details>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
