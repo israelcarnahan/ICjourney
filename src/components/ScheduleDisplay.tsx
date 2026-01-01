@@ -69,11 +69,6 @@ const getRTMDisplay = (visit: Visit) => {
   return visit.rtm || "—";
 };
 
-// Helper function to format priority label
-function formatPriorityLabel(v: Visit): string {
-  return getPrimaryDriverLabel(v);
-}
-
 // const vehicleIcons: Record<VehicleType, LucideIcon | React.FC<any>> = {
 //   car: Car,
 //   truck: Truck,
