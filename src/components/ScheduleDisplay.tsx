@@ -122,17 +122,7 @@ const getPriorityStyles = (priority: string): string => {
     return "bg-gray-900/20 text-gray-200 border border-gray-700/50";
   }
   
-  // Handle legacy priority values
-  switch (priority) {
-    case "RepslyWin":
-      return "bg-purple-900/20 text-purple-200 border border-purple-700/50";
-    case "Wishlist":
-      return "bg-blue-900/20 text-blue-200 border border-blue-700/50";
-    case "Unvisited":
-      return "bg-green-900/20 text-green-200 border border-green-700/50";
-    default:
-      return "bg-gray-900/20 text-gray-200 border border-gray-700/50";
-  }
+  return "bg-gray-900/20 text-gray-200 border border-gray-700/50";
 };
 
 const formatDate = (dateStr: string | Date | null | undefined): string => {

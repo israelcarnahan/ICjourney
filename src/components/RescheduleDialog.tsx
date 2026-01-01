@@ -15,6 +15,7 @@ import {
   usePubData,
 } from "../context/PubDataContext";
 import { planVisits } from "../utils/scheduleUtils";
+import { getPrimaryDriverLabel } from "../utils/sourceDetails";
 import validatePostcode from "uk-postcode-validator";
 import clsx from "clsx";
 import { toArray } from "../utils/typeGuards";
@@ -135,17 +136,44 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
         );
       });
 
+      const getDriverRank = (label: string): number => {
+        if (label.startsWith("Visit by ")) return 1;
+        if (label.startsWith("Follow-up ")) return 2;
+        if (label.startsWith("Priority ")) {
+          const parts = label.split(" ");
+          const level = Number(parts[1]);
+          return Number.isFinite(level) ? 3 + level : 99;
+        }
+        if (label === "Masterfile") return 20;
+        return 99;
+      };
+
+      const getPriorityStyle = (label: string): string => {
+        if (label.startsWith("Visit by ")) {
+          return "bg-red-900/20 text-red-200 border border-red-700/50";
+        }
+        if (label.startsWith("Follow-up ")) {
+          return "bg-purple-900/20 text-purple-200 border border-purple-700/50";
+        }
+        if (label.startsWith("Priority ")) {
+          const level = label.split(" ")[1];
+          if (level === "1") {
+            return "bg-amber-900/20 text-amber-200 border border-amber-700/50";
+          }
+          if (level === "2") {
+            return "bg-blue-900/20 text-blue-200 border border-blue-700/50";
+          }
+          if (level === "3") {
+            return "bg-green-900/20 text-green-200 border border-green-700/50";
+          }
+        }
+        return "bg-gray-900/20 text-gray-200 border border-gray-700/50";
+      };
+
       // Get all pubs from userFiles and map their priorities
       const allPubs = userFiles.pubs.map((pub) => ({
         ...pub,
-        Priority:
-          pub.listType === "wins"
-            ? "RepslyWin"
-            : pub.listType === "hitlist"
-            ? "Wishlist"
-            : pub.listType === "unvisited"
-            ? "Unvisited"
-            : "Masterfile",
+        Priority: getPrimaryDriverLabel(pub),
       }));
 
       if (!allPubs.length) {
@@ -192,17 +220,7 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
 
       // Sort pubs by priority
       const sortedPubs = [...nearbyPubs].sort((a, b) => {
-        const priorityOrder = {
-          RecentWin: 0,
-          Wishlist: 1,
-          Unvisited: 2,
-          Masterfile: 3,
-        };
-        const aOrder =
-          priorityOrder[a.Priority as keyof typeof priorityOrder] ?? 4;
-        const bOrder =
-          priorityOrder[b.Priority as keyof typeof priorityOrder] ?? 4;
-        return aOrder - bOrder;
+        return getDriverRank(a.Priority) - getDriverRank(b.Priority);
       });
 
       // Limit the number of pubs
@@ -561,15 +579,9 @@ const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
                             </td>
                             <td className="px-4 py-2">
                               <span
-                                className={`px-2 py-1 text-xs rounded-full ${
-                                  visit.Priority === "KPI"
-                                    ? "bg-red-900/50 text-red-200 border border-red-700/50"
-                                    : visit.Priority === "Wishlist"
-                                    ? "bg-blue-900/50 text-blue-200 border border-blue-700/50"
-                                    : visit.Priority === "Unvisited"
-                                    ? "bg-green-900/50 text-green-200 border border-green-700/50"
-                                    : "bg-gray-900/50 text-gray-200 border border-gray-700/50"
-                                }`}
+                                className={`px-2 py-1 text-xs rounded-full ${getPriorityStyle(
+                                  visit.Priority
+                                )}`}
                               >
                                 {visit.Priority}
                               </span>

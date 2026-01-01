@@ -15,9 +15,6 @@ const CoverageHeatMap: React.FC<CoverageHeatMapProps> = ({ schedule, allPubs }) 
     const areas = new Map<string, {
       total: number;
       scheduled: number;
-      kpi: number;
-      wishlist: number;
-      unvisited: number;
     }>();
 
     // Process all pubs to get totals
@@ -25,13 +22,10 @@ const CoverageHeatMap: React.FC<CoverageHeatMapProps> = ({ schedule, allPubs }) 
       if (!pub.zip) return;
       const [prefix] = extractNumericPart(pub.zip);
       if (!areas.has(prefix)) {
-        areas.set(prefix, { total: 0, scheduled: 0, kpi: 0, wishlist: 0, unvisited: 0 });
+        areas.set(prefix, { total: 0, scheduled: 0 });
       }
       const areaStats = areas.get(prefix)!;
       areaStats.total++;
-      if (pub.Priority === 'KPI') areaStats.kpi++;
-      if (pub.Priority === 'Wishlist') areaStats.wishlist++;
-      if (pub.Priority === 'Unvisited') areaStats.unvisited++;
     });
 
     // Process scheduled pubs
@@ -93,11 +87,6 @@ const CoverageHeatMap: React.FC<CoverageHeatMapProps> = ({ schedule, allPubs }) 
                   <div className="space-y-1">
                     <p className="font-medium">{area} Area Coverage</p>
                     <p>Scheduled: {stats.scheduled} of {stats.total}</p>
-                    <div className="text-xs space-y-1">
-                      <p className="text-red-300">KPI Targets: {stats.kpi}</p>
-                      <p className="text-blue-300">Wishlist: {stats.wishlist}</p>
-                      <p className="text-green-300">Unvisited: {stats.unvisited}</p>
-                    </div>
                   </div>
                   <Tooltip.Arrow className="fill-dark-800" />
                 </Tooltip.Content>
