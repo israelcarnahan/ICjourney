@@ -160,14 +160,19 @@ const RepStatsPanel: React.FC = () => {
   }
 
   const getListEntries = (pub: Pub) => {
-    const sources = Array.isArray((pub as any).sources) ? (pub as any).sources : [];
+    const sources: Array<{ fileName?: string; listName?: string }> = Array.isArray((pub as any).sources)
+      ? (pub as any).sources
+      : [];
     if (sources.length > 0) {
-      return sources.map((source: any) => ({
+      return sources.map((source) => ({
         fileName: source.fileName ?? source.listName ?? pub.fileName,
       }));
     }
     return [{ fileName: pub.fileName }];
   };
+
+  const getPubKey = (pub: Pub) =>
+    pub.uuid || pub.id || `${pub.fileId}-${pub.pub}-${pub.zip}`;
 
   const calculateDriverStats = () => {
     // Driver summary stays focused on scheduling drivers, not list membership.
@@ -257,6 +262,48 @@ const RepStatsPanel: React.FC = () => {
 
   const driverStats = calculateDriverStats();
   const listStats = calculateListMembershipStats();
+  const listMembershipDetails = useMemo(() => {
+    const membership = new Map<string, Map<string, Pub>>();
+    const scheduledKeys = new Set<string>();
+
+    schedule.forEach((day) => {
+      toArray(day.visits).forEach((visit) => {
+        scheduledKeys.add(getPubKey(visit as Pub));
+      });
+    });
+
+    (userFiles?.pubs || []).forEach((pub) => {
+      const pubKey = getPubKey(pub);
+      getListEntries(pub).forEach((source) => {
+        const listName = source.fileName || pub.fileName || "Unknown list";
+        const entries = membership.get(listName) || new Map<string, Pub>();
+        entries.set(String(pubKey), pub);
+        membership.set(listName, entries);
+      });
+    });
+
+    const details = new Map<
+      string,
+      {
+        unscheduled: Array<{ pub: Pub; reason: string }>;
+      }
+    >();
+
+    membership.forEach((entries, listName) => {
+      const unscheduled: Array<{ pub: Pub; reason: string }> = [];
+      entries.forEach((pub, pubKey) => {
+        if (scheduledKeys.has(pubKey)) return;
+        const reason =
+          pub.postcodeMeta?.status === "INVALID"
+            ? "Invalid postcode"
+            : "Capacity";
+        unscheduled.push({ pub, reason });
+      });
+      details.set(listName, { unscheduled });
+    });
+
+    return details;
+  }, [schedule, userFiles]);
 
   const getDriverRank = (label: string) => {
     if (label.startsWith("Visit by")) return 1;
@@ -300,21 +347,6 @@ const RepStatsPanel: React.FC = () => {
       : `${stat.scheduled}/${stat.total} scheduled`;
 
     return scheduledText;
-  };
-
-  const getPriorityInfo = (stat: any) => {
-    if (!stat) return "";
-
-    if (stat.priority.startsWith("Visit by ")) {
-      return stat.priority;
-    }
-    if (stat.priority.startsWith("Follow-up ")) {
-      return stat.priority;
-    }
-    if (stat.deadline) {
-      return `Deadline: ${format(stat.deadline, "MMM d, yyyy")}`;
-    }
-    return stat.priority;
   };
 
   return (
@@ -432,6 +464,160 @@ const RepStatsPanel: React.FC = () => {
           </div>
         )}
 
+        {showPostcodeFixes && pendingFixes.length > 0 && (
+          <PostcodeFixesDialog
+            isOpen={showPostcodeFixes}
+            issues={pendingFixes}
+            onCancel={() => setShowPostcodeFixes(false)}
+            onConfirm={applyPostcodeUpdates}
+          />
+        )}
+
+        {sortedDriverStats.map(
+          ([fileId, stat]) =>
+            stat?.total > 0 && (
+              <Tooltip.Provider key={`tooltip-${fileId}`}>
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <div
+                      className={`flex flex-col gap-1 p-2.5 rounded-lg cursor-help ${getStatusColor(
+                        stat
+                      )}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(stat)}
+                          <span className="font-medium text-sm whitespace-nowrap">
+                            {stat.fileName}
+                          </span>
+                        </div>
+                        <span className="text-xs text-eggplant-200">
+                          {getStatusMessage(stat)}
+                        </span>
+                      </div>
+                      <div className="mt-1">
+                        <div className="text-xs text-eggplant-300 whitespace-pre-line">
+                          {/* Add deadline completion info for hitlist imports with deadlines */}
+                          {stat.deadline &&
+                            stat.completionDate &&
+                            stat.isExhausted &&
+                            stat.daysToDeadline != null && (
+                              <div
+                                className={`mt-1 ${
+                                  stat.daysToDeadline > 0
+                                    ? "text-green-400"
+                                    : stat.daysToDeadline === 0
+                                    ? "text-yellow-400"
+                                    : "text-red-400"
+                                }`}
+                              >
+                                {stat.daysToDeadline > 0
+                                  ? `✓ Scheduled ${stat.daysToDeadline} week days early`
+                                  : stat.daysToDeadline === 0
+                                  ? `⚠️ Scheduled on deadline`
+                                  : `⚠️ Scheduled ${Math.abs(
+                                      stat.daysToDeadline
+                                    )} week days late`}
+                              </div>
+                            )}
+                        </div>
+                      </div>
+                    </div>
+                  </Tooltip.Trigger>
+                  <Tooltip.Portal>
+                    <Tooltip.Content
+                      className="bg-dark-800 text-eggplant-100 px-3 py-2 rounded-lg text-sm shadow-lg max-w-xs"
+                      sideOffset={5}
+                    >
+                      <p className="font-medium mb-1">{stat.fileName}</p>
+                      <p className="text-sm">
+                        {stat.scheduled} scheduled, {stat.remaining} remaining
+                        {stat.isExhausted && " - All pubs scheduled!"}
+                      </p>
+
+                      {/* Show deadline completion status for hitlist imports with deadlines */}
+                      {stat.deadline &&
+                        stat.completionDate &&
+                        stat.daysToDeadline != null && (
+                        <div className="mt-2 pt-2 border-t border-eggplant-800/50">
+                          {stat.daysToDeadline > 0 ? (
+                            <p className="text-sm text-green-400 flex items-center">
+                              <CheckCircle2 className="h-3 w-3 mr-1" />
+                              Scheduled {stat.daysToDeadline} week days prior to
+                              deadline
+                            </p>
+                          ) : stat.daysToDeadline === 0 ? (
+                            <p className="text-sm text-yellow-400 flex items-center">
+                              <AlertTriangle className="h-3 w-3 mr-1" />
+                              Scheduled on deadline day
+                            </p>
+                          ) : (
+                            <p className="text-sm text-red-400 flex items-center">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Scheduled {Math.abs(stat.daysToDeadline)} week
+                              days after deadline
+                            </p>
+                          )}
+                          <p className="text-xs text-eggplant-300 mt-1">
+                            Last visit:{" "}
+                            {format(stat.completionDate, "MMM d, yyyy")}
+                          </p>
+                        </div>
+                      )}
+                      <Tooltip.Arrow className="fill-dark-800" />
+                    </Tooltip.Content>
+                  </Tooltip.Portal>
+                </Tooltip.Root>
+              </Tooltip.Provider>
+            )
+        )}
+
+        <details className="bg-eggplant-800/30 rounded-lg p-3 border border-eggplant-700/40">
+          <summary className="text-sm text-eggplant-200 cursor-pointer">
+            List membership (expanded)
+          </summary>
+          <div className="mt-2 space-y-2">
+            {Array.from(listStats.values())
+              .sort((a, b) => a.fileName.localeCompare(b.fileName))
+              .map((stat) => {
+                const listDetail = listMembershipDetails.get(stat.fileName);
+                const unscheduled = listDetail?.unscheduled ?? [];
+                return (
+                  <details
+                    key={stat.fileId}
+                    className="rounded-md border border-eggplant-700/30 bg-eggplant-900/20 px-2 py-1"
+                  >
+                    <summary className="flex items-center justify-between text-xs text-eggplant-200 cursor-pointer">
+                      <span className="font-medium">{stat.fileName}</span>
+                      <span className="text-eggplant-300">
+                        {stat.scheduled}/{stat.total} scheduled
+                      </span>
+                    </summary>
+                    {unscheduled.length > 0 && (
+                      <div className="mt-2 space-y-1 text-[11px] text-eggplant-300">
+                        {unscheduled.map(({ pub, reason }) => (
+                          <div key={getPubKey(pub)} className="flex items-start justify-between gap-3">
+                            <span className="flex-1 whitespace-normal break-words">
+                              {pub.pub} ({pub.zip})
+                            </span>
+                            <span className="text-eggplant-400 whitespace-nowrap">
+                              {reason}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {unscheduled.length === 0 && (
+                      <div className="mt-2 text-[11px] text-eggplant-400">
+                        All related accounts scheduled.
+                      </div>
+                    )}
+                  </details>
+                );
+              })}
+          </div>
+        </details>
+
         {showDebug && (
           <details className="bg-eggplant-800/30 rounded-lg p-3 border border-eggplant-700/40">
             <summary className="text-sm text-eggplant-200 cursor-pointer">
@@ -481,6 +667,18 @@ const RepStatsPanel: React.FC = () => {
                 <span className="text-eggplant-200">Days requested:</span>{" "}
                 {schedulingDebug.daysRequested}
               </div>
+              <div>
+                <span className="text-eggplant-200">Unscheduled by list:</span>{" "}
+                {Array.from(listMembershipDetails.entries())
+                  .map(([listName, detail]) => ({
+                    listName,
+                    count: detail.unscheduled.length,
+                  }))
+                  .filter((entry) => entry.count > 0)
+                  .slice(0, 5)
+                  .map((entry) => `${entry.listName}: ${entry.count}`)
+                  .join(", ") || "None"}
+              </div>
               {schedulingDebug.notes && (
                 <div className="text-[10px] text-eggplant-400">
                   {schedulingDebug.notes}
@@ -489,136 +687,6 @@ const RepStatsPanel: React.FC = () => {
             </div>
           </details>
         )}
-
-        {showPostcodeFixes && pendingFixes.length > 0 && (
-          <PostcodeFixesDialog
-            isOpen={showPostcodeFixes}
-            issues={pendingFixes}
-            onCancel={() => setShowPostcodeFixes(false)}
-            onConfirm={applyPostcodeUpdates}
-          />
-        )}
-
-        {sortedDriverStats.map(
-          ([fileId, stat]) =>
-            stat?.total > 0 && (
-              <Tooltip.Provider key={`tooltip-${fileId}`}>
-                <Tooltip.Root>
-                  <Tooltip.Trigger asChild>
-                    <div
-                      className={`flex flex-col gap-2 p-2.5 rounded-lg cursor-help ${getStatusColor(
-                        stat
-                      )}`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(stat)}
-                          <span className="font-medium text-sm whitespace-nowrap">
-                            {stat.fileName}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <div className="text-xs text-eggplant-300 whitespace-pre-line">
-                          {getPriorityInfo(stat)}
-                          {/* Add deadline completion info for hitlist imports with deadlines */}
-                          {stat.deadline &&
-                            stat.completionDate &&
-                            stat.isExhausted && (
-                              <div
-                                className={`mt-1 ${
-                                  stat.daysToDeadline > 0
-                                    ? "text-green-400"
-                                    : stat.daysToDeadline === 0
-                                    ? "text-yellow-400"
-                                    : "text-red-400"
-                                }`}
-                              >
-                                {stat.daysToDeadline > 0
-                                  ? `✓ Scheduled ${stat.daysToDeadline} week days early`
-                                  : stat.daysToDeadline === 0
-                                  ? `⚠️ Scheduled on deadline`
-                                  : `⚠️ Scheduled ${Math.abs(
-                                      stat.daysToDeadline
-                                    )} week days late`}
-                              </div>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="w-1 h-1 rounded-full bg-current opacity-30" />
-                          <span className="text-xs">
-                            {getStatusMessage(stat)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </Tooltip.Trigger>
-                  <Tooltip.Portal>
-                    <Tooltip.Content
-                      className="bg-dark-800 text-eggplant-100 px-3 py-2 rounded-lg text-sm shadow-lg max-w-xs"
-                      sideOffset={5}
-                    >
-                      <p className="font-medium mb-1">{stat.fileName}</p>
-                      <p className="text-sm">
-                        {stat.scheduled} scheduled, {stat.remaining} remaining
-                        {stat.isExhausted && " - All pubs scheduled!"}
-                      </p>
-
-                      {/* Show deadline completion status for hitlist imports with deadlines */}
-                      {stat.deadline && stat.completionDate && (
-                        <div className="mt-2 pt-2 border-t border-eggplant-800/50">
-                          {stat.daysToDeadline > 0 ? (
-                            <p className="text-sm text-green-400 flex items-center">
-                              <CheckCircle2 className="h-3 w-3 mr-1" />
-                              Scheduled {stat.daysToDeadline} week days prior to
-                              deadline
-                            </p>
-                          ) : stat.daysToDeadline === 0 ? (
-                            <p className="text-sm text-yellow-400 flex items-center">
-                              <AlertTriangle className="h-3 w-3 mr-1" />
-                              Scheduled on deadline day
-                            </p>
-                          ) : (
-                            <p className="text-sm text-red-400 flex items-center">
-                              <AlertCircle className="h-3 w-3 mr-1" />
-                              Scheduled {Math.abs(stat.daysToDeadline)} week
-                              days after deadline
-                            </p>
-                          )}
-                          <p className="text-xs text-eggplant-300 mt-1">
-                            Last visit:{" "}
-                            {format(stat.completionDate, "MMM d, yyyy")}
-                          </p>
-                        </div>
-                      )}
-                      <Tooltip.Arrow className="fill-dark-800" />
-                    </Tooltip.Content>
-                  </Tooltip.Portal>
-                </Tooltip.Root>
-              </Tooltip.Provider>
-            )
-        )}
-
-        <details className="bg-eggplant-800/30 rounded-lg p-3 border border-eggplant-700/40">
-          <summary className="text-sm text-eggplant-200 cursor-pointer">
-            List membership (expanded)
-          </summary>
-          <div className="mt-2 space-y-2">
-            {Array.from(listStats.values())
-              .sort((a, b) => a.fileName.localeCompare(b.fileName))
-              .map((stat) => (
-              <div
-                key={stat.fileId}
-                className="flex items-center justify-between text-xs text-eggplant-200"
-              >
-                <span className="font-medium">{stat.fileName}</span>
-                <span className="text-eggplant-300">
-                  {stat.scheduled}/{stat.total} scheduled
-                </span>
-              </div>
-            ))}
-          </div>
-        </details>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
