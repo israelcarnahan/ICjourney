@@ -101,11 +101,35 @@ export function mergeIntoCanonical(
 ): Pub {
   devLog('lineage', `Merging ${incomingPub.pub} (${incomingPub.fileName}) into canonical ${canonicalPub.pub}`);
   
+  // Ensure the canonical pub contributes its own source record once.
+  const canonicalSources = [...(canonicalPub.sources || [])];
+  const hasCanonicalSource =
+    canonicalPub.fileName &&
+    canonicalSources.some((source) => source.fileName === canonicalPub.fileName);
+  if (!hasCanonicalSource && canonicalPub.fileName) {
+    canonicalSources.push({
+      sourceId: canonicalPub.uuid,
+      fileId: canonicalPub.fileId,
+      fileName: canonicalPub.fileName,
+      rowIndex: -1,
+      schedulingMode: canonicalPub.deadline
+        ? 'deadline'
+        : canonicalPub.followUpDays && canonicalPub.followUpDays > 0
+        ? 'followup'
+        : 'priority',
+      priority: canonicalPub.priorityLevel,
+      deadline: canonicalPub.deadline,
+      followUpDays: canonicalPub.followUpDays,
+      mapped: {},
+      extras: {},
+    });
+  }
+
   // Build source reference
   const sourceRef = buildSourceRef(incomingPub, rowIndex, mappedValues, extras);
   
   // Initialize arrays if they don't exist
-  const sources = [...(canonicalPub.sources || []), sourceRef];
+  const sources = [...canonicalSources, sourceRef];
   const fieldValuesBySource = { ...(canonicalPub.fieldValuesBySource || {}) };
   const mergedExtras = { ...(canonicalPub.mergedExtras || {}) };
   
