@@ -182,7 +182,8 @@ export async function planVisits(
     let bestDistance = Infinity;
 
     candidates.forEach((pub, index) => {
-      if (scheduledPubs.has(pub.pub)) return;
+      const pubKey = pub.uuid || `${pub.fileId}-${pub.pub}-${pub.zip}`;
+      if (scheduledPubs.has(pubKey)) return;
       const primary = getPrimaryValue(bucket, pub);
       const distance = calculateDistance(lastLocation, pub.zip).mileage;
 
@@ -210,7 +211,8 @@ export async function planVisits(
         if (!selection) break;
 
         dayVisits.push(selection.pub);
-        scheduledPubs.add(selection.pub.pub);
+        const pubKey = selection.pub.uuid || `${selection.pub.fileId}-${selection.pub.pub}-${selection.pub.zip}`;
+        scheduledPubs.add(pubKey);
         lastLocation = selection.pub.zip;
         bucketPubs[bucket].splice(selection.index, 1);
       }
@@ -305,6 +307,10 @@ export async function planVisits(
 type BucketKey = "deadline" | "followUp" | "priority" | "master";
 
 const classifyBucket = (pub: Pub): BucketKey => {
+  // Prefer effective scheduling fields so debug matches scheduling output.
+  if (pub.effectivePlan?.deadline) return "deadline";
+  if (pub.effectivePlan?.followUpDays) return "followUp";
+  if (pub.effectivePlan?.priorityLevel) return "priority";
   if (pub.deadline) return "deadline";
   if (pub.followUpDays) return "followUp";
   if (pub.priorityLevel) return "priority";

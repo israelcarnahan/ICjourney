@@ -172,7 +172,7 @@ const RepStatsPanel: React.FC = () => {
   };
 
   const getPubKey = (pub: Pub) =>
-    pub.uuid || pub.id || `${pub.fileId}-${pub.pub}-${pub.zip}`;
+    pub.uuid || `${pub.fileId}-${pub.pub}-${pub.zip}`;
 
   const calculateDriverStats = () => {
     // Driver summary stays focused on scheduling drivers, not list membership.
