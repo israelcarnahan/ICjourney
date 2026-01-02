@@ -328,15 +328,23 @@ export async function planVisits(
     return bucketRank[bucket];
   };
 
+  const getBusinessDaysUntil = (start: Date, end: Date): number => {
+    const days = countBusinessDaysInclusive(start, end);
+    return Math.max(0, days - 1);
+  };
+
   const pickBestPub = (
     candidates: Pub[],
     lastLocation: string,
+    currentDate: Date,
     pressureDeadlineBy: Date | null
   ): { pub: Pub; index: number } | null => {
     let bestIndex = -1;
     let bestRank = Infinity;
     let bestPrimary = Infinity;
     let bestDistance = Infinity;
+    let bestUrgent = false;
+    let bestDaysUntil = Infinity;
 
     candidates.forEach((pub, index) => {
       const pubKey = pub.uuid || `${pub.fileId}-${pub.pub}-${pub.zip}`;
@@ -344,6 +352,9 @@ export async function planVisits(
 
       const bucket = getBucket(pub);
       const deadlineDate = getDeadlineDate(pub);
+      const daysUntilDue =
+        deadlineDate != null ? getBusinessDaysUntil(currentDate, deadlineDate) : Infinity;
+      const isUrgentDeadline = bucket === "deadline" && daysUntilDue <= 2;
       const forceDeadlineFirst =
         bucket === "deadline" &&
         pressureDeadlineBy != null &&
@@ -356,13 +367,29 @@ export async function planVisits(
       const primary = getPrimaryValue(bucket, pub);
       const distance = calculateDistance(lastLocation, pub.zip).mileage;
 
+      if (isUrgentDeadline !== bestUrgent) {
+        if (isUrgentDeadline) {
+          bestUrgent = true;
+          bestDaysUntil = daysUntilDue;
+          bestRank = rank;
+          bestPrimary = primary;
+          bestDistance = distance;
+          bestIndex = index;
+        }
+        return;
+      }
+
       if (
+        (bestUrgent && daysUntilDue < bestDaysUntil) ||
+        (bestUrgent && daysUntilDue === bestDaysUntil && rank < bestRank) ||
         rank < bestRank ||
         (rank === bestRank && primary < bestPrimary) ||
         (rank === bestRank &&
           primary === bestPrimary &&
           distance < bestDistance)
       ) {
+        bestUrgent = isUrgentDeadline;
+        bestDaysUntil = daysUntilDue;
         bestRank = rank;
         bestPrimary = primary;
         bestDistance = distance;
@@ -398,6 +425,7 @@ export async function planVisits(
     const seedSelection = pickBestPub(
       seedCandidates,
       lastLocation,
+      currentDate,
       pressuredLocality?.pressuredBy ?? null
     );
     if (!seedSelection) break;
@@ -424,6 +452,7 @@ export async function planVisits(
       const nextSelection = pickBestPub(
         localityCandidates,
         lastLocation,
+        currentDate,
         pressureDeadlineBy
       );
       if (!nextSelection) break;
