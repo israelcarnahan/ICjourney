@@ -169,6 +169,18 @@ export async function planVisits(
     return (pub.zip || "UNKNOWN").substring(0, 2).toUpperCase();
   };
 
+  const normalizeDateOnly = (value: Date): number =>
+    new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+
+  const meetsDeadlineConstraint = (pub: Pub, date: Date): boolean => {
+    const effective = pub.effectivePlan;
+    const deadline = effective?.deadline ?? pub.deadline;
+    if (!deadline) return true;
+    const deadlineDate = new Date(deadline);
+    if (Number.isNaN(deadlineDate.getTime())) return true;
+    return normalizeDateOnly(date) <= normalizeDateOnly(deadlineDate);
+  };
+
   const pickBestPub = (
     candidates: Pub[],
     lastLocation: string
@@ -209,7 +221,10 @@ export async function planVisits(
     const dayVisits: Pub[] = [];
     let lastLocation = hasHome ? homeAddress : "";
 
-    const seedSelection = pickBestPub(remainingPubs, lastLocation);
+    const eligibleSeeds = remainingPubs.filter((pub) =>
+      meetsDeadlineConstraint(pub, currentDate)
+    );
+    const seedSelection = pickBestPub(eligibleSeeds, lastLocation);
     if (!seedSelection) break;
 
     const seedPub = seedSelection.pub;
@@ -218,11 +233,16 @@ export async function planVisits(
     dayVisits.push(seedPub);
     scheduledPubs.add(seedKey);
     lastLocation = seedPub.zip;
-    remainingPubs.splice(seedSelection.index, 1);
+    remainingPubs.splice(
+      remainingPubs.findIndex((p) => p === seedPub),
+      1
+    );
 
     while (dayVisits.length < visitsPerDay) {
       const localityCandidates = remainingPubs.filter(
-        (pub) => getLocalityKey(pub) === dayLocalityKey
+        (pub) =>
+          getLocalityKey(pub) === dayLocalityKey &&
+          meetsDeadlineConstraint(pub, currentDate)
       );
       const nextSelection = pickBestPub(localityCandidates, lastLocation);
       if (!nextSelection) break;
