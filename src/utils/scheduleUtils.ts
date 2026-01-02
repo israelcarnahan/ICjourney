@@ -181,10 +181,55 @@ export async function planVisits(
     return normalizeDateOnly(date) <= normalizeDateOnly(deadlineDate);
   };
 
+  const countBusinessDaysInclusive = (start: Date, end: Date): number => {
+    if (normalizeDateOnly(start) > normalizeDateOnly(end)) return 0;
+    let count = 0;
+    let cursor = new Date(start);
+    while (normalizeDateOnly(cursor) <= normalizeDateOnly(end)) {
+      count += 1;
+      cursor = addBusinessDays(cursor, 1);
+    }
+    return count;
+  };
+
+  const isDeadlinePressure = (
+    date: Date,
+    pubs: Pub[],
+    slotsPerDay: number
+  ): boolean => {
+    const deadlineDates = pubs
+      .map((pub) => pub.effectivePlan?.deadline ?? pub.deadline)
+      .filter(Boolean)
+      .map((value) => new Date(value as string))
+      .filter((d) => !Number.isNaN(d.getTime()))
+      .filter((d) => normalizeDateOnly(d) >= normalizeDateOnly(date))
+      .sort((a, b) => normalizeDateOnly(a) - normalizeDateOnly(b));
+    if (deadlineDates.length === 0) return false;
+
+    const earliestDeadline = deadlineDates[0];
+    const deadlineCount = pubs.filter((pub) => {
+      const deadline = pub.effectivePlan?.deadline ?? pub.deadline;
+      if (!deadline) return false;
+      const d = new Date(deadline);
+      if (Number.isNaN(d.getTime())) return false;
+      return normalizeDateOnly(d) <= normalizeDateOnly(earliestDeadline);
+    }).length;
+    const availableSlots =
+      countBusinessDaysInclusive(date, earliestDeadline) * slotsPerDay;
+    return deadlineCount >= availableSlots;
+  };
+
   const getBucketRank = (
     bucket: BucketKey,
-    isCapacityConstrained: boolean
+    isCapacityConstrained: boolean,
+    isDeadlinePressured: boolean
   ): number => {
+    if (isDeadlinePressured) {
+      if (bucket === "deadline") return 0;
+      if (bucket === "priority") return 1;
+      if (bucket === "followUp") return 2;
+      return 3;
+    }
     if (isCapacityConstrained) {
       if (bucket === "deadline") return 0;
       if (bucket === "priority") return 1;
@@ -197,7 +242,8 @@ export async function planVisits(
   const pickBestPub = (
     candidates: Pub[],
     lastLocation: string,
-    isCapacityConstrained: boolean
+    isCapacityConstrained: boolean,
+    isDeadlinePressured: boolean
   ): { pub: Pub; index: number } | null => {
     let bestIndex = -1;
     let bestRank = Infinity;
@@ -209,7 +255,11 @@ export async function planVisits(
       if (scheduledPubs.has(pubKey)) return;
 
       const bucket = getBucket(pub);
-      const rank = getBucketRank(bucket, isCapacityConstrained);
+      const rank = getBucketRank(
+        bucket,
+        isCapacityConstrained,
+        isDeadlinePressured
+      );
       const primary = getPrimaryValue(bucket, pub);
       const distance = calculateDistance(lastLocation, pub.zip).mileage;
 
@@ -238,14 +288,18 @@ export async function planVisits(
     const eligibleSeeds = remainingPubs.filter((pub) =>
       meetsDeadlineConstraint(pub, currentDate)
     );
-    const remainingSlots =
-      remainingDays * visitsPerDay - dayVisits.length;
-    const isCapacityConstrained =
-      remainingPubs.length > remainingSlots;
+    const remainingSlots = remainingDays * visitsPerDay - dayVisits.length;
+    const isCapacityConstrained = remainingPubs.length > remainingSlots;
+    const isDeadlinePressured = isDeadlinePressure(
+      currentDate,
+      remainingPubs,
+      visitsPerDay
+    );
     const seedSelection = pickBestPub(
       eligibleSeeds,
       lastLocation,
-      isCapacityConstrained
+      isCapacityConstrained,
+      isDeadlinePressured
     );
     if (!seedSelection) break;
 
@@ -261,10 +315,13 @@ export async function planVisits(
     );
 
     while (dayVisits.length < visitsPerDay) {
-      const slotsLeft =
-        remainingDays * visitsPerDay - dayVisits.length;
-      const isConstrained =
-        remainingPubs.length > slotsLeft;
+      const slotsLeft = remainingDays * visitsPerDay - dayVisits.length;
+      const isConstrained = remainingPubs.length > slotsLeft;
+      const isPressured = isDeadlinePressure(
+        currentDate,
+        remainingPubs,
+        visitsPerDay
+      );
       const localityCandidates = remainingPubs.filter(
         (pub) =>
           getLocalityKey(pub) === dayLocalityKey &&
@@ -273,7 +330,8 @@ export async function planVisits(
       const nextSelection = pickBestPub(
         localityCandidates,
         lastLocation,
-        isConstrained
+        isConstrained,
+        isPressured
       );
       if (!nextSelection) break;
 
