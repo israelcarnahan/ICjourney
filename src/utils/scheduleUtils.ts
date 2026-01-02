@@ -306,7 +306,11 @@ export async function planVisits(
         best = { locality, pressuredBy: info.pressuredBy, ratio: info.pressureRatio };
       }
     });
-    const resolved = best ?? null;
+    const resolved = best as {
+      locality: string;
+      pressuredBy: Date | null;
+      ratio: number;
+    } | null;
     if (!resolved) return null;
     return { locality: resolved.locality, pressuredBy: resolved.pressuredBy };
   };
