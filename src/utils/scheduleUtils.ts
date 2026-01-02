@@ -306,8 +306,9 @@ export async function planVisits(
         best = { locality, pressuredBy: info.pressuredBy, ratio: info.pressureRatio };
       }
     });
-    if (!best) return null;
-    return { locality: best.locality, pressuredBy: best.pressuredBy };
+    const resolved = best ?? null;
+    if (!resolved) return null;
+    return { locality: resolved.locality, pressuredBy: resolved.pressuredBy };
   };
 
   const getBucketRank = (
