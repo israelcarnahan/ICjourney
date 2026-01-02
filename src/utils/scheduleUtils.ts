@@ -181,9 +181,23 @@ export async function planVisits(
     return normalizeDateOnly(date) <= normalizeDateOnly(deadlineDate);
   };
 
+  const getBucketRank = (
+    bucket: BucketKey,
+    isCapacityConstrained: boolean
+  ): number => {
+    if (isCapacityConstrained) {
+      if (bucket === "deadline") return 0;
+      if (bucket === "priority") return 1;
+      if (bucket === "followUp") return 2;
+      return 3;
+    }
+    return bucketRank[bucket];
+  };
+
   const pickBestPub = (
     candidates: Pub[],
-    lastLocation: string
+    lastLocation: string,
+    isCapacityConstrained: boolean
   ): { pub: Pub; index: number } | null => {
     let bestIndex = -1;
     let bestRank = Infinity;
@@ -195,7 +209,7 @@ export async function planVisits(
       if (scheduledPubs.has(pubKey)) return;
 
       const bucket = getBucket(pub);
-      const rank = bucketRank[bucket];
+      const rank = getBucketRank(bucket, isCapacityConstrained);
       const primary = getPrimaryValue(bucket, pub);
       const distance = calculateDistance(lastLocation, pub.zip).mileage;
 
@@ -224,7 +238,15 @@ export async function planVisits(
     const eligibleSeeds = remainingPubs.filter((pub) =>
       meetsDeadlineConstraint(pub, currentDate)
     );
-    const seedSelection = pickBestPub(eligibleSeeds, lastLocation);
+    const remainingSlots =
+      remainingDays * visitsPerDay - dayVisits.length;
+    const isCapacityConstrained =
+      remainingPubs.length > remainingSlots;
+    const seedSelection = pickBestPub(
+      eligibleSeeds,
+      lastLocation,
+      isCapacityConstrained
+    );
     if (!seedSelection) break;
 
     const seedPub = seedSelection.pub;
@@ -239,12 +261,20 @@ export async function planVisits(
     );
 
     while (dayVisits.length < visitsPerDay) {
+      const slotsLeft =
+        remainingDays * visitsPerDay - dayVisits.length;
+      const isConstrained =
+        remainingPubs.length > slotsLeft;
       const localityCandidates = remainingPubs.filter(
         (pub) =>
           getLocalityKey(pub) === dayLocalityKey &&
           meetsDeadlineConstraint(pub, currentDate)
       );
-      const nextSelection = pickBestPub(localityCandidates, lastLocation);
+      const nextSelection = pickBestPub(
+        localityCandidates,
+        lastLocation,
+        isConstrained
+      );
       if (!nextSelection) break;
 
       const selectedPub = nextSelection.pub;
@@ -307,7 +337,7 @@ export async function planVisits(
       if (visit.deadline) {
         const deadlineDate = new Date(visit.deadline);
         const visitDate = new Date(currentDate);
-        if (visitDate > deadlineDate) {
+        if (normalizeDateOnly(visitDate) > normalizeDateOnly(deadlineDate)) {
           schedulingErrors.push(
             `${visit.pub} scheduled after deadline (${format(
               deadlineDate,
