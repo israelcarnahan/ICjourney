@@ -116,19 +116,14 @@ export async function planVisits(
 
   // Track scheduled pubs to prevent duplicates
   const scheduledPubs = new Set<string>();
+  const remainingPubs = [...eligiblePubs];
 
   type BucketKey = "deadline" | "followUp" | "priority" | "master";
-  const bucketOrder: BucketKey[] = [
-    "deadline",
-    "followUp",
-    "priority",
-    "master",
-  ];
-  const bucketPubs: Record<BucketKey, Pub[]> = {
-    deadline: [],
-    followUp: [],
-    priority: [],
-    master: [],
+  const bucketRank: Record<BucketKey, number> = {
+    priority: 0,
+    followUp: 1,
+    deadline: 2,
+    master: 3,
   };
 
   const getBucket = (pub: Pub): BucketKey => {
@@ -148,10 +143,6 @@ export async function planVisits(
     return "master";
   };
 
-  eligiblePubs.forEach((pub) => {
-    bucketPubs[getBucket(pub)].push(pub);
-  });
-
   const getPrimaryValue = (bucket: BucketKey, pub: Pub): number => {
     const effective = pub.effectivePlan;
     const deadline = effective?.deadline ?? pub.deadline;
@@ -165,32 +156,45 @@ export async function planVisits(
       return typeof followUpDays === "number" ? followUpDays : Infinity;
     }
     if (bucket === "priority") {
-      return typeof priorityLevel === "number"
-        ? priorityLevel
-        : Infinity;
+      return typeof priorityLevel === "number" ? priorityLevel : Infinity;
     }
     return 0;
   };
 
-  const pickNextFromBucket = (
-    bucket: BucketKey,
+  const getLocalityKey = (pub: Pub): string => {
+    const area = pub.postcodeMeta?.areaLetters;
+    if (area) return area;
+    const [prefix] = extractNumericPart(pub.zip || "");
+    if (prefix) return prefix;
+    return (pub.zip || "UNKNOWN").substring(0, 2).toUpperCase();
+  };
+
+  const pickBestPub = (
+    candidates: Pub[],
     lastLocation: string
   ): { pub: Pub; index: number } | null => {
-    const candidates = bucketPubs[bucket];
     let bestIndex = -1;
+    let bestRank = Infinity;
     let bestPrimary = Infinity;
     let bestDistance = Infinity;
 
     candidates.forEach((pub, index) => {
       const pubKey = pub.uuid || `${pub.fileId}-${pub.pub}-${pub.zip}`;
       if (scheduledPubs.has(pubKey)) return;
+
+      const bucket = getBucket(pub);
+      const rank = bucketRank[bucket];
       const primary = getPrimaryValue(bucket, pub);
       const distance = calculateDistance(lastLocation, pub.zip).mileage;
 
       if (
-        primary < bestPrimary ||
-        (primary === bestPrimary && distance < bestDistance)
+        rank < bestRank ||
+        (rank === bestRank && primary < bestPrimary) ||
+        (rank === bestRank &&
+          primary === bestPrimary &&
+          distance < bestDistance)
       ) {
+        bestRank = rank;
         bestPrimary = primary;
         bestDistance = distance;
         bestIndex = index;
@@ -205,18 +209,34 @@ export async function planVisits(
     const dayVisits: Pub[] = [];
     let lastLocation = hasHome ? homeAddress : "";
 
-    for (const bucket of bucketOrder) {
-      while (dayVisits.length < visitsPerDay) {
-        const selection = pickNextFromBucket(bucket, lastLocation);
-        if (!selection) break;
+    const seedSelection = pickBestPub(remainingPubs, lastLocation);
+    if (!seedSelection) break;
 
-        dayVisits.push(selection.pub);
-        const pubKey = selection.pub.uuid || `${selection.pub.fileId}-${selection.pub.pub}-${selection.pub.zip}`;
-        scheduledPubs.add(pubKey);
-        lastLocation = selection.pub.zip;
-        bucketPubs[bucket].splice(selection.index, 1);
-      }
-      if (dayVisits.length >= visitsPerDay) break;
+    const seedPub = seedSelection.pub;
+    const dayLocalityKey = getLocalityKey(seedPub);
+    const seedKey = seedPub.uuid || `${seedPub.fileId}-${seedPub.pub}-${seedPub.zip}`;
+    dayVisits.push(seedPub);
+    scheduledPubs.add(seedKey);
+    lastLocation = seedPub.zip;
+    remainingPubs.splice(seedSelection.index, 1);
+
+    while (dayVisits.length < visitsPerDay) {
+      const localityCandidates = remainingPubs.filter(
+        (pub) => getLocalityKey(pub) === dayLocalityKey
+      );
+      const nextSelection = pickBestPub(localityCandidates, lastLocation);
+      if (!nextSelection) break;
+
+      const selectedPub = nextSelection.pub;
+      const selectedKey =
+        selectedPub.uuid || `${selectedPub.fileId}-${selectedPub.pub}-${selectedPub.zip}`;
+      dayVisits.push(selectedPub);
+      scheduledPubs.add(selectedKey);
+      lastLocation = selectedPub.zip;
+      remainingPubs.splice(
+        remainingPubs.findIndex((p) => p === selectedPub),
+        1
+      );
     }
 
     if (dayVisits.length === 0) break;
