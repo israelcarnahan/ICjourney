@@ -1,0 +1,33 @@
+{
+  "defaults": {
+    "visitsPerDay": 5,
+    "businessDays": 5,
+    "startDate": "2026-01-05",
+    "testDir": "testFiles"
+  },
+  "files": {
+    "deadline test.xlsx": {
+      "schedulingMode": "deadline",
+      "deadline": "2026-01-16"
+    },
+    "followupBy test.xlsx": {
+      "schedulingMode": "followup",
+      "followUpDays": 7
+    },
+    "p1 test.xlsx": {
+      "schedulingMode": "priority",
+      "priorityLevel": 1
+    },
+    "p2 test.xlsx": {
+      "schedulingMode": "priority",
+      "priorityLevel": 2
+    },
+    "P3 test.xlsx": {
+      "schedulingMode": "priority",
+      "priorityLevel": 3
+    },
+    "masterfile test.xlsx": {
+      "schedulingMode": null
+    }
+  }
+}
