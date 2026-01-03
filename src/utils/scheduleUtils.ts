@@ -85,7 +85,8 @@ export async function planVisits(
   businessDays: number,
   homeAddress: string,
   visitsPerDay: number,
-  searchRadius: number = 15
+  searchRadius: number = 15,
+  debugCollector?: (entry: Record<string, unknown>) => void
 ): Promise<DaySchedule[]> {
   // Invalid postcodes are excluded from scheduling until fixed by the user.
   const eligiblePubs = pubs.filter((pub) => pub.postcodeMeta?.status !== "INVALID");
@@ -203,6 +204,8 @@ export async function planVisits(
     pressureRatio: number;
     pressuredBy: Date | null;
     infeasibleBy: Date | null;
+    requiredAtPressure: number;
+    capacityAtPressure: number;
   };
 
   const getLocalityDeadlinePressure = (
@@ -215,6 +218,24 @@ export async function planVisits(
       remainingScheduleDays > 0
         ? addBusinessDays(date, remainingScheduleDays - 1)
         : date;
+    const remainingByLocality = pubs.reduce<Record<string, number>>(
+      (acc, pub) => {
+        const key = getLocalityKey(pub);
+        acc[key] = (acc[key] ?? 0) + 1;
+        return acc;
+      },
+      {}
+    );
+    const totalRemaining = Object.values(remainingByLocality).reduce(
+      (acc, n) => acc + n,
+      0
+    );
+    const localityShare: Record<string, number> = {};
+    Object.entries(remainingByLocality).forEach(([key, count]) => {
+      const rawShare = totalRemaining > 0 ? count / totalRemaining : 0;
+      localityShare[key] = Math.sqrt(rawShare);
+    });
+
     const byLocality = new Map<string, Pub[]>();
     pubs.forEach((pub) => {
       const key = getLocalityKey(pub);
@@ -235,6 +256,8 @@ export async function planVisits(
           pressureRatio: 0,
           pressuredBy: null,
           infeasibleBy: null,
+          requiredAtPressure: 0,
+          capacityAtPressure: 0,
         });
         return;
       }
@@ -247,6 +270,8 @@ export async function planVisits(
 
       let maxRatio = 0;
       let pressuredBy: Date | null = null;
+      let requiredAtPressure = 0;
+      let capacityAtPressure = 0;
       let infeasibleBy: Date | null = null;
 
       uniqueDeadlines.forEach((deadlineDate) => {
@@ -260,13 +285,15 @@ export async function planVisits(
             ? deadlineDate
             : endDate;
         const capacity =
-          countBusinessDaysInclusive(date, capEnd) * slotsPerDay;
+          countBusinessDaysInclusive(date, capEnd) *
+          slotsPerDay *
+          (localityShare[locality] ?? 0);
         const ratio = required / Math.max(1, capacity);
         if (ratio > maxRatio) {
           maxRatio = ratio;
-        }
-        if (ratio >= 0.8 && !pressuredBy) {
           pressuredBy = deadlineDate;
+          requiredAtPressure = required;
+          capacityAtPressure = capacity;
         }
         if (required > capacity && !infeasibleBy) {
           infeasibleBy = deadlineDate;
@@ -275,8 +302,10 @@ export async function planVisits(
 
       out.set(locality, {
         pressureRatio: maxRatio,
-        pressuredBy,
+        pressuredBy: maxRatio >= 0.8 ? pressuredBy : null,
         infeasibleBy,
+        requiredAtPressure,
+        capacityAtPressure,
       });
     });
 
@@ -285,16 +314,28 @@ export async function planVisits(
 
   const selectPressuredLocality = (
     pressures: Map<string, PressureInfo>
-  ): { locality: string; pressuredBy: Date | null } | null => {
+  ): {
+    locality: string;
+    pressuredBy: Date | null;
+    pressureRatio: number;
+    requiredAtPressure: number;
+    capacityAtPressure: number;
+  } | null => {
     let best: { locality: string; pressuredBy: Date | null; ratio: number } | null = null;
+    let bestRequired = 0;
+    let bestCapacity = 0;
     pressures.forEach((info, locality) => {
       if (!info.pressuredBy) return;
       if (!best) {
         best = { locality, pressuredBy: info.pressuredBy, ratio: info.pressureRatio };
+        bestRequired = info.requiredAtPressure;
+        bestCapacity = info.capacityAtPressure;
         return;
       }
       if (info.pressureRatio > best.ratio) {
         best = { locality, pressuredBy: info.pressuredBy, ratio: info.pressureRatio };
+        bestRequired = info.requiredAtPressure;
+        bestCapacity = info.capacityAtPressure;
         return;
       }
       if (
@@ -304,6 +345,20 @@ export async function planVisits(
         normalizeDateOnly(info.pressuredBy) < normalizeDateOnly(best.pressuredBy)
       ) {
         best = { locality, pressuredBy: info.pressuredBy, ratio: info.pressureRatio };
+        bestRequired = info.requiredAtPressure;
+        bestCapacity = info.capacityAtPressure;
+        return;
+      }
+      if (
+        info.pressureRatio === best.ratio &&
+        info.pressuredBy &&
+        best.pressuredBy &&
+        normalizeDateOnly(info.pressuredBy) === normalizeDateOnly(best.pressuredBy) &&
+        info.requiredAtPressure > bestRequired
+      ) {
+        best = { locality, pressuredBy: info.pressuredBy, ratio: info.pressureRatio };
+        bestRequired = info.requiredAtPressure;
+        bestCapacity = info.capacityAtPressure;
       }
     });
     const resolved = best as {
@@ -312,7 +367,85 @@ export async function planVisits(
       ratio: number;
     } | null;
     if (!resolved) return null;
-    return { locality: resolved.locality, pressuredBy: resolved.pressuredBy };
+    return {
+      locality: resolved.locality,
+      pressuredBy: resolved.pressuredBy,
+      pressureRatio: resolved.ratio,
+      requiredAtPressure: bestRequired,
+      capacityAtPressure: bestCapacity,
+    };
+  };
+
+  const buildDeadlineRatioLookup = (
+    date: Date,
+    pubs: Pub[],
+    slotsPerDay: number,
+    remainingScheduleDays: number
+  ): Map<string, Map<number, number>> => {
+    const endDate =
+      remainingScheduleDays > 0
+        ? addBusinessDays(date, remainingScheduleDays - 1)
+        : date;
+    const remainingByLocality = pubs.reduce<Record<string, number>>(
+      (acc, pub) => {
+        const key = getLocalityKey(pub);
+        acc[key] = (acc[key] ?? 0) + 1;
+        return acc;
+      },
+      {}
+    );
+    const totalRemaining = Object.values(remainingByLocality).reduce(
+      (acc, n) => acc + n,
+      0
+    );
+    const localityShare: Record<string, number> = {};
+    Object.entries(remainingByLocality).forEach(([key, count]) => {
+      const rawShare = totalRemaining > 0 ? count / totalRemaining : 0;
+      localityShare[key] = Math.sqrt(rawShare);
+    });
+
+    const byLocality = new Map<string, Pub[]>();
+    pubs.forEach((pub) => {
+      const key = getLocalityKey(pub);
+      const list = byLocality.get(key) ?? [];
+      list.push(pub);
+      byLocality.set(key, list);
+    });
+
+    const out = new Map<string, Map<number, number>>();
+    byLocality.forEach((localPubs, locality) => {
+      const deadlines = localPubs
+        .map(getDeadlineDate)
+        .filter((d): d is Date => Boolean(d))
+        .filter((d) => normalizeDateOnly(d) >= normalizeDateOnly(date))
+        .sort((a, b) => normalizeDateOnly(a) - normalizeDateOnly(b));
+      if (deadlines.length === 0) return;
+
+      const uniqueDeadlines = Array.from(
+        new Set(deadlines.map((d) => normalizeDateOnly(d)))
+      );
+      const ratioMap = new Map<number, number>();
+      uniqueDeadlines.forEach((value) => {
+        const deadlineDate = new Date(value);
+        const required = localPubs.filter((pub) => {
+          const d = getDeadlineDate(pub);
+          if (!d) return false;
+          return normalizeDateOnly(d) <= normalizeDateOnly(deadlineDate);
+        }).length;
+        const capEnd =
+          normalizeDateOnly(deadlineDate) < normalizeDateOnly(endDate)
+            ? deadlineDate
+            : endDate;
+        const capacity =
+          countBusinessDaysInclusive(date, capEnd) *
+          slotsPerDay *
+          (localityShare[locality] ?? 0);
+        const ratio = required / Math.max(1, capacity);
+        ratioMap.set(value, ratio);
+      });
+      out.set(locality, ratioMap);
+    });
+    return out;
   };
 
   const getBucketRank = (
@@ -333,18 +466,20 @@ export async function planVisits(
     return Math.max(0, days - 1);
   };
 
+  const DEADLINE_URGENCY_START = 0.5;
+
   const pickBestPub = (
     candidates: Pub[],
     lastLocation: string,
     currentDate: Date,
-    pressureDeadlineBy: Date | null
+    pressureDeadlineBy: Date | null,
+    deadlineRatioLookup: Map<string, Map<number, number>>
   ): { pub: Pub; index: number } | null => {
     let bestIndex = -1;
     let bestRank = Infinity;
     let bestPrimary = Infinity;
     let bestDistance = Infinity;
-    let bestUrgent = false;
-    let bestDaysUntil = Infinity;
+    let bestUrgency = 0;
 
     candidates.forEach((pub, index) => {
       const pubKey = pub.uuid || `${pub.fileId}-${pub.pub}-${pub.zip}`;
@@ -352,9 +487,13 @@ export async function planVisits(
 
       const bucket = getBucket(pub);
       const deadlineDate = getDeadlineDate(pub);
-      const daysUntilDue =
-        deadlineDate != null ? getBusinessDaysUntil(currentDate, deadlineDate) : Infinity;
-      const isUrgentDeadline = bucket === "deadline" && daysUntilDue <= 2;
+      let urgencyRatio = 0;
+      if (bucket === "deadline" && deadlineDate) {
+        const locality = getLocalityKey(pub);
+        const ratioMap = deadlineRatioLookup.get(locality);
+        const ratioKey = ratioMap ? ratioMap.get(normalizeDateOnly(deadlineDate)) : undefined;
+        urgencyRatio = ratioKey != null && ratioKey >= DEADLINE_URGENCY_START ? ratioKey : 0;
+      }
       const forceDeadlineFirst =
         bucket === "deadline" &&
         pressureDeadlineBy != null &&
@@ -367,29 +506,16 @@ export async function planVisits(
       const primary = getPrimaryValue(bucket, pub);
       const distance = calculateDistance(lastLocation, pub.zip).mileage;
 
-      if (isUrgentDeadline !== bestUrgent) {
-        if (isUrgentDeadline) {
-          bestUrgent = true;
-          bestDaysUntil = daysUntilDue;
-          bestRank = rank;
-          bestPrimary = primary;
-          bestDistance = distance;
-          bestIndex = index;
-        }
-        return;
-      }
-
       if (
-        (bestUrgent && daysUntilDue < bestDaysUntil) ||
-        (bestUrgent && daysUntilDue === bestDaysUntil && rank < bestRank) ||
+        urgencyRatio > bestUrgency ||
+        (urgencyRatio === bestUrgency && rank < bestRank) ||
         rank < bestRank ||
         (rank === bestRank && primary < bestPrimary) ||
         (rank === bestRank &&
           primary === bestPrimary &&
           distance < bestDistance)
       ) {
-        bestUrgent = isUrgentDeadline;
-        bestDaysUntil = daysUntilDue;
+        bestUrgency = urgencyRatio;
         bestRank = rank;
         bestPrimary = primary;
         bestDistance = distance;
@@ -414,6 +540,12 @@ export async function planVisits(
       visitsPerDay,
       remainingDays
     );
+    const deadlineRatioLookup = buildDeadlineRatioLookup(
+      currentDate,
+      remainingPubs,
+      visitsPerDay,
+      remainingDays
+    );
     const pressuredLocality = selectPressuredLocality(pressureMap);
     const pressuredSeeds = pressuredLocality
       ? eligibleSeeds.filter(
@@ -426,7 +558,8 @@ export async function planVisits(
       seedCandidates,
       lastLocation,
       currentDate,
-      pressuredLocality?.pressuredBy ?? null
+      pressuredLocality?.pressuredBy ?? null,
+      deadlineRatioLookup
     );
     if (!seedSelection) break;
 
@@ -453,7 +586,8 @@ export async function planVisits(
         localityCandidates,
         lastLocation,
         currentDate,
-        pressureDeadlineBy
+        pressureDeadlineBy,
+        deadlineRatioLookup
       );
       if (!nextSelection) break;
 
@@ -470,6 +604,44 @@ export async function planVisits(
     }
 
     if (dayVisits.length === 0) break;
+
+    if (debugCollector) {
+      const pressureInfo = pressureMap.get(dayLocalityKey);
+      const deadlineByLocality = dayVisits.reduce<Record<string, number>>(
+        (acc, visit) => {
+          if (getDeadlineDate(visit)) {
+            const loc = getLocalityKey(visit);
+            acc[loc] = (acc[loc] ?? 0) + 1;
+          }
+          return acc;
+        },
+        {}
+      );
+      const daysUntilDueDist = dayVisits.reduce<Record<string, number>>(
+        (acc, visit) => {
+          const deadlineDate = getDeadlineDate(visit);
+          if (!deadlineDate) return acc;
+          const daysUntil = getBusinessDaysUntil(currentDate, deadlineDate);
+          const key = String(daysUntil);
+          acc[key] = (acc[key] ?? 0) + 1;
+          return acc;
+        },
+        {}
+      );
+      debugCollector({
+        date: format(currentDate, "yyyy-MM-dd"),
+        seedLocality: dayLocalityKey,
+        seedReason: pressuredSeeds.length > 0 ? "pressure-override" : "normal",
+        pressureRatio: pressureInfo?.pressureRatio ?? 0,
+        pressureDueBy: pressureInfo?.pressuredBy
+          ? format(pressureInfo.pressuredBy, "yyyy-MM-dd")
+          : null,
+        pressureRequired: pressureInfo?.requiredAtPressure ?? 0,
+        pressureCapacity: pressureInfo?.capacityAtPressure ?? 0,
+        deadlineScheduledByLocality: deadlineByLocality,
+        daysUntilDueDistribution: daysUntilDueDist,
+      });
+    }
 
     // Calculate metrics for the day
     let totalMileage = 0;

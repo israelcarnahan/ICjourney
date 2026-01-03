@@ -1,14 +1,14 @@
 {
   "defaults": {
     "visitsPerDay": 5,
-    "businessDays": 5,
-    "startDate": "2026-01-05",
+    "businessDays": 18,
+    "startDate": "2026-01-02",
     "testDir": "testFiles"
   },
   "files": {
     "deadline test.xlsx": {
       "schedulingMode": "deadline",
-      "deadline": "2026-01-16"
+      "deadline": "2026-01-15"
     },
     "followupBy test.xlsx": {
       "schedulingMode": "followup",

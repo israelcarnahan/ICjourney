@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
     "audit:dates": "node scripts/audit-dates.mjs",
+    "schedule:run": "node node_modules/tsx/dist/cli.mjs scripts/run-schedule.mjs",
     "prepush": "npm run typecheck"
   },
   "dependencies": {
