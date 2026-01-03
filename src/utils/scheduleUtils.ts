@@ -466,8 +466,6 @@ export async function planVisits(
     return Math.max(0, days - 1);
   };
 
-  const DEADLINE_URGENCY_START = 0.5;
-
   const pickBestPub = (
     candidates: Pub[],
     lastLocation: string,
@@ -492,7 +490,7 @@ export async function planVisits(
         const locality = getLocalityKey(pub);
         const ratioMap = deadlineRatioLookup.get(locality);
         const ratioKey = ratioMap ? ratioMap.get(normalizeDateOnly(deadlineDate)) : undefined;
-        urgencyRatio = ratioKey != null && ratioKey >= DEADLINE_URGENCY_START ? ratioKey : 0;
+        urgencyRatio = ratioKey ?? 0;
       }
       const forceDeadlineFirst =
         bucket === "deadline" &&
