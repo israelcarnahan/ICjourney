@@ -469,7 +469,6 @@ export async function planVisits(
   const pickBestPub = (
     candidates: Pub[],
     lastLocation: string,
-    currentDate: Date,
     pressureDeadlineBy: Date | null,
     deadlineRatioLookup: Map<string, Map<number, number>>
   ): { pub: Pub; index: number } | null => {
@@ -555,7 +554,6 @@ export async function planVisits(
     const seedSelection = pickBestPub(
       seedCandidates,
       lastLocation,
-      currentDate,
       pressuredLocality?.pressuredBy ?? null,
       deadlineRatioLookup
     );
@@ -583,7 +581,6 @@ export async function planVisits(
       const nextSelection = pickBestPub(
         localityCandidates,
         lastLocation,
-        currentDate,
         pressureDeadlineBy,
         deadlineRatioLookup
       );
