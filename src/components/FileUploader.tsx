@@ -3,6 +3,7 @@ import { useDropzone } from "react-dropzone";
 import * as XLSX from "xlsx-js-style";
 import { Upload, AlertCircle, Info } from "lucide-react";
 import clsx from "clsx";
+import * as Dialog from "@radix-ui/react-dialog";
 
 import type { ListType, Pub } from "../context/PubDataContext";
 import { usePubData } from "../context/PubDataContext";
@@ -94,6 +95,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   const [pendingFile, setPendingFile] = useState<any>(null);
   const [hasPendingDedup, setHasPendingDedup] = useState(false);
   const [pendingRowIndices, setPendingRowIndices] = useState<Record<string, number>>({});
+  const [showFollowupBlocked, setShowFollowupBlocked] = useState(false);
 
   // reflect prop
   useEffect(() => setIsFileLoaded(isLoaded), [isLoaded]);
@@ -261,6 +263,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     meta: PendingImportMeta
   ) => {
     const rows = processed.rows;
+
+    if (Number.isFinite(meta.followUpDays) && (meta.followUpDays as number) > 0) {
+      setError("Follow-up scheduling isn't supported yet. Use Priority or Deadline lists for now.");
+      setShowFollowupBlocked(true);
+      return;
+    }
 
     if (meta.fileType === "masterhouse") {
       const fileId = crypto.randomUUID();
@@ -744,6 +752,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       return;
     }
 
+    if (Number.isFinite(followUpDays) && (followUpDays as number) > 0) {
+      setShowFollowupBlocked(true);
+      return;
+    }
+
     const schedulingMode: "deadline" | "priority" | "followup" =
       deadline ? "deadline" :
       (Number.isFinite(followUpDays) && (followUpDays as number) > 0 ? "followup" : "priority");
@@ -866,7 +879,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                   <p>• Map columns first (wizard)</p>
                   <p>• Set priority levels (1–3)</p>
                   <p>• Add target dates</p>
-                  <p>• Configure follow-ups</p>
+                  <p>• Configure list intent</p>
                 </div>
               )}
               <p className="text-[10px] text-eggplant-300">
@@ -906,6 +919,25 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         currentFileName={currentFileName}
         usedPriorities={usedPriorities}
       />
+
+      <Dialog.Root open={showFollowupBlocked} onOpenChange={setShowFollowupBlocked}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-gradient-to-b from-eggplant-900/90 to-dark-900/90 border border-eggplant-700/60 rounded-2xl shadow-xl p-5">
+            <Dialog.Title className="text-lg font-semibold text-eggplant-100">
+              Follow-up scheduling paused
+            </Dialog.Title>
+            <Dialog.Description className="mt-2 text-sm text-eggplant-200">
+              Follow-up scheduling isn't supported yet. Use Priority or Deadline lists for now.
+            </Dialog.Description>
+            <div className="mt-4 flex justify-end">
+              <Dialog.Close className="px-4 py-2 rounded-lg text-eggplant-100 hover:bg-eggplant-800/50 transition-colors">
+                OK
+              </Dialog.Close>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {/* Postcode Issues Summary Card */}
       {hasPendingPostcodeReview && pendingImportMeta && (
@@ -1014,3 +1046,5 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 };
 
 export default FileUploader;
+
+

@@ -128,6 +128,7 @@ export async function planVisits(
     if (effective?.primaryMode === "priority") return "priority";
 
     const deadline = effective?.deadline ?? pub.deadline;
+    // Follow-up-by-date is deferred; followUpDays stays a scalar driver for now.
     const followUpDays = effective?.followUpDays ?? pub.followUpDays;
     const priorityLevel = effective?.priorityLevel ?? pub.priorityLevel;
 
