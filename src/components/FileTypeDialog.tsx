@@ -29,7 +29,7 @@ interface FileTypeDialogProps {
   isEditing?: boolean;
 }
 
-type ScheduleMode = 'priority' | 'deadline' | 'followup';
+type ScheduleMode = 'priority' | 'deadline';
 const FOLLOWUP_DISABLED_MESSAGE =
   "Coming later - requires visit history/CRM import to compute per-account follow-up due dates.";
 const FOLLOWUP_BLOCKED_DETAIL =
@@ -57,9 +57,6 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
   const [deadline, setDeadline] = useState<string>(
     initialValues?.deadline || ''
   );
-  const [followUpDays, setFollowUpDays] = useState<number | ''>(
-    initialValues?.followUpDays || ''
-  );
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showFollowupBlocked, setShowFollowupBlocked] = useState(false);
   const [showFollowupNotice, setShowFollowupNotice] = useState(false);
@@ -81,7 +78,6 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
       setMode('priority');
       setSelectedPriority(null);
       setDeadline('');
-      setFollowUpDays('');
       setShowAdvanced(false);
       setShowFollowupNotice(false);
     }
@@ -89,10 +85,7 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
 
   // Auto-infer list type based on mode
   useEffect(() => {
-    const inferredType: ListType =
-      mode === 'deadline' ? 'hitlist'
-      : mode === 'followup' ? 'wins'
-      : 'hitlist';
+    const inferredType: ListType = 'hitlist';
     
     setSelectedType(inferredType);
   }, [mode]);
@@ -101,13 +94,8 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
   useEffect(() => {
     if (mode === 'priority') {
       setDeadline('');
-      setFollowUpDays('');
     } else if (mode === 'deadline') {
       setSelectedPriority(null);
-      setFollowUpDays('');
-    } else if (mode === 'followup') {
-      setSelectedPriority(null);
-      setDeadline('');
     }
   }, [mode]);
 
@@ -120,22 +108,14 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
       return;
     }
 
-    if (mode === "followup") {
-      setShowFollowupBlocked(true);
-      return;
-    }
-
     // Auto-infer type based on mode
-    const inferredType: ListType =
-      mode === 'deadline' ? 'hitlist'
-      : mode === 'followup' ? 'wins'
-      : 'hitlist';
+    const inferredType: ListType = 'hitlist';
 
     onSubmit(
       showAdvanced ? selectedType : inferredType,
       mode === 'deadline' ? (deadline || undefined) : undefined,
       mode === 'priority' ? (typeof selectedPriority === 'number' ? selectedPriority : undefined) : undefined,
-      mode === 'followup' ? (Number.isFinite(followUpDays) && (followUpDays as number) > 0 ? (followUpDays as number) : undefined) : undefined
+      undefined
     );
   };
 
@@ -236,7 +216,10 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
                   <Tooltip.Provider>
                     <Tooltip.Root>
                       <Tooltip.Trigger asChild>
-                        <div className="flex items-center space-x-2 opacity-60 cursor-not-allowed">
+                        <div
+                          className="flex items-center space-x-2 opacity-60 cursor-not-allowed"
+                          onClick={() => setShowFollowupBlocked(true)}
+                        >
                           <RadioGroup.Item
                             value="followup"
                             id="mode-followup"
@@ -310,32 +293,6 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
                   className="w-full px-3 py-2 bg-eggplant-900/40 border border-eggplant-700 text-eggplant-100 text-sm focus:ring-neon-purple focus:border-neon-purple rounded-lg"
                   data-testid="filetype-deadline"
                 />
-              </div>
-            )}
-
-            {/* Follow-up Days Section - Only show when mode is followup */}
-            {mode === 'followup' && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-eggplant-100 mb-2">
-                  Follow-up Timeline (Days)
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={followUpDays}
-                    onChange={(e) =>
-                      setFollowUpDays(
-                        e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1)
-                      )
-                    }
-                    className="w-20 px-3 py-2 bg-eggplant-900/40 border border-eggplant-700 text-eggplant-100 text-sm focus:ring-neon-purple focus:border-neon-purple rounded-lg"
-                    min="1"
-                    data-testid="filetype-followup"
-                  />
-                  <span className="text-sm text-eggplant-200">
-                    days after installation
-                  </span>
-                </div>
               </div>
             )}
 
