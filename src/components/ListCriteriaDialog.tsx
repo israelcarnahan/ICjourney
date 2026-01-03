@@ -10,6 +10,10 @@ import { useState, useCallback } from "react";
 import type { ListType } from "../context/PubDataContext";
 
 type ScheduleType = "date" | "priority";
+const FOLLOWUP_DISABLED_MESSAGE =
+  "Coming later - requires visit history/CRM import to compute per-account follow-up due dates.";
+const FOLLOWUP_BLOCKED_DETAIL =
+  "Follow-up scheduling isn't supported yet. Use Priority or Deadline lists for now.";
 
 interface ListCriteriaDialogProps {
   isOpen: boolean;
@@ -101,11 +105,8 @@ export function ListCriteriaDialog({
 
     try {
       if (listType === "wins") {
-        if (!followUpDays || followUpDays < 1 || followUpDays > 90) {
-          setError("Please enter a valid follow-up period (1-90 days)");
-          return;
-        }
-        onSubmit(undefined, undefined, followUpDays);
+        setError(FOLLOWUP_BLOCKED_DETAIL);
+        return;
       } else if (listType === "hitlist") {
         if (scheduleType === "date") {
           if (!deadline) {
@@ -157,6 +158,9 @@ export function ListCriteriaDialog({
               <h3 className="text-lg font-medium text-eggplant-100">
                 Follow-up Period
               </h3>
+              <div className="rounded-lg border border-eggplant-700/60 bg-eggplant-800/40 p-3 text-xs text-eggplant-200">
+                {FOLLOWUP_DISABLED_MESSAGE}
+              </div>
               <div className="flex items-center space-x-4">
                 <input
                   type="number"
@@ -166,6 +170,7 @@ export function ListCriteriaDialog({
                   }
                   min="1"
                   max="90"
+                  disabled
                   className="w-20 px-3 py-2 rounded bg-eggplant-800 border border-eggplant-700 text-eggplant-100 focus:outline-none focus:border-neon-pink"
                 />
                 <span className="text-eggplant-200">days after last visit</span>
@@ -323,7 +328,7 @@ export function ListCriteriaDialog({
                 (listType === "hitlist" &&
                   ((scheduleType === "date" && !deadline) ||
                     (scheduleType === "priority" && !priorityLevel))) ||
-                (listType === "wins" && !followUpDays)
+                listType === "wins"
               }
             >
               Save Settings
@@ -334,3 +339,4 @@ export function ListCriteriaDialog({
     </Dialog.Root>
   );
 }
+

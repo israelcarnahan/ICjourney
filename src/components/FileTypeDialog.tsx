@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { AlertTriangle, X, ChevronDown, ChevronUp } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as RadioGroup from "@radix-ui/react-radio-group";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import clsx from "clsx";
 import { ListType } from "../context/PubDataContext";
 
@@ -28,7 +29,11 @@ interface FileTypeDialogProps {
   isEditing?: boolean;
 }
 
-type ScheduleMode = 'priority' | 'deadline' | 'followup';
+type ScheduleMode = 'priority' | 'deadline';
+const FOLLOWUP_DISABLED_MESSAGE =
+  "Coming later - requires visit history/CRM import to compute per-account follow-up due dates.";
+const FOLLOWUP_BLOCKED_DETAIL =
+  "Follow-up scheduling isn't supported yet. Use Priority or Deadline lists for now.";
 
 const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
   isOpen,
@@ -52,10 +57,9 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
   const [deadline, setDeadline] = useState<string>(
     initialValues?.deadline || ''
   );
-  const [followUpDays, setFollowUpDays] = useState<number | ''>(
-    initialValues?.followUpDays || ''
-  );
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showFollowupBlocked, setShowFollowupBlocked] = useState(false);
+  const [showFollowupNotice, setShowFollowupNotice] = useState(false);
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -64,7 +68,8 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
       if (initialValues?.deadline) {
         setMode('deadline');
       } else if (initialValues?.followUpDays) {
-        setMode('followup');
+        setMode('priority');
+        setShowFollowupNotice(true);
       } else {
         setMode('priority');
       }
@@ -73,17 +78,14 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
       setMode('priority');
       setSelectedPriority(null);
       setDeadline('');
-      setFollowUpDays('');
       setShowAdvanced(false);
+      setShowFollowupNotice(false);
     }
   }, [isOpen, initialValues]);
 
   // Auto-infer list type based on mode
   useEffect(() => {
-    const inferredType: ListType =
-      mode === 'deadline' ? 'hitlist'
-      : mode === 'followup' ? 'wins'
-      : 'hitlist';
+    const inferredType: ListType = 'hitlist';
     
     setSelectedType(inferredType);
   }, [mode]);
@@ -92,13 +94,8 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
   useEffect(() => {
     if (mode === 'priority') {
       setDeadline('');
-      setFollowUpDays('');
     } else if (mode === 'deadline') {
       setSelectedPriority(null);
-      setFollowUpDays('');
-    } else if (mode === 'followup') {
-      setSelectedPriority(null);
-      setDeadline('');
     }
   }, [mode]);
 
@@ -112,16 +109,13 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
     }
 
     // Auto-infer type based on mode
-    const inferredType: ListType =
-      mode === 'deadline' ? 'hitlist'
-      : mode === 'followup' ? 'wins'
-      : 'hitlist';
+    const inferredType: ListType = 'hitlist';
 
     onSubmit(
       showAdvanced ? selectedType : inferredType,
       mode === 'deadline' ? (deadline || undefined) : undefined,
       mode === 'priority' ? (typeof selectedPriority === 'number' ? selectedPriority : undefined) : undefined,
-      mode === 'followup' ? (Number.isFinite(followUpDays) && (followUpDays as number) > 0 ? (followUpDays as number) : undefined) : undefined
+      undefined
     );
   };
 
@@ -173,6 +167,11 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
               <p className="text-sm">{error}</p>
             </div>
           )}
+          {showFollowupNotice && (
+            <div className="mb-4 p-3 rounded-lg bg-eggplant-800/40 border border-eggplant-700/50 text-eggplant-200">
+              <p className="text-sm">{FOLLOWUP_BLOCKED_DETAIL}</p>
+            </div>
+          )}
 
           <div className="mb-4">
             <p className="text-sm text-eggplant-200 mb-4">
@@ -214,16 +213,37 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
                   </label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroup.Item
-                    value="followup"
-                    id="mode-followup"
-                    className="w-4 h-4 rounded-full border border-eggplant-700 bg-eggplant-900/40 data-[state=checked]:border-neon-purple data-[state=checked]:bg-neon-purple/20"
-                  >
-                    <RadioGroup.Indicator className="flex items-center justify-center w-full h-full relative after:content-[''] after:block after:w-2 after:h-2 after:rounded-full after:bg-neon-purple" />
-                  </RadioGroup.Item>
-                  <label htmlFor="mode-followup" className="text-sm text-eggplant-200 cursor-pointer">
-                    Follow-up Timeline
-                  </label>
+                  <Tooltip.Provider>
+                    <Tooltip.Root>
+                      <Tooltip.Trigger asChild>
+                        <div
+                          className="flex items-center space-x-2 opacity-60 cursor-not-allowed"
+                          onClick={() => setShowFollowupBlocked(true)}
+                        >
+                          <RadioGroup.Item
+                            value="followup"
+                            id="mode-followup"
+                            disabled
+                            className="w-4 h-4 rounded-full border border-eggplant-700 bg-eggplant-900/40 data-[state=checked]:border-neon-purple data-[state=checked]:bg-neon-purple/20"
+                          >
+                            <RadioGroup.Indicator className="flex items-center justify-center w-full h-full relative after:content-[''] after:block after:w-2 after:h-2 after:rounded-full after:bg-neon-purple" />
+                          </RadioGroup.Item>
+                          <label htmlFor="mode-followup" className="text-sm text-eggplant-200 cursor-not-allowed">
+                            Follow-up Timeline
+                          </label>
+                        </div>
+                      </Tooltip.Trigger>
+                      <Tooltip.Portal>
+                        <Tooltip.Content
+                          className="rounded-md bg-dark-800/90 px-3 py-2 text-xs text-eggplant-100 shadow-xl"
+                          sideOffset={6}
+                        >
+                          {FOLLOWUP_DISABLED_MESSAGE}
+                          <Tooltip.Arrow className="fill-dark-800/90" />
+                        </Tooltip.Content>
+                      </Tooltip.Portal>
+                    </Tooltip.Root>
+                  </Tooltip.Provider>
                 </div>
               </RadioGroup.Root>
             </div>
@@ -276,32 +296,6 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
               </div>
             )}
 
-            {/* Follow-up Days Section - Only show when mode is followup */}
-            {mode === 'followup' && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-eggplant-100 mb-2">
-                  Follow-up Timeline (Days)
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={followUpDays}
-                    onChange={(e) =>
-                      setFollowUpDays(
-                        e.target.value === '' ? '' : Math.max(1, parseInt(e.target.value) || 1)
-                      )
-                    }
-                    className="w-20 px-3 py-2 bg-eggplant-900/40 border border-eggplant-700 text-eggplant-100 text-sm focus:ring-neon-purple focus:border-neon-purple rounded-lg"
-                    min="1"
-                    data-testid="filetype-followup"
-                  />
-                  <span className="text-sm text-eggplant-200">
-                    days after installation
-                  </span>
-                </div>
-              </div>
-            )}
-
             {/* Advanced Toggle */}
             <div className="mb-4">
               <button
@@ -348,8 +342,27 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
           </div>
         </Dialog.Content>
       </Dialog.Portal>
+      <Dialog.Root open={showFollowupBlocked} onOpenChange={setShowFollowupBlocked}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-gradient-to-b from-eggplant-900/90 to-dark-900/90 border border-eggplant-700/60 rounded-2xl shadow-xl p-5">
+            <Dialog.Title className="text-lg font-semibold text-eggplant-100">
+              Follow-up scheduling paused
+            </Dialog.Title>
+            <Dialog.Description className="mt-2 text-sm text-eggplant-200">
+              {FOLLOWUP_BLOCKED_DETAIL}
+            </Dialog.Description>
+            <div className="mt-4 flex justify-end">
+              <Dialog.Close className="px-4 py-2 rounded-lg text-eggplant-100 hover:bg-eggplant-800/50 transition-colors">
+                OK
+              </Dialog.Close>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </Dialog.Root>
   );
 };
 
 export default FileTypeDialog;
+

@@ -1,6 +1,7 @@
 import React from "react";
 import { Plus, Star, Target, AlertTriangle, Clock, X } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import { devLog } from "../utils/devLog";
 import * as Switch from "@radix-ui/react-switch";
 import clsx from "clsx";
@@ -21,6 +22,11 @@ interface FileConfig {
   priorityLevel?: number;
   followUpDays?: number;
 }
+
+const FOLLOWUP_DISABLED_MESSAGE =
+  "Coming later - requires visit history/CRM import to compute per-account follow-up due dates.";
+const FOLLOWUP_BLOCKED_DETAIL =
+  "Follow-up scheduling isn't supported yet. Use Priority or Deadline lists for now.";
 
 const ENHANCEMENT_OPTIONS = [
   {
@@ -599,32 +605,67 @@ const EnhancementSelector: React.FC<EnhancementSelectorProps> = ({
               </div>
             ) : (
               <div className="grid gap-4">
-                {ENHANCEMENT_OPTIONS.map((option) => (
-                  <button
-                    key={option.id}
-                    onClick={() => setSelectedOption(option)}
-                    className={clsx(
-                      "w-full p-4 rounded-lg text-left transition-all",
-                      "border border-transparent hover:border-neon-purple",
-                      "bg-gradient-to-r from-eggplant-800/50 to-dark-800/50",
-                      "hover:from-eggplant-800/70 hover:to-dark-800/70"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={clsx("p-2 rounded-lg", option.color)}>
-                        <option.icon className="h-5 w-5" />
+                {ENHANCEMENT_OPTIONS.map((option) => {
+                  const isFollowupDisabled = option.id === "wins";
+                  const button = (
+                    <button
+                      key={option.id}
+                      onClick={() => {
+                        if (isFollowupDisabled) {
+                          setError(FOLLOWUP_BLOCKED_DETAIL);
+                          return;
+                        }
+                        setSelectedOption(option);
+                      }}
+                      disabled={isFollowupDisabled}
+                      className={clsx(
+                        "w-full p-4 rounded-lg text-left transition-all",
+                        "border border-transparent hover:border-neon-purple",
+                        "bg-gradient-to-r from-eggplant-800/50 to-dark-800/50",
+                        "hover:from-eggplant-800/70 hover:to-dark-800/70",
+                        isFollowupDisabled && "opacity-60 cursor-not-allowed hover:border-transparent"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={clsx("p-2 rounded-lg", option.color)}>
+                          <option.icon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-white">
+                            {option.name}
+                          </h3>
+                          <p className="text-sm text-white/80">
+                            {option.description}
+                          </p>
+                          {isFollowupDisabled && (
+                            <p className="mt-1 text-xs text-eggplant-200">
+                              Coming later
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-medium text-white">
-                          {option.name}
-                        </h3>
-                        <p className="text-sm text-white/80">
-                          {option.description}
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+
+                  if (!isFollowupDisabled) return button;
+
+                  return (
+                    <Tooltip.Provider key={option.id}>
+                      <Tooltip.Root>
+                        <Tooltip.Trigger asChild>{button}</Tooltip.Trigger>
+                        <Tooltip.Portal>
+                          <Tooltip.Content
+                            className="rounded-md bg-dark-800/90 px-3 py-2 text-xs text-eggplant-100 shadow-xl"
+                            sideOffset={6}
+                          >
+                            {FOLLOWUP_DISABLED_MESSAGE}
+                            <Tooltip.Arrow className="fill-dark-800/90" />
+                          </Tooltip.Content>
+                        </Tooltip.Portal>
+                      </Tooltip.Root>
+                    </Tooltip.Provider>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -635,3 +676,4 @@ const EnhancementSelector: React.FC<EnhancementSelectorProps> = ({
 };
 
 export default EnhancementSelector;
+
