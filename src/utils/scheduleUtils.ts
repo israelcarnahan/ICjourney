@@ -120,13 +120,6 @@ export async function planVisits(
   const remainingPubs = [...eligiblePubs];
 
   type BucketKey = "deadline" | "followUp" | "priority" | "master";
-  const bucketRank: Record<BucketKey, number> = {
-    priority: 0,
-    followUp: 1,
-    deadline: 2,
-    master: 3,
-  };
-
   const getBucket = (pub: Pub): BucketKey => {
     // Prefer effectivePlan when available so merged drivers control scheduling.
     const effective = pub.effectivePlan;
