@@ -453,12 +453,19 @@ export async function planVisits(
     forceDeadlineFirst: boolean
   ): number => {
     if (forceDeadlineFirst) {
-      if (bucket === "deadline") return 0;
-      if (bucket === "priority") return 1;
-      if (bucket === "followUp") return 2;
-      return 3;
+      return -1;
     }
-    return bucketRank[bucket];
+    switch (bucket) {
+      case "priority":
+        return 0.0;
+      case "followUp":
+        return 0.2;
+      case "deadline":
+        return 0.4;
+      case "master":
+      default:
+        return 0.8;
+    }
   };
 
   const getBusinessDaysUntil = (start: Date, end: Date): number => {
@@ -496,24 +503,26 @@ export async function planVisits(
         pressureDeadlineBy != null &&
         deadlineDate != null &&
         normalizeDateOnly(deadlineDate) <= normalizeDateOnly(pressureDeadlineBy);
-      const rank = getBucketRank(
+      const baseRank = getBucketRank(
         bucket,
         forceDeadlineFirst
       );
+      const effectiveRank =
+        baseRank - (bucket === "deadline" ? urgencyRatio * 1.5 : 0);
       const primary = getPrimaryValue(bucket, pub);
       const distance = calculateDistance(lastLocation, pub.zip).mileage;
 
       if (
         urgencyRatio > bestUrgency ||
-        (urgencyRatio === bestUrgency && rank < bestRank) ||
-        rank < bestRank ||
-        (rank === bestRank && primary < bestPrimary) ||
-        (rank === bestRank &&
+        (urgencyRatio === bestUrgency && effectiveRank < bestRank) ||
+        effectiveRank < bestRank ||
+        (effectiveRank === bestRank && primary < bestPrimary) ||
+        (effectiveRank === bestRank &&
           primary === bestPrimary &&
           distance < bestDistance)
       ) {
         bestUrgency = urgencyRatio;
-        bestRank = rank;
+        bestRank = effectiveRank;
         bestPrimary = primary;
         bestDistance = distance;
         bestIndex = index;
