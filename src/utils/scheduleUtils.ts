@@ -465,7 +465,6 @@ export async function planVisits(
   const pickBestPub = (
     candidates: Pub[],
     lastLocation: string,
-    pressureDeadlineBy: Date | null,
     deadlineRatioLookup: Map<string, Map<number, number>>
   ): { pub: Pub; index: number } | null => {
     let bestIndex = -1;
@@ -510,7 +509,6 @@ export async function planVisits(
   const buildCandidateDebug = (
     candidates: Pub[],
     lastLocation: string,
-    pressureDeadlineBy: Date | null,
     deadlineRatioLookup: Map<string, Map<number, number>>
   ) => {
     return candidates
@@ -611,7 +609,6 @@ export async function planVisits(
     const seedSelection = pickBestPub(
       seedBucket.filtered,
       lastLocation,
-      pressuredLocality?.pressuredBy ?? null,
       deadlineRatioLookup
     );
     if (!seedSelection) break;
@@ -632,7 +629,6 @@ export async function planVisits(
       const candidates = buildCandidateDebug(
         seedBucket.filtered,
         seedLastLocation,
-        pressuredLocality?.pressuredBy ?? null,
         deadlineRatioLookup
       );
       const chosen = candidates.find((c) => c.pub === seedPub.pub && c.postcode === seedPub.zip);
@@ -665,7 +661,6 @@ export async function planVisits(
       const nextSelection = pickBestPub(
         fillBucket.filtered,
         lastLocation,
-        pressureDeadlineBy,
         deadlineRatioLookup
       );
       if (!nextSelection) break;
@@ -685,7 +680,6 @@ export async function planVisits(
         const candidates = buildCandidateDebug(
           fillBucket.filtered,
           fillLastLocation,
-          pressureDeadlineBy,
           deadlineRatioLookup
         );
         const chosen = candidates.find((c) => c.pub === selectedPub.pub && c.postcode === selectedPub.zip);
