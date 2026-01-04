@@ -2,7 +2,12 @@ import { Pub, ScheduleDay, SchedulingDebugSummary } from "../context/PubDataCont
 import { format, addBusinessDays } from "date-fns";
 import { Visit } from "../types";
 import { devLog } from "./devLog";
-import { compareByProximity, estimateMockDistance, getProximityScore } from "../geo/mockGeo";
+import {
+  compareByProximity,
+  estimateMockDistance,
+  getProximityRank,
+  getProximityScore,
+} from "../geo/mockGeo";
 
 export const extractNumericPart = (postcode: string): [string, number] => {
   // Extract the first part of the postcode (letters + number)
@@ -465,11 +470,12 @@ export async function planVisits(
   const pickBestPub = (
     candidates: Pub[],
     lastLocation: string,
+    seedLocation: string | null,
     deadlineRatioLookup: Map<string, Map<number, number>>
   ): { pub: Pub; index: number } | null => {
     let bestIndex = -1;
     let bestPrimary = Infinity;
-    let bestDistance = Infinity;
+    let bestSelectionScore = Infinity;
     let bestUrgency = 0;
 
     candidates.forEach((pub, index) => {
@@ -486,18 +492,21 @@ export async function planVisits(
         urgencyRatio = ratioKey ?? 0;
       }
       const primary = getPrimaryValue(bucket, pub);
-      const distance = calculateDistance(lastLocation, pub.zip).mileage;
+      const lastRank = getProximityRank(lastLocation, pub.zip);
+      const seedRank = seedLocation ? getProximityRank(seedLocation, pub.zip) : null;
+      const selectionScore =
+        seedRank === null ? lastRank : seedRank * 0.7 + lastRank * 0.3;
 
       if (
         urgencyRatio > bestUrgency ||
         (urgencyRatio === bestUrgency && primary < bestPrimary) ||
         (urgencyRatio === bestUrgency &&
           primary === bestPrimary &&
-          distance < bestDistance)
+          selectionScore < bestSelectionScore)
       ) {
         bestUrgency = urgencyRatio;
         bestPrimary = primary;
-        bestDistance = distance;
+        bestSelectionScore = selectionScore;
         bestIndex = index;
       }
     });
@@ -509,6 +518,7 @@ export async function planVisits(
   const buildCandidateDebug = (
     candidates: Pub[],
     lastLocation: string,
+    seedLocation: string | null,
     deadlineRatioLookup: Map<string, Map<number, number>>
   ) => {
     return candidates
@@ -525,8 +535,14 @@ export async function planVisits(
           urgencyRatio = ratioKey ?? 0;
         }
         const primary = getPrimaryValue(bucket, pub);
-        const distance = calculateDistance(lastLocation, pub.zip).mileage;
-        const proximity = getProximityScore(lastLocation, pub.zip);
+        const lastProximity = getProximityScore(lastLocation, pub.zip);
+        const seedProximity = seedLocation
+          ? getProximityScore(seedLocation, pub.zip)
+          : null;
+        const lastRank = getProximityRank(lastLocation, pub.zip);
+        const seedRank = seedLocation ? getProximityRank(seedLocation, pub.zip) : null;
+        const selectionScore =
+          seedRank === null ? lastRank : seedRank * 0.7 + lastRank * 0.3;
         return {
           pub: pub.pub,
           postcode: pub.zip,
@@ -534,13 +550,22 @@ export async function planVisits(
           primary,
           urgencyRatio,
           effectiveRank: 0,
-          distance,
-          proximity: {
-            eligible: proximity.eligible,
-            tier: proximity.tier,
-            districtDelta: proximity.districtDelta,
-            sectorDelta: proximity.sectorDelta,
-            unitDelta: proximity.unitDelta,
+          selectionScore,
+          seedProximity: seedProximity
+            ? {
+                eligible: seedProximity.eligible,
+                tier: seedProximity.tier,
+                districtDelta: seedProximity.districtDelta,
+                sectorDelta: seedProximity.sectorDelta,
+                unitDelta: seedProximity.unitDelta,
+              }
+            : null,
+          lastProximity: {
+            eligible: lastProximity.eligible,
+            tier: lastProximity.tier,
+            districtDelta: lastProximity.districtDelta,
+            sectorDelta: lastProximity.sectorDelta,
+            unitDelta: lastProximity.unitDelta,
           },
         };
       })
@@ -548,7 +573,7 @@ export async function planVisits(
         if (a.urgencyRatio !== b.urgencyRatio) return b.urgencyRatio - a.urgencyRatio;
         if (a.effectiveRank !== b.effectiveRank) return a.effectiveRank - b.effectiveRank;
         if (a.primary !== b.primary) return a.primary - b.primary;
-        return a.distance - b.distance;
+        return a.selectionScore - b.selectionScore;
       });
   };
 
@@ -557,21 +582,21 @@ export async function planVisits(
       urgencyRatio: number;
       effectiveRank: number;
       primary: number;
-      distance: number;
+      selectionScore: number;
     },
     candidates: {
       urgencyRatio: number;
       effectiveRank: number;
       primary: number;
-      distance: number;
+      selectionScore: number;
     }[]
   ): string => {
     const maxUrgency = Math.max(0, ...candidates.map((c) => c.urgencyRatio));
     const minPrimary = Math.min(...candidates.map((c) => c.primary));
-    const minDistance = Math.min(...candidates.map((c) => c.distance));
+    const minSelectionScore = Math.min(...candidates.map((c) => c.selectionScore));
     if (maxUrgency > 0 && chosen.urgencyRatio === maxUrgency) return "urgency";
     if (chosen.primary === minPrimary) return "primary-value";
-    if (chosen.distance === minDistance) return "distance";
+    if (chosen.selectionScore === minSelectionScore) return "proximity";
     return "tie-break";
   };
 
@@ -610,6 +635,7 @@ export async function planVisits(
     const seedSelection = pickBestPub(
       seedBucket.filtered,
       lastLocation,
+      null,
       deadlineRatioLookup
     );
     if (!seedSelection) break;
@@ -630,6 +656,7 @@ export async function planVisits(
       const candidates = buildCandidateDebug(
         seedBucket.filtered,
         seedLastLocation,
+        null,
         deadlineRatioLookup
       );
       const chosen = candidates.find((c) => c.pub === seedPub.pub && c.postcode === seedPub.zip);
@@ -664,6 +691,7 @@ export async function planVisits(
       const nextSelection = pickBestPub(
         fillBucket.filtered,
         lastLocation,
+        seedPub.zip,
         deadlineRatioLookup
       );
       if (!nextSelection) break;
@@ -683,6 +711,7 @@ export async function planVisits(
         const candidates = buildCandidateDebug(
           fillBucket.filtered,
           fillLastLocation,
+          seedPub.zip,
           deadlineRatioLookup
         );
         const chosen = candidates.find((c) => c.pub === selectedPub.pub && c.postcode === selectedPub.zip);
