@@ -508,6 +508,86 @@ export async function planVisits(
     return { pub: candidates[bestIndex], index: bestIndex };
   };
 
+  const buildCandidateDebug = (
+    candidates: Pub[],
+    lastLocation: string,
+    pressureDeadlineBy: Date | null,
+    deadlineRatioLookup: Map<string, Map<number, number>>
+  ) => {
+    return candidates
+      .map((pub) => {
+        const bucket = getBucket(pub);
+        const deadlineDate = getDeadlineDate(pub);
+        let urgencyRatio = 0;
+        if (bucket === "deadline" && deadlineDate) {
+          const locality = getLocalityKey(pub);
+          const ratioMap = deadlineRatioLookup.get(locality);
+          const ratioKey = ratioMap
+            ? ratioMap.get(normalizeDateOnly(deadlineDate))
+            : undefined;
+          urgencyRatio = ratioKey ?? 0;
+        }
+        const forceDeadlineFirst =
+          bucket === "deadline" &&
+          pressureDeadlineBy != null &&
+          deadlineDate != null &&
+          normalizeDateOnly(deadlineDate) <= normalizeDateOnly(pressureDeadlineBy);
+        const baseRank = getBucketRank(bucket, forceDeadlineFirst);
+        const effectiveRank =
+          baseRank - (bucket === "deadline" ? urgencyRatio * 1.5 : 0);
+        const primary = getPrimaryValue(bucket, pub);
+        const distance = calculateDistance(lastLocation, pub.zip).mileage;
+        const proximity = getProximityScore(lastLocation, pub.zip);
+        return {
+          pub: pub.pub,
+          postcode: pub.zip,
+          bucket,
+          primary,
+          urgencyRatio,
+          effectiveRank,
+          distance,
+          proximity: {
+            eligible: proximity.eligible,
+            tier: proximity.tier,
+            districtDelta: proximity.districtDelta,
+            sectorDelta: proximity.sectorDelta,
+            unitDelta: proximity.unitDelta,
+          },
+        };
+      })
+      .sort((a, b) => {
+        if (a.urgencyRatio !== b.urgencyRatio) return b.urgencyRatio - a.urgencyRatio;
+        if (a.effectiveRank !== b.effectiveRank) return a.effectiveRank - b.effectiveRank;
+        if (a.primary !== b.primary) return a.primary - b.primary;
+        return a.distance - b.distance;
+      });
+  };
+
+  const getSelectionReason = (
+    chosen: {
+      urgencyRatio: number;
+      effectiveRank: number;
+      primary: number;
+      distance: number;
+    },
+    candidates: {
+      urgencyRatio: number;
+      effectiveRank: number;
+      primary: number;
+      distance: number;
+    }[]
+  ): string => {
+    const maxUrgency = Math.max(0, ...candidates.map((c) => c.urgencyRatio));
+    const minRank = Math.min(...candidates.map((c) => c.effectiveRank));
+    const minPrimary = Math.min(...candidates.map((c) => c.primary));
+    const minDistance = Math.min(...candidates.map((c) => c.distance));
+    if (maxUrgency > 0 && chosen.urgencyRatio === maxUrgency) return "urgency";
+    if (chosen.effectiveRank === minRank) return "bucket-rank";
+    if (chosen.primary === minPrimary) return "primary-value";
+    if (chosen.distance === minDistance) return "distance";
+    return "tie-break";
+  };
+
   while (remainingDays > 0) {
     const dayVisits: Pub[] = [];
     let lastLocation = hasHome ? homeAddress : "";
@@ -544,6 +624,7 @@ export async function planVisits(
     if (!seedSelection) break;
 
     const seedPub = seedSelection.pub;
+    const seedLastLocation = lastLocation;
     const dayLocalityKey = getLocalityKey(seedPub);
     const seedKey = seedPub.uuid || `${seedPub.fileId}-${seedPub.pub}-${seedPub.zip}`;
     dayVisits.push(seedPub);
@@ -554,6 +635,27 @@ export async function planVisits(
       1
     );
 
+    if (debugCollector) {
+      const candidates = buildCandidateDebug(
+        seedCandidates,
+        seedLastLocation,
+        pressuredLocality?.pressuredBy ?? null,
+        deadlineRatioLookup
+      );
+      const chosen = candidates.find((c) => c.pub === seedPub.pub && c.postcode === seedPub.zip);
+      debugCollector({
+        type: "selection",
+        phase: "seed",
+        date: format(currentDate, "yyyy-MM-dd"),
+        dayLocality: dayLocalityKey,
+        lastLocation: seedLastLocation,
+        activeBuckets: Array.from(new Set(candidates.map((c) => c.bucket))),
+        candidates,
+        chosen: chosen ?? null,
+        reason: chosen ? getSelectionReason(chosen, candidates) : "unknown",
+      });
+    }
+
     while (dayVisits.length < visitsPerDay) {
       const localPressure = pressureMap.get(dayLocalityKey);
       const pressureDeadlineBy = localPressure?.pressuredBy ?? null;
@@ -562,6 +664,7 @@ export async function planVisits(
           getLocalityKey(pub) === dayLocalityKey &&
           meetsDeadlineConstraint(pub, currentDate)
       );
+      const fillLastLocation = lastLocation;
       const nextSelection = pickBestPub(
         localityCandidates,
         lastLocation,
@@ -580,6 +683,27 @@ export async function planVisits(
         remainingPubs.findIndex((p) => p === selectedPub),
         1
       );
+
+      if (debugCollector) {
+        const candidates = buildCandidateDebug(
+          localityCandidates,
+          fillLastLocation,
+          pressureDeadlineBy,
+          deadlineRatioLookup
+        );
+        const chosen = candidates.find((c) => c.pub === selectedPub.pub && c.postcode === selectedPub.zip);
+        debugCollector({
+          type: "selection",
+          phase: "fill",
+          date: format(currentDate, "yyyy-MM-dd"),
+          dayLocality: dayLocalityKey,
+          lastLocation: fillLastLocation,
+          activeBuckets: Array.from(new Set(candidates.map((c) => c.bucket))),
+          candidates,
+          chosen: chosen ?? null,
+          reason: chosen ? getSelectionReason(chosen, candidates) : "unknown",
+        });
+      }
     }
 
     if (dayVisits.length === 0) break;
