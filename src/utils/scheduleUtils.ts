@@ -2,6 +2,7 @@ import { Pub, ScheduleDay, SchedulingDebugSummary } from "../context/PubDataCont
 import { format, addBusinessDays } from "date-fns";
 import { Visit } from "../types";
 import { devLog } from "./devLog";
+import { compareByProximity, estimateMockDistance, getProximityScore } from "../geo/mockGeo";
 
 export const extractNumericPart = (postcode: string): [string, number] => {
   // Extract the first part of the postcode (letters + number)
@@ -14,21 +15,7 @@ export const extractNumericPart = (postcode: string): [string, number] => {
 };
 
 export const calculateDistance = (fromPostcode: string, toPostcode: string) => {
-  // Basic postcode proximity check
-  const fromPrefix = fromPostcode.substring(0, 2);
-  const toPrefix = toPostcode.substring(0, 2);
-
-  // If postcodes don't share first two characters, they're likely far apart
-  const isFarApart = fromPrefix !== toPrefix;
-
-  // Calculate a rough estimate based on postcode similarity
-  const baseTime = isFarApart ? 90 : 30;
-  const baseMileage = isFarApart ? 45 : 15;
-
-  return {
-    driveTime: baseTime,
-    mileage: baseMileage,
-  };
+  return estimateMockDistance(fromPostcode, toPostcode);
 };
 
 export const findNearestPubs = (
@@ -36,20 +23,14 @@ export const findNearestPubs = (
   availablePubs: Visit[],
   maxDistance: number
 ): Visit[] => {
-  const sourcePrefix = sourcePub.zip.substring(0, 2);
-
-  // Filter pubs by postcode proximity first
   return availablePubs
-    .filter((pub) => {
-      const pubPrefix = pub.zip.substring(0, 2);
-      return pubPrefix === sourcePrefix;
-    })
+    .filter((pub) => getProximityScore(sourcePub.zip, pub.zip).eligible)
     .map((pub) => ({
       ...pub,
       distance: calculateDistance(sourcePub.zip, pub.zip).mileage,
     }))
     .filter((pub) => pub.distance <= maxDistance)
-    .sort((a, b) => (a.distance || 0) - (b.distance || 0));
+    .sort((a, b) => compareByProximity(sourcePub.zip, a.zip, b.zip));
 };
 
 export const getPriorityOrder = (pub: Visit): number => {

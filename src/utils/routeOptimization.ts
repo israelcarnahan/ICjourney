@@ -1,31 +1,10 @@
 import { Visit } from "../types";
 import { calculateDistance } from "./scheduleUtils";
+import { compareByProximity, getProximityRank } from "../geo/mockGeo";
 
 const parseTimeString = (time: string): number => {
   const [hours, minutes] = time.split(":").map(Number);
   return hours * 60 + minutes;
-};
-
-const extractPostcodePrefix = (postcode: string): string => {
-  // Normalize postcode format and extract the outward code (first part)
-  return postcode.trim().toUpperCase().split(" ")[0];
-};
-
-const getPostcodeDistance = (a: string, b: string): number => {
-  const prefixA = extractPostcodePrefix(a);
-  const prefixB = extractPostcodePrefix(b);
-
-  // If prefixes match exactly, they're closest
-  if (prefixA === prefixB) return 0;
-
-  // If first part matches (e.g., "IP1" and "IP2"), they're very close
-  if (prefixA.slice(0, -1) === prefixB.slice(0, -1)) return 1;
-
-  // If only letters match (e.g., "IP" and "IP"), they're in same region
-  if (prefixA.replace(/\d/g, "") === prefixB.replace(/\d/g, "")) return 2;
-
-  // Otherwise, they're in different regions
-  return 3;
 };
 
 export const optimizeRoute = (
@@ -64,7 +43,7 @@ export const optimizeRoute = (
       const visitsByProximity = remainingVisits
         .map((visit) => ({
           visit,
-          postcodeDistance: getPostcodeDistance(visit.zip, scheduledVisit.zip),
+          postcodeDistance: getProximityRank(scheduledVisit.zip, visit.zip),
           physicalDistance: calculateDistance(scheduledVisit.zip, visit.zip)
             .mileage,
         }))
@@ -108,8 +87,8 @@ export const optimizeRoute = (
       // Sort remaining visits by postcode proximity to the last scheduled visit
       const lastScheduledVisit = scheduledVisits[scheduledVisits.length - 1];
       remainingVisits.sort((a, b) => {
-        const distA = getPostcodeDistance(a.zip, lastScheduledVisit.zip);
-        const distB = getPostcodeDistance(b.zip, lastScheduledVisit.zip);
+        const distA = getProximityRank(lastScheduledVisit.zip, a.zip);
+        const distB = getProximityRank(lastScheduledVisit.zip, b.zip);
         if (distA !== distB) return distA - distB;
         return (
           calculateDistance(lastScheduledVisit.zip, a.zip).mileage -
@@ -124,26 +103,20 @@ export const optimizeRoute = (
 
   // If no scheduled visits, optimize based on postcode proximity to home
   const visitsByPostcode = unscheduledVisits.reduce((acc, visit) => {
-    const prefix = extractPostcodePrefix(visit.zip);
+    const prefix = visit.zip.trim().toUpperCase().split(" ")[0];
     if (!acc[prefix]) acc[prefix] = [];
     acc[prefix].push(visit);
     return acc;
   }, {} as Record<string, Visit[]>);
 
   // Sort postcode groups by distance from home
-  const sortedPostcodes = Object.keys(visitsByPostcode).sort((a, b) => {
-    const distA = calculateDistance(homeAddress, a).mileage;
-    const distB = calculateDistance(homeAddress, b).mileage;
-    return distA - distB;
-  });
+  const sortedPostcodes = Object.keys(visitsByPostcode).sort((a, b) =>
+    compareByProximity(homeAddress, a, b)
+  );
 
   // Create final route by visiting each postcode group
   return sortedPostcodes.flatMap((postcode) => {
     const visitsInArea = visitsByPostcode[postcode];
-    return visitsInArea.sort((a, b) => {
-      const distA = calculateDistance(homeAddress, a.zip).mileage;
-      const distB = calculateDistance(homeAddress, b.zip).mileage;
-      return distA - distB;
-    });
+    return visitsInArea.sort((a, b) => compareByProximity(homeAddress, a.zip, b.zip));
   });
 };
