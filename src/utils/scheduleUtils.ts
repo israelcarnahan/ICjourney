@@ -435,7 +435,7 @@ export async function planVisits(
     "master",
   ];
 
-  const DEADLINE_URGENCY_THRESHOLD = 0.1;
+  const DEADLINE_URGENCY_THRESHOLD = 0.15;
 
   const getDeadlineUrgency = (
     pub: Pub,
@@ -449,6 +449,43 @@ export async function planVisits(
     return ratioKey ?? 0;
   };
 
+  const getDeadlineActivationInfo = (
+    candidates: Pub[],
+    deadlineRatioLookup: Map<string, Map<number, number>>,
+    seedLocation: string | null
+  ): {
+    bestUrgency: number;
+    bestDeadlineCandidate: Pub | null;
+    active: boolean;
+    reason: "urgency" | "override" | "inactive";
+  } => {
+    let bestUrgency = 0;
+    let bestDeadlineCandidate: Pub | null = null;
+    candidates.forEach((pub) => {
+      if (getBucket(pub) !== "deadline") return;
+      const urgency = getDeadlineUrgency(pub, deadlineRatioLookup);
+      if (urgency > bestUrgency) {
+        bestUrgency = urgency;
+        bestDeadlineCandidate = pub;
+      }
+    });
+    const hasNearbyOverride =
+      seedLocation != null &&
+      candidates.some((pub) => {
+        if (getBucket(pub) !== "deadline") return false;
+        const proximity = getProximityScore(seedLocation, pub.zip);
+        return proximity.tier === "sector";
+      });
+    const active =
+      bestUrgency >= DEADLINE_URGENCY_THRESHOLD || hasNearbyOverride;
+    const reason = active
+      ? bestUrgency >= DEADLINE_URGENCY_THRESHOLD
+        ? "urgency"
+        : "override"
+      : "inactive";
+    return { bestUrgency, bestDeadlineCandidate, active, reason };
+  };
+
   const selectHighestBucket = (
     candidates: Pub[],
     pressureDeadlineBy: Date | null,
@@ -458,25 +495,16 @@ export async function planVisits(
     const pool = candidates.filter((pub) =>
       meetsDeadlineConstraint(pub, currentDate)
     );
-    const maxDeadlineUrgency = pool.reduce((acc, pub) => {
-      if (getBucket(pub) !== "deadline") return acc;
-      const urgency = getDeadlineUrgency(pub, deadlineRatioLookup);
-      return urgency > acc ? urgency : acc;
-    }, 0);
-    const hasNearbyDeadline =
-      seedLocation != null &&
-      pool.some((pub) => {
-        if (getBucket(pub) !== "deadline") return false;
-        const proximity = getProximityScore(seedLocation, pub.zip);
-        return proximity.tier === "sector" || proximity.tier === "district";
-      });
-    const deadlineActive =
-      maxDeadlineUrgency >= DEADLINE_URGENCY_THRESHOLD || hasNearbyDeadline;
+    const deadlineActivation = getDeadlineActivationInfo(
+      pool,
+      deadlineRatioLookup,
+      seedLocation
+    );
 
     for (const bucket of bucketOrder) {
       const filtered = pool.filter((pub) => {
         if (getBucket(pub) !== bucket) return false;
-        if (bucket === "deadline" && !deadlineActive) return false;
+        if (bucket === "deadline" && !deadlineActivation.active) return false;
         if (bucket !== "deadline") return true;
         const deadlineDate = getDeadlineDate(pub);
         if (!deadlineDate) return true;
@@ -621,6 +649,14 @@ export async function planVisits(
     const dayVisits: Pub[] = [];
     let lastLocation = hasHome ? homeAddress : "";
     let pickIndex = 0;
+    const dayPickSummary: Record<string, number> = {
+      deadline: 0,
+      followUp: 0,
+      priority: 0,
+      master: 0,
+    };
+    let deadlinePickByUrgency = 0;
+    let deadlinePickByOverride = 0;
 
     const eligibleSeeds = remainingPubs.filter((pub) =>
       meetsDeadlineConstraint(pub, currentDate)
@@ -645,6 +681,11 @@ export async function planVisits(
       : [];
     const seedCandidates =
       pressuredSeeds.length > 0 ? pressuredSeeds : eligibleSeeds;
+    const seedActivation = getDeadlineActivationInfo(
+      seedCandidates,
+      deadlineRatioLookup,
+      null
+    );
     const seedBucket = selectHighestBucket(
       seedCandidates,
       pressuredLocality?.pressuredBy ?? null,
@@ -666,6 +707,11 @@ export async function planVisits(
     dayVisits.push(seedPub);
     scheduledPubs.add(seedKey);
     lastLocation = seedPub.zip;
+    dayPickSummary[seedBucket.bucket ?? "master"] += 1;
+    if (seedBucket.bucket === "deadline") {
+      if (seedActivation.reason === "urgency") deadlinePickByUrgency += 1;
+      if (seedActivation.reason === "override") deadlinePickByOverride += 1;
+    }
     remainingPubs.splice(
       remainingPubs.findIndex((p) => p === seedPub),
       1
@@ -686,6 +732,20 @@ export async function planVisits(
         pickIndex,
         dayLocality: dayLocalityKey,
         lastLocation: seedLastLocation,
+        deadlineThreshold: DEADLINE_URGENCY_THRESHOLD,
+        bestDeadlineUrgency: seedActivation.bestUrgency,
+        deadlineActive: seedActivation.active,
+        deadlineActiveReason: seedActivation.reason,
+        topDeadlineCandidate: seedActivation.bestDeadlineCandidate
+          ? {
+              pub: seedActivation.bestDeadlineCandidate.pub,
+              postcode: seedActivation.bestDeadlineCandidate.zip,
+              urgencyRatio: getDeadlineUrgency(
+                seedActivation.bestDeadlineCandidate,
+                deadlineRatioLookup
+              ),
+            }
+          : null,
         activeBucket: seedBucket.bucket,
         candidates,
         chosen: chosen ?? null,
@@ -701,6 +761,11 @@ export async function planVisits(
         (pub) =>
           getLocalityKey(pub) === dayLocalityKey &&
           meetsDeadlineConstraint(pub, currentDate)
+      );
+      const fillActivation = getDeadlineActivationInfo(
+        localityCandidates,
+        deadlineRatioLookup,
+        seedPub.zip
       );
       const fillBucket = selectHighestBucket(
         localityCandidates,
@@ -723,6 +788,11 @@ export async function planVisits(
       dayVisits.push(selectedPub);
       scheduledPubs.add(selectedKey);
       lastLocation = selectedPub.zip;
+      dayPickSummary[fillBucket.bucket ?? "master"] += 1;
+      if (fillBucket.bucket === "deadline") {
+        if (fillActivation.reason === "urgency") deadlinePickByUrgency += 1;
+        if (fillActivation.reason === "override") deadlinePickByOverride += 1;
+      }
       remainingPubs.splice(
         remainingPubs.findIndex((p) => p === selectedPub),
         1
@@ -743,6 +813,20 @@ export async function planVisits(
           pickIndex,
           dayLocality: dayLocalityKey,
           lastLocation: fillLastLocation,
+          deadlineThreshold: DEADLINE_URGENCY_THRESHOLD,
+          bestDeadlineUrgency: fillActivation.bestUrgency,
+          deadlineActive: fillActivation.active,
+          deadlineActiveReason: fillActivation.reason,
+          topDeadlineCandidate: fillActivation.bestDeadlineCandidate
+            ? {
+                pub: fillActivation.bestDeadlineCandidate.pub,
+                postcode: fillActivation.bestDeadlineCandidate.zip,
+                urgencyRatio: getDeadlineUrgency(
+                  fillActivation.bestDeadlineCandidate,
+                  deadlineRatioLookup
+                ),
+              }
+            : null,
           activeBucket: fillBucket.bucket,
           candidates,
           chosen: chosen ?? null,
@@ -778,8 +862,10 @@ export async function planVisits(
         {}
       );
       debugCollector({
+        type: "daySummary",
         date: format(currentDate, "yyyy-MM-dd"),
         seedLocality: dayLocalityKey,
+        seedPostcode: seedPub.zip,
         seedReason: pressuredSeeds.length > 0 ? "pressure-override" : "normal",
         pressureRatio: pressureInfo?.pressureRatio ?? 0,
         pressureDueBy: pressureInfo?.pressuredBy
@@ -787,6 +873,12 @@ export async function planVisits(
           : null,
         pressureRequired: pressureInfo?.requiredAtPressure ?? 0,
         pressureCapacity: pressureInfo?.capacityAtPressure ?? 0,
+        deadlineThreshold: DEADLINE_URGENCY_THRESHOLD,
+        pickCounts: dayPickSummary,
+        deadlinePickReasons: {
+          urgency: deadlinePickByUrgency,
+          override: deadlinePickByOverride,
+        },
         deadlineScheduledByLocality: deadlineByLocality,
         daysUntilDueDistribution: daysUntilDueDist,
       });
