@@ -435,7 +435,7 @@ export async function planVisits(
     "master",
   ];
 
-  const DEADLINE_URGENCY_THRESHOLD = 0.17;
+  const DEADLINE_URGENCY_THRESHOLD = 0.2;
 
   const getDeadlineUrgency = (
     pub: Pub,
