@@ -1,0 +1,25 @@
+{
+  "defaults": {
+    "testDir": "testFiles/larger test files",
+    "visitsPerDay": 5,
+    "businessDays": 65,
+    "startDate": "2026-01-04"
+  },
+  "files": {
+    "masterhouse large tester 557.xlsx": {
+      "schedulingMode": null
+    },
+    "deadline tester large 89.xlsx": {
+      "schedulingMode": "deadline",
+      "deadline": "2026-03-31"
+    },
+    "p1- TNT Hitlist 80.xlsx": {
+      "schedulingMode": "priority",
+      "priorityLevel": 1
+    },
+    "p3 - Greene King LT - Amstel hitlist 53.xlsx": {
+      "schedulingMode": "priority",
+      "priorityLevel": 3
+    }
+  }
+}

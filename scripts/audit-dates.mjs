@@ -93,7 +93,7 @@ function parsePostcode(raw) {
 }
 
 const canonicalFields = {
-  name: ["name", "pub", "pub name", "account", "account name"],
+  name: ["name", "pub", "pub name", "account", "account name", "place"],
   postcode: ["postcode", "post code", "post_code", "zip", "zip code"],
   rtm: ["rtm"],
   address: ["address", "addr", "street"],

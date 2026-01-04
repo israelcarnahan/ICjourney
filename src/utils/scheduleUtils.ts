@@ -578,6 +578,7 @@ export async function planVisits(
   while (remainingDays > 0) {
     const dayVisits: Pub[] = [];
     let lastLocation = hasHome ? homeAddress : "";
+    let pickIndex = 0;
 
     const eligibleSeeds = remainingPubs.filter((pub) =>
       meetsDeadlineConstraint(pub, currentDate)
@@ -636,6 +637,7 @@ export async function planVisits(
         type: "selection",
         phase: "seed",
         date: format(currentDate, "yyyy-MM-dd"),
+        pickIndex,
         dayLocality: dayLocalityKey,
         lastLocation: seedLastLocation,
         activeBucket: seedBucket.bucket,
@@ -644,6 +646,7 @@ export async function planVisits(
         reason: chosen ? getSelectionReason(chosen, candidates) : "unknown",
       });
     }
+    pickIndex += 1;
 
     while (dayVisits.length < visitsPerDay) {
       const localPressure = pressureMap.get(dayLocalityKey);
@@ -687,6 +690,7 @@ export async function planVisits(
           type: "selection",
           phase: "fill",
           date: format(currentDate, "yyyy-MM-dd"),
+          pickIndex,
           dayLocality: dayLocalityKey,
           lastLocation: fillLastLocation,
           activeBucket: fillBucket.bucket,
@@ -695,6 +699,7 @@ export async function planVisits(
           reason: chosen ? getSelectionReason(chosen, candidates) : "unknown",
         });
       }
+      pickIndex += 1;
     }
 
     if (dayVisits.length === 0) break;

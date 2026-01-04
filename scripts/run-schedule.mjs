@@ -12,6 +12,7 @@ const DEFAULT_CONFIG = "scripts/audit-config.json";
 
 const args = process.argv.slice(2);
 const configPathArgIndex = args.findIndex((arg) => arg === "--config");
+const testDirArgIndex = args.findIndex((arg) => arg === "--testDir");
 const configPath =
   configPathArgIndex >= 0 && args[configPathArgIndex + 1]
     ? args[configPathArgIndex + 1]
@@ -21,7 +22,14 @@ const config = JSON.parse(
   fs.readFileSync(path.resolve(process.cwd(), configPath), "utf8")
 );
 const defaults = config.defaults ?? {};
-const testDir = path.resolve(process.cwd(), defaults.testDir ?? "testFiles");
+const testDirOverride =
+  testDirArgIndex >= 0 && args[testDirArgIndex + 1]
+    ? args[testDirArgIndex + 1]
+    : process.env.TEST_DIR;
+const testDir = path.resolve(
+  process.cwd(),
+  testDirOverride ?? defaults.testDir ?? "testFiles"
+);
 const fileConfigs = config.files ?? {};
 
 const visitsPerDay = defaults.visitsPerDay ?? 5;
@@ -29,7 +37,7 @@ const businessDays = defaults.businessDays ?? 5;
 const startDate = new Date(defaults.startDate ?? new Date());
 
 const canonicalFields = {
-  name: ["name", "pub", "pub name", "account", "account name"],
+  name: ["name", "pub", "pub name", "account", "account name", "place"],
   postcode: ["postcode", "post code", "post_code", "zip", "zip code"],
   rtm: ["rtm"],
   address: ["address", "addr", "street"],
