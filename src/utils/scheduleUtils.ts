@@ -435,17 +435,48 @@ export async function planVisits(
     "master",
   ];
 
+  const DEADLINE_URGENCY_THRESHOLD = 0.1;
+
+  const getDeadlineUrgency = (
+    pub: Pub,
+    deadlineRatioLookup: Map<string, Map<number, number>>
+  ): number => {
+    const deadlineDate = getDeadlineDate(pub);
+    if (!deadlineDate) return 0;
+    const locality = getLocalityKey(pub);
+    const ratioMap = deadlineRatioLookup.get(locality);
+    const ratioKey = ratioMap ? ratioMap.get(normalizeDateOnly(deadlineDate)) : undefined;
+    return ratioKey ?? 0;
+  };
+
   const selectHighestBucket = (
     candidates: Pub[],
-    pressureDeadlineBy: Date | null
+    pressureDeadlineBy: Date | null,
+    deadlineRatioLookup: Map<string, Map<number, number>>,
+    seedLocation: string | null
   ): { bucket: BucketKey | null; filtered: Pub[] } => {
     const pool = candidates.filter((pub) =>
       meetsDeadlineConstraint(pub, currentDate)
     );
+    const maxDeadlineUrgency = pool.reduce((acc, pub) => {
+      if (getBucket(pub) !== "deadline") return acc;
+      const urgency = getDeadlineUrgency(pub, deadlineRatioLookup);
+      return urgency > acc ? urgency : acc;
+    }, 0);
+    const hasNearbyDeadline =
+      seedLocation != null &&
+      pool.some((pub) => {
+        if (getBucket(pub) !== "deadline") return false;
+        const proximity = getProximityScore(seedLocation, pub.zip);
+        return proximity.tier === "sector" || proximity.tier === "district";
+      });
+    const deadlineActive =
+      maxDeadlineUrgency >= DEADLINE_URGENCY_THRESHOLD || hasNearbyDeadline;
 
     for (const bucket of bucketOrder) {
       const filtered = pool.filter((pub) => {
         if (getBucket(pub) !== bucket) return false;
+        if (bucket === "deadline" && !deadlineActive) return false;
         if (bucket !== "deadline") return true;
         const deadlineDate = getDeadlineDate(pub);
         if (!deadlineDate) return true;
@@ -483,14 +514,8 @@ export async function planVisits(
       if (scheduledPubs.has(pubKey)) return;
 
       const bucket = getBucket(pub);
-      const deadlineDate = getDeadlineDate(pub);
-      let urgencyRatio = 0;
-      if (bucket === "deadline" && deadlineDate) {
-        const locality = getLocalityKey(pub);
-        const ratioMap = deadlineRatioLookup.get(locality);
-        const ratioKey = ratioMap ? ratioMap.get(normalizeDateOnly(deadlineDate)) : undefined;
-        urgencyRatio = ratioKey ?? 0;
-      }
+      const urgencyRatio =
+        bucket === "deadline" ? getDeadlineUrgency(pub, deadlineRatioLookup) : 0;
       const primary = getPrimaryValue(bucket, pub);
       const lastRank = getProximityRank(lastLocation, pub.zip);
       const seedRank = seedLocation ? getProximityRank(seedLocation, pub.zip) : null;
@@ -524,16 +549,8 @@ export async function planVisits(
     return candidates
       .map((pub) => {
         const bucket = getBucket(pub);
-        const deadlineDate = getDeadlineDate(pub);
-        let urgencyRatio = 0;
-        if (bucket === "deadline" && deadlineDate) {
-          const locality = getLocalityKey(pub);
-          const ratioMap = deadlineRatioLookup.get(locality);
-          const ratioKey = ratioMap
-            ? ratioMap.get(normalizeDateOnly(deadlineDate))
-            : undefined;
-          urgencyRatio = ratioKey ?? 0;
-        }
+        const urgencyRatio =
+          bucket === "deadline" ? getDeadlineUrgency(pub, deadlineRatioLookup) : 0;
         const primary = getPrimaryValue(bucket, pub);
         const lastProximity = getProximityScore(lastLocation, pub.zip);
         const seedProximity = seedLocation
@@ -630,7 +647,9 @@ export async function planVisits(
       pressuredSeeds.length > 0 ? pressuredSeeds : eligibleSeeds;
     const seedBucket = selectHighestBucket(
       seedCandidates,
-      pressuredLocality?.pressuredBy ?? null
+      pressuredLocality?.pressuredBy ?? null,
+      deadlineRatioLookup,
+      null
     );
     const seedSelection = pickBestPub(
       seedBucket.filtered,
@@ -685,7 +704,9 @@ export async function planVisits(
       );
       const fillBucket = selectHighestBucket(
         localityCandidates,
-        pressureDeadlineBy
+        pressureDeadlineBy,
+        deadlineRatioLookup,
+        seedPub.zip
       );
       const fillLastLocation = lastLocation;
       const nextSelection = pickBestPub(
