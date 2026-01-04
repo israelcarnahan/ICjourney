@@ -423,24 +423,38 @@ export async function planVisits(
     return out;
   };
 
-  const getBucketRank = (
-    bucket: BucketKey,
-    forceDeadlineFirst: boolean
-  ): number => {
-    if (forceDeadlineFirst) {
-      return -1;
+  const bucketOrder: BucketKey[] = [
+    "deadline",
+    "followUp",
+    "priority",
+    "master",
+  ];
+
+  const selectHighestBucket = (
+    candidates: Pub[],
+    pressureDeadlineBy: Date | null
+  ): { bucket: BucketKey | null; filtered: Pub[] } => {
+    const pool = candidates.filter((pub) =>
+      meetsDeadlineConstraint(pub, currentDate)
+    );
+
+    for (const bucket of bucketOrder) {
+      const filtered = pool.filter((pub) => {
+        if (getBucket(pub) !== bucket) return false;
+        if (bucket !== "deadline") return true;
+        const deadlineDate = getDeadlineDate(pub);
+        if (!deadlineDate) return true;
+        if (!pressureDeadlineBy) return true;
+        return (
+          normalizeDateOnly(deadlineDate) <= normalizeDateOnly(pressureDeadlineBy)
+        );
+      });
+      if (filtered.length > 0) {
+        return { bucket, filtered };
+      }
     }
-    switch (bucket) {
-      case "priority":
-        return 0.0;
-      case "followUp":
-        return 0.2;
-      case "deadline":
-        return 0.4;
-      case "master":
-      default:
-        return 0.8;
-    }
+
+    return { bucket: null, filtered: [] };
   };
 
   const getBusinessDaysUntil = (start: Date, end: Date): number => {
@@ -455,7 +469,6 @@ export async function planVisits(
     deadlineRatioLookup: Map<string, Map<number, number>>
   ): { pub: Pub; index: number } | null => {
     let bestIndex = -1;
-    let bestRank = Infinity;
     let bestPrimary = Infinity;
     let bestDistance = Infinity;
     let bestUrgency = 0;
@@ -473,31 +486,17 @@ export async function planVisits(
         const ratioKey = ratioMap ? ratioMap.get(normalizeDateOnly(deadlineDate)) : undefined;
         urgencyRatio = ratioKey ?? 0;
       }
-      const forceDeadlineFirst =
-        bucket === "deadline" &&
-        pressureDeadlineBy != null &&
-        deadlineDate != null &&
-        normalizeDateOnly(deadlineDate) <= normalizeDateOnly(pressureDeadlineBy);
-      const baseRank = getBucketRank(
-        bucket,
-        forceDeadlineFirst
-      );
-      const effectiveRank =
-        baseRank - (bucket === "deadline" ? urgencyRatio * 1.5 : 0);
       const primary = getPrimaryValue(bucket, pub);
       const distance = calculateDistance(lastLocation, pub.zip).mileage;
 
       if (
         urgencyRatio > bestUrgency ||
-        (urgencyRatio === bestUrgency && effectiveRank < bestRank) ||
-        effectiveRank < bestRank ||
-        (effectiveRank === bestRank && primary < bestPrimary) ||
-        (effectiveRank === bestRank &&
+        (urgencyRatio === bestUrgency && primary < bestPrimary) ||
+        (urgencyRatio === bestUrgency &&
           primary === bestPrimary &&
           distance < bestDistance)
       ) {
         bestUrgency = urgencyRatio;
-        bestRank = effectiveRank;
         bestPrimary = primary;
         bestDistance = distance;
         bestIndex = index;
@@ -527,14 +526,6 @@ export async function planVisits(
             : undefined;
           urgencyRatio = ratioKey ?? 0;
         }
-        const forceDeadlineFirst =
-          bucket === "deadline" &&
-          pressureDeadlineBy != null &&
-          deadlineDate != null &&
-          normalizeDateOnly(deadlineDate) <= normalizeDateOnly(pressureDeadlineBy);
-        const baseRank = getBucketRank(bucket, forceDeadlineFirst);
-        const effectiveRank =
-          baseRank - (bucket === "deadline" ? urgencyRatio * 1.5 : 0);
         const primary = getPrimaryValue(bucket, pub);
         const distance = calculateDistance(lastLocation, pub.zip).mileage;
         const proximity = getProximityScore(lastLocation, pub.zip);
@@ -544,7 +535,7 @@ export async function planVisits(
           bucket,
           primary,
           urgencyRatio,
-          effectiveRank,
+          effectiveRank: 0,
           distance,
           proximity: {
             eligible: proximity.eligible,
@@ -578,11 +569,9 @@ export async function planVisits(
     }[]
   ): string => {
     const maxUrgency = Math.max(0, ...candidates.map((c) => c.urgencyRatio));
-    const minRank = Math.min(...candidates.map((c) => c.effectiveRank));
     const minPrimary = Math.min(...candidates.map((c) => c.primary));
     const minDistance = Math.min(...candidates.map((c) => c.distance));
     if (maxUrgency > 0 && chosen.urgencyRatio === maxUrgency) return "urgency";
-    if (chosen.effectiveRank === minRank) return "bucket-rank";
     if (chosen.primary === minPrimary) return "primary-value";
     if (chosen.distance === minDistance) return "distance";
     return "tie-break";
@@ -615,8 +604,12 @@ export async function planVisits(
       : [];
     const seedCandidates =
       pressuredSeeds.length > 0 ? pressuredSeeds : eligibleSeeds;
-    const seedSelection = pickBestPub(
+    const seedBucket = selectHighestBucket(
       seedCandidates,
+      pressuredLocality?.pressuredBy ?? null
+    );
+    const seedSelection = pickBestPub(
+      seedBucket.filtered,
       lastLocation,
       pressuredLocality?.pressuredBy ?? null,
       deadlineRatioLookup
@@ -637,7 +630,7 @@ export async function planVisits(
 
     if (debugCollector) {
       const candidates = buildCandidateDebug(
-        seedCandidates,
+        seedBucket.filtered,
         seedLastLocation,
         pressuredLocality?.pressuredBy ?? null,
         deadlineRatioLookup
@@ -649,7 +642,7 @@ export async function planVisits(
         date: format(currentDate, "yyyy-MM-dd"),
         dayLocality: dayLocalityKey,
         lastLocation: seedLastLocation,
-        activeBuckets: Array.from(new Set(candidates.map((c) => c.bucket))),
+        activeBucket: seedBucket.bucket,
         candidates,
         chosen: chosen ?? null,
         reason: chosen ? getSelectionReason(chosen, candidates) : "unknown",
@@ -664,9 +657,13 @@ export async function planVisits(
           getLocalityKey(pub) === dayLocalityKey &&
           meetsDeadlineConstraint(pub, currentDate)
       );
+      const fillBucket = selectHighestBucket(
+        localityCandidates,
+        pressureDeadlineBy
+      );
       const fillLastLocation = lastLocation;
       const nextSelection = pickBestPub(
-        localityCandidates,
+        fillBucket.filtered,
         lastLocation,
         pressureDeadlineBy,
         deadlineRatioLookup
@@ -686,7 +683,7 @@ export async function planVisits(
 
       if (debugCollector) {
         const candidates = buildCandidateDebug(
-          localityCandidates,
+          fillBucket.filtered,
           fillLastLocation,
           pressureDeadlineBy,
           deadlineRatioLookup
@@ -698,7 +695,7 @@ export async function planVisits(
           date: format(currentDate, "yyyy-MM-dd"),
           dayLocality: dayLocalityKey,
           lastLocation: fillLastLocation,
-          activeBuckets: Array.from(new Set(candidates.map((c) => c.bucket))),
+          activeBucket: fillBucket.bucket,
           candidates,
           chosen: chosen ?? null,
           reason: chosen ? getSelectionReason(chosen, candidates) : "unknown",
