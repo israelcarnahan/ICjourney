@@ -77,6 +77,12 @@
 
 ```
 src/
+├── App.tsx                           # Main application component with routing and context providers
+├── main.tsx                           # Application entry point (React root initialization)
+├── index.css                          # Global CSS styles, Tailwind directives, and custom animations
+├── types.ts                           # Root-level type definitions (Visit, ScheduleDay, OpeningHours, etc.)
+├── vite-env.d.ts                      # Vite environment type definitions reference
+│
 ├── api/                              # Business data providers
 │   ├── fallbackProvider.ts          # Default provider with fallback business data and opening hours
 │   ├── googlePlacesProvider.ts      # Google Places API provider (branch only)
