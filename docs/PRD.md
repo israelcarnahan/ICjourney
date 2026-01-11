@@ -1,42 +1,51 @@
-Purpose:
-Defines what the system is meant to do — product and engineering intent.
-Semantics may evolve over time.
+# PRD — IC Journey Planner (Intended Behavior)
 
-This document distinguishes:
+## Product Goal
 
-- Current behavior
-- Intended behavior
-- Deferred / future behavior
-  Temporary compromises must be explicitly labeled.
+Enable reps to generate explainable, constraint-aware visit schedules that respect deadlines, follow-ups, priorities, and locality.
 
-Product Goals:
+---
 
-- Generate plausible, explainable visit schedules
-- Respect user-defined intent (deadlines, priorities)
-- Preserve trust through transparency
-- Prefer determinism over clever optimization
+## Intended User Flow
 
-Non-Goals (Current):
+1. Login
+2. Upload Masterfile
+3. Upload optional lists (Masterfile, Priority hitlists etc.)
+4. Map columns
+5. Resolve duplicates & Postcode issues
+6. Configure schedule settings
+7. Review & adjust
+8. Export
 
-- Real route optimization
-- Perfect geographic accuracy
-- Full follow-up-by-date support
-- Black-box scheduling
+---
 
-User Journey (High Level):
+## Scheduling Semantics (Intended)
 
-- Upload masterfile
-- Upload additional lists
-- Map columns
-- Deduplicate with provenance
-- Define scheduling intent
-- Generate schedule
-- Review / adjust
-- Export
+### Deadline (Visit-By)
 
-Scheduling Intent (Conceptual):
+- A constraint, not a “schedule first at all costs”
+- Visits may occur any day on or before the date
+- Violations must be explainable
 
-- Visit By (Deadline): schedule on or before a date
-- Follow-Up: deferred; scaffold exists but gated
-- Priority: relative importance
-- Baseline: default behavior
+### Follow-Up-By (Deferred)
+
+- Follow-up derived from last-visited + offset from settings
+- Explicitly deferred in main branch
+
+### Priority
+
+- Relative ordering only
+- Must not override hard constraints
+
+### Locality
+
+- Prefer closer visits where constraints allow
+- Never violate deadlines to optimize distance alone
+
+---
+
+## Deferred / Future
+
+- Follow-up-by-date scheduling[](followup-by-date.md)
+- Real maps & routing [](BRANCH_SUMMARY_feat-api-google-places.md)
+- Backend persistence
