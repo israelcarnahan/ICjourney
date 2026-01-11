@@ -37,7 +37,26 @@ Each issue should fall into one or more of the following categories:
 - Multiple map abstractions exist without clear ownership or authority
 - Legacy fields coexist with newer normalized fields
 - Reduction of duplicated heuristics not yet enforced
+  - **HIGHT IMPACT** Maps service duplication across hook + util + mock data; unclear single source of truth.
+  - **HIGHT IMPACT** Clones inside `src/utils/scheduleUtils.ts`. **This usually means one of these:**
+    - the same “scoring / selection” logic got copied into a second function
+    - debug logic got duplicated
+    - threshold/urgency logic exists twice
+    - or two code paths that “should be one” (and probably diverged)
+  - **MEDIUM IMPACT**`PostcodeFixesDialog.tsx` duplicated with `PostcodeReviewDialog.tsx` **Many clones**
+  - **LOW IMPACT** Basically harmless duplication.
+    - MonopolyIcons.tsx repeated blocks (icons usually copy/paste)
+    - About.tsx repeated markup
+    - small repeated snippets in DedupReviewDialog.tsx
+    - EnhancementSelector.tsx repeated block
+    - RepStatsPanel.tsx repeated block
+    - DriveTimeBar.tsx with VehicleSelector.tsx (shared display snippet)
 - Codebase size and structure not yet rationalized end-to-end
+
+### Structural Check:
+
+Dependency Cruiser found no circular dependencies or structural import violations.
+This suggests cleanup focus should be on semantic duplication rather than dependency structure.
 
 ---
 
