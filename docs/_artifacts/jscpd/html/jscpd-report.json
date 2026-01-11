@@ -1,0 +1,2486 @@
+{
+  "statistics": {
+    "detectionDate": "2026-01-11T22:40:41.460Z",
+    "formats": {
+      "javascript": {
+        "sources": {
+          "src/components/ui/radio-group.tsx": {
+            "lines": 18,
+            "tokens": 133,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/label.tsx": {
+            "lines": 4,
+            "tokens": 15,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/input.tsx": {
+            "lines": 5,
+            "tokens": 21,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/button.tsx": {
+            "lines": 8,
+            "tokens": 33,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/planner/UploadedFilesPanel.tsx": {
+            "lines": 3,
+            "tokens": 21,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/planner/GenerateControls.tsx": {
+            "lines": 0,
+            "tokens": 3,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/pages/Home.tsx": {
+            "lines": 65,
+            "tokens": 507,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/pages/About.tsx": {
+            "lines": 41,
+            "tokens": 399,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/context/PubDataContext.tsx": {
+            "lines": 14,
+            "tokens": 85,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/context/LoginGate.tsx": {
+            "lines": 4,
+            "tokens": 22,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/context/AuthContext.tsx": {
+            "lines": 0,
+            "tokens": 3,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/VisitScheduler.tsx": {
+            "lines": 386,
+            "tokens": 3527,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/VehicleSelector.tsx": {
+            "lines": 9,
+            "tokens": 96,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/UnscheduledPubsPanel.tsx": {
+            "lines": 270,
+            "tokens": 2319,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/SwipeToDelete.tsx": {
+            "lines": 30,
+            "tokens": 240,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/Sparkles.tsx": {
+            "lines": 7,
+            "tokens": 55,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/SparkleButton.tsx": {
+            "lines": 1,
+            "tokens": 13,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/SourceListChips.tsx": {
+            "lines": 0,
+            "tokens": 7,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/SourceChips.tsx": {
+            "lines": 9,
+            "tokens": 97,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ScheduleSettings.tsx": {
+            "lines": 179,
+            "tokens": 1121,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ScheduleReport.tsx": {
+            "lines": 20,
+            "tokens": 140,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/RescheduleDialog.tsx": {
+            "lines": 239,
+            "tokens": 1825,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/RepStatsPanel.tsx": {
+            "lines": 401,
+            "tokens": 3745,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/RemovePubDialog.tsx": {
+            "lines": 40,
+            "tokens": 379,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ProgressBar.tsx": {
+            "lines": 3,
+            "tokens": 9,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/PostcodeReviewDialog.tsx": {
+            "lines": 154,
+            "tokens": 1354,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/PostcodeFixesDialog.tsx": {
+            "lines": 115,
+            "tokens": 1147,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/OriginalValues.tsx": {
+            "lines": 54,
+            "tokens": 603,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/OpeningHoursIndicator.tsx": {
+            "lines": 14,
+            "tokens": 86,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/Navbar.tsx": {
+            "lines": 112,
+            "tokens": 644,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ListTypeDialog.tsx": {
+            "lines": 22,
+            "tokens": 195,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ListCriteriaDialog.tsx": {
+            "lines": 187,
+            "tokens": 1379,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/FileTypeDialog.tsx": {
+            "lines": 221,
+            "tokens": 1755,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/FilePreview.tsx": {
+            "lines": 113,
+            "tokens": 893,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/EnhancementSelector.tsx": {
+            "lines": 390,
+            "tokens": 2746,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/DriveTimeBar.tsx": {
+            "lines": 126,
+            "tokens": 1354,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/DeleteButton.tsx": {
+            "lines": 23,
+            "tokens": 122,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/DedupReviewDialog.tsx": {
+            "lines": 434,
+            "tokens": 4672,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/CustomDatePicker.tsx": {
+            "lines": 12,
+            "tokens": 79,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/CoverageHeatMap.tsx": {
+            "lines": 22,
+            "tokens": 147,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ColumnMappingWizard.tsx": {
+            "lines": 199,
+            "tokens": 1909,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/App.tsx": {
+            "lines": 8,
+            "tokens": 116,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 3962,
+          "tokens": 34016,
+          "sources": 42,
+          "clones": 0,
+          "duplicatedLines": 0,
+          "duplicatedTokens": 0,
+          "percentage": 0,
+          "percentageTokens": 0,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "tsx": {
+        "sources": {
+          "src/components/ui/radio-group.tsx": {
+            "lines": 39,
+            "tokens": 328,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/label.tsx": {
+            "lines": 23,
+            "tokens": 162,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/input.tsx": {
+            "lines": 24,
+            "tokens": 171,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ui/button.tsx": {
+            "lines": 29,
+            "tokens": 202,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/planner/UploadedFilesPanel.tsx": {
+            "lines": 29,
+            "tokens": 225,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/planner/GenerateControls.tsx": {
+            "lines": 23,
+            "tokens": 171,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/icons/MonopolyIcons.tsx": {
+            "lines": 77,
+            "tokens": 619,
+            "sources": 1,
+            "clones": 7,
+            "duplicatedLines": 89,
+            "duplicatedTokens": 602,
+            "percentage": 115.58,
+            "percentageTokens": 97.25,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/pages/Home.tsx": {
+            "lines": 283,
+            "tokens": 2244,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/pages/About.tsx": {
+            "lines": 154,
+            "tokens": 1316,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 22,
+            "duplicatedTokens": 222,
+            "percentage": 14.29,
+            "percentageTokens": 16.87,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/context/PubDataContext.tsx": {
+            "lines": 579,
+            "tokens": 4992,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 7,
+            "duplicatedTokens": 73,
+            "percentage": 1.21,
+            "percentageTokens": 1.46,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/context/LoginGate.tsx": {
+            "lines": 44,
+            "tokens": 362,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/context/AuthContext.tsx": {
+            "lines": 59,
+            "tokens": 497,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/VisitScheduler.tsx": {
+            "lines": 454,
+            "tokens": 4156,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/VehicleSelector.tsx": {
+            "lines": 174,
+            "tokens": 1239,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 33,
+            "duplicatedTokens": 211,
+            "percentage": 18.97,
+            "percentageTokens": 17.03,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/UnscheduledPubsPanel.tsx": {
+            "lines": 327,
+            "tokens": 2904,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/TerritoryMap.tsx": {
+            "lines": 35,
+            "tokens": 373,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/SwipeToDelete.tsx": {
+            "lines": 114,
+            "tokens": 1074,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/Sparkles.tsx": {
+            "lines": 73,
+            "tokens": 796,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/SparkleButton.tsx": {
+            "lines": 63,
+            "tokens": 672,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/SourceListChips.tsx": {
+            "lines": 29,
+            "tokens": 210,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/SourceChips.tsx": {
+            "lines": 33,
+            "tokens": 280,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ScheduleSettings.tsx": {
+            "lines": 274,
+            "tokens": 1984,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ScheduleReport.tsx": {
+            "lines": 102,
+            "tokens": 1270,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ScheduleOverview.tsx": {
+            "lines": 15,
+            "tokens": 144,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/RouteMap.tsx": {
+            "lines": 21,
+            "tokens": 171,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/RescheduleDialog.tsx": {
+            "lines": 622,
+            "tokens": 5225,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/RepStatsPanel.tsx": {
+            "lines": 765,
+            "tokens": 7550,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 42,
+            "duplicatedTokens": 270,
+            "percentage": 5.49,
+            "percentageTokens": 3.58,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/RemovePubDialog.tsx": {
+            "lines": 69,
+            "tokens": 605,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ProgressBar.tsx": {
+            "lines": 25,
+            "tokens": 204,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/PostcodeReviewDialog.tsx": {
+            "lines": 281,
+            "tokens": 2588,
+            "sources": 1,
+            "clones": 5,
+            "duplicatedLines": 58,
+            "duplicatedTokens": 587,
+            "percentage": 20.64,
+            "percentageTokens": 22.68,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/PostcodeFixesDialog.tsx": {
+            "lines": 217,
+            "tokens": 2158,
+            "sources": 1,
+            "clones": 5,
+            "duplicatedLines": 58,
+            "duplicatedTokens": 587,
+            "percentage": 26.73,
+            "percentageTokens": 27.2,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/OriginalValues.tsx": {
+            "lines": 97,
+            "tokens": 1048,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 10,
+            "duplicatedTokens": 170,
+            "percentage": 10.31,
+            "percentageTokens": 16.22,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/OpeningHoursIndicator.tsx": {
+            "lines": 64,
+            "tokens": 540,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/Navbar.tsx": {
+            "lines": 166,
+            "tokens": 1113,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ListTypeDialog.tsx": {
+            "lines": 55,
+            "tokens": 444,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ListCriteriaDialog.tsx": {
+            "lines": 340,
+            "tokens": 2646,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/FileTypeDialog.tsx": {
+            "lines": 366,
+            "tokens": 2979,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/FilePreview.tsx": {
+            "lines": 215,
+            "tokens": 1801,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ErrorBoundary.tsx": {
+            "lines": 70,
+            "tokens": 579,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 7,
+            "duplicatedTokens": 73,
+            "percentage": 10,
+            "percentageTokens": 12.61,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/EnhancementSelector.tsx": {
+            "lines": 677,
+            "tokens": 5495,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 22,
+            "duplicatedTokens": 240,
+            "percentage": 3.25,
+            "percentageTokens": 4.37,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/DriveTimeBar.tsx": {
+            "lines": 463,
+            "tokens": 3253,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 22,
+            "duplicatedTokens": 147,
+            "percentage": 4.75,
+            "percentageTokens": 4.52,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/DeleteButton.tsx": {
+            "lines": 51,
+            "tokens": 355,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/DedupReviewDialog.tsx": {
+            "lines": 516,
+            "tokens": 5634,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 34,
+            "duplicatedTokens": 244,
+            "percentage": 6.59,
+            "percentageTokens": 4.33,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/CustomDatePicker.tsx": {
+            "lines": 46,
+            "tokens": 351,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/CoverageHeatMap.tsx": {
+            "lines": 120,
+            "tokens": 1230,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/components/ColumnMappingWizard.tsx": {
+            "lines": 391,
+            "tokens": 3863,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/main.tsx": {
+            "lines": 9,
+            "tokens": 81,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/App.tsx": {
+            "lines": 126,
+            "tokens": 1260,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 8828,
+          "tokens": 77564,
+          "sources": 48,
+          "clones": 16,
+          "duplicatedLines": 202,
+          "duplicatedTokens": 1713,
+          "percentage": 2.29,
+          "percentageTokens": 2.21,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "typescript": {
+        "sources": {
+          "src/utils/typeGuards.ts": {
+            "lines": 3,
+            "tokens": 183,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/storage.ts": {
+            "lines": 13,
+            "tokens": 190,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/sourceDetails.ts": {
+            "lines": 244,
+            "tokens": 2784,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/seedFromPub.ts": {
+            "lines": 23,
+            "tokens": 370,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/scheduleUtils.ts": {
+            "lines": 886,
+            "tokens": 8854,
+            "sources": 1,
+            "clones": 8,
+            "duplicatedLines": 124,
+            "duplicatedTokens": 1496,
+            "percentage": 14,
+            "percentageTokens": 16.9,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/scheduleMappers.ts": {
+            "lines": 47,
+            "tokens": 550,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/rtmColors.ts": {
+            "lines": 15,
+            "tokens": 197,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/routeOptimization.ts": {
+            "lines": 148,
+            "tokens": 1631,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/postcodeUtils.ts": {
+            "lines": 126,
+            "tokens": 967,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/openingHours.ts": {
+            "lines": 98,
+            "tokens": 917,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/normalizeFile.ts": {
+            "lines": 47,
+            "tokens": 526,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/mockData.ts": {
+            "lines": 58,
+            "tokens": 534,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 31,
+            "duplicatedTokens": 340,
+            "percentage": 53.45,
+            "percentageTokens": 63.67,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/mapsLoader.ts": {
+            "lines": 22,
+            "tokens": 184,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/lineageMerge.ts": {
+            "lines": 271,
+            "tokens": 2350,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/googleMaps.ts": {
+            "lines": 91,
+            "tokens": 818,
+            "sources": 1,
+            "clones": 3,
+            "duplicatedLines": 64,
+            "duplicatedTokens": 540,
+            "percentage": 70.33,
+            "percentageTokens": 66.01,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/fuzzy.ts": {
+            "lines": 145,
+            "tokens": 1324,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/devLog.ts": {
+            "lines": 3,
+            "tokens": 51,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/dedupe.ts": {
+            "lines": 342,
+            "tokens": 3303,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/columnSynonyms.ts": {
+            "lines": 29,
+            "tokens": 512,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/utils/calendarUtils.ts": {
+            "lines": 66,
+            "tokens": 848,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/types/xlsx-js-style.d.ts": {
+            "lines": 45,
+            "tokens": 540,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/types/shims.d.ts": {
+            "lines": 42,
+            "tokens": 322,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/types/index.ts": {
+            "lines": 91,
+            "tokens": 777,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/types/import.ts": {
+            "lines": 20,
+            "tokens": 249,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/services/persistence.ts": {
+            "lines": 71,
+            "tokens": 788,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/hooks/useMapsService.ts": {
+            "lines": 138,
+            "tokens": 1262,
+            "sources": 1,
+            "clones": 4,
+            "duplicatedLines": 95,
+            "duplicatedTokens": 880,
+            "percentage": 68.84,
+            "percentageTokens": 69.73,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/hooks/useColumnMapping.ts": {
+            "lines": 24,
+            "tokens": 313,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/config/maps.ts": {
+            "lines": 68,
+            "tokens": 543,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/config/environment.ts": {
+            "lines": 5,
+            "tokens": 41,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/config/api.ts": {
+            "lines": 6,
+            "tokens": 62,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/api/useBusinessData.ts": {
+            "lines": 52,
+            "tokens": 855,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/api/types.ts": {
+            "lines": 48,
+            "tokens": 394,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/api/postcodesProvider.ts": {
+            "lines": 27,
+            "tokens": 361,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/api/nominatimProvider.ts": {
+            "lines": 54,
+            "tokens": 878,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/api/http.ts": {
+            "lines": 33,
+            "tokens": 525,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/api/fallbackProvider.ts": {
+            "lines": 65,
+            "tokens": 807,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "src/types.ts": {
+            "lines": 50,
+            "tokens": 368,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 3516,
+          "tokens": 36178,
+          "sources": 37,
+          "clones": 8,
+          "duplicatedLines": 157,
+          "duplicatedTokens": 1628,
+          "percentage": 4.47,
+          "percentageTokens": 4.5,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "css": {
+        "sources": {
+          "src/index.css": {
+            "lines": 205,
+            "tokens": 1146,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 205,
+          "tokens": 1146,
+          "sources": 1,
+          "clones": 0,
+          "duplicatedLines": 0,
+          "duplicatedTokens": 0,
+          "percentage": 0,
+          "percentageTokens": 0,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      }
+    },
+    "total": {
+      "lines": 16511,
+      "tokens": 148904,
+      "sources": 128,
+      "clones": 24,
+      "duplicatedLines": 359,
+      "duplicatedTokens": 3341,
+      "percentage": 2.17,
+      "percentageTokens": 2.24,
+      "newDuplicatedLines": 0,
+      "newClones": 0
+    }
+  },
+  "duplicates": [
+    {
+      "format": "tsx",
+      "lines": 14,
+      "fragment": ": React.FC<LucideProps> = (props) => (\r\n  <svg\r\n    xmlns=\"http://www.w3.org/2000/svg\"\r\n    width=\"24\"\r\n    height=\"24\"\r\n    viewBox=\"0 0 24 24\"\r\n    fill=\"none\"\r\n    stroke=\"currentColor\"\r\n    strokeWidth=\"2\"\r\n    strokeLinecap=\"round\"\r\n    strokeLinejoin=\"round\"\r\n    {...props}\r\n  >\r\n    <rect",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\icons\\MonopolyIcons.tsx",
+        "start": 23,
+        "end": 36,
+        "startLoc": {
+          "line": 23,
+          "column": 11,
+          "position": 173
+        },
+        "endLoc": {
+          "line": 36,
+          "column": 5,
+          "position": 261
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\icons\\MonopolyIcons.tsx",
+        "start": 4,
+        "end": 17,
+        "startLoc": {
+          "line": 4,
+          "column": 9,
+          "position": 31
+        },
+        "endLoc": {
+          "line": 17,
+          "column": 5,
+          "position": 119
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 14,
+      "fragment": ": React.FC<LucideProps> = (props) => (\r\n  <svg\r\n    xmlns=\"http://www.w3.org/2000/svg\"\r\n    width=\"24\"\r\n    height=\"24\"\r\n    viewBox=\"0 0 24 24\"\r\n    fill=\"none\"\r\n    stroke=\"currentColor\"\r\n    strokeWidth=\"2\"\r\n    strokeLinecap=\"round\"\r\n    strokeLinejoin=\"round\"\r\n    {...props}\r\n  >\r\n    <path d=\"M12 3a9 9 0 0 1 9 9v5a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-5a9 9 0 0 1 9-9z",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\icons\\MonopolyIcons.tsx",
+        "start": 42,
+        "end": 55,
+        "startLoc": {
+          "line": 42,
+          "column": 12,
+          "position": 333
+        },
+        "endLoc": {
+          "line": 55,
+          "column": 70,
+          "position": 426
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\icons\\MonopolyIcons.tsx",
+        "start": 4,
+        "end": 17,
+        "startLoc": {
+          "line": 4,
+          "column": 9,
+          "position": 31
+        },
+        "endLoc": {
+          "line": 17,
+          "column": 36,
+          "position": 124
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 14,
+      "fragment": ": React.FC<LucideProps> = (props) => (\r\n  <svg\r\n    xmlns=\"http://www.w3.org/2000/svg\"\r\n    width=\"24\"\r\n    height=\"24\"\r\n    viewBox=\"0 0 24 24\"\r\n    fill=\"none\"\r\n    stroke=\"currentColor\"\r\n    strokeWidth=\"2\"\r\n    strokeLinecap=\"round\"\r\n    strokeLinejoin=\"round\"\r\n    {...props}\r\n  >\r\n    <circle",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\icons\\MonopolyIcons.tsx",
+        "start": 61,
+        "end": 74,
+        "startLoc": {
+          "line": 61,
+          "column": 16,
+          "position": 475
+        },
+        "endLoc": {
+          "line": 74,
+          "column": 7,
+          "position": 563
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\icons\\MonopolyIcons.tsx",
+        "start": 4,
+        "end": 17,
+        "startLoc": {
+          "line": 4,
+          "column": 9,
+          "position": 31
+        },
+        "endLoc": {
+          "line": 17,
+          "column": 5,
+          "position": 119
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 11,
+      "fragment": ") {\n        best = { locality, pressuredBy: info.pressuredBy, ratio: info.pressureRatio };\n        bestRequired = info.requiredAtPressure;\n        bestCapacity = info.capacityAtPressure;\n        return;\n      }\n      if (\n        info.pressureRatio === best.ratio &&\n        info.pressuredBy &&\n        best.pressuredBy &&\n        normalizeDateOnly(info.pressuredBy) ===",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\utils\\scheduleUtils.ts",
+        "start": 340,
+        "end": 350,
+        "startLoc": {
+          "line": 340,
+          "column": 7,
+          "position": 3632
+        },
+        "endLoc": {
+          "line": 350,
+          "column": 4,
+          "position": 3731
+        }
+      },
+      "secondFile": {
+        "name": "src\\utils\\scheduleUtils.ts",
+        "start": 329,
+        "end": 339,
+        "startLoc": {
+          "line": 329,
+          "column": 6,
+          "position": 3523
+        },
+        "endLoc": {
+          "line": 339,
+          "column": 2,
+          "position": 3622
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 32,
+      "fragment": "=> {\n    const endDate =\n      remainingScheduleDays > 0\n        ? addBusinessDays(date, remainingScheduleDays - 1)\n        : date;\n    const remainingByLocality = pubs.reduce<Record<string, number>>(\n      (acc, pub) => {\n        const key = getLocalityKey(pub);\n        acc[key] = (acc[key] ?? 0) + 1;\n        return acc;\n      },\n      {}\n    );\n    const totalRemaining = Object.values(remainingByLocality).reduce(\n      (acc, n) => acc + n,\n      0\n    );\n    const localityShare: Record<string, number> = {};\n    Object.entries(remainingByLocality).forEach(([key, count]) => {\n      const rawShare = totalRemaining > 0 ? count / totalRemaining : 0;\n      localityShare[key] = Math.sqrt(rawShare);\n    });\n\n    const byLocality = new Map<string, Pub[]>();\n    pubs.forEach((pub) => {\n      const key = getLocalityKey(pub);\n      const list = byLocality.get(key) ?? [];\n      list.push(pub);\n      byLocality.set(key, list);\n    });\n\n    const out = new Map<string, Map",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\utils\\scheduleUtils.ts",
+        "start": 378,
+        "end": 409,
+        "startLoc": {
+          "line": 378,
+          "column": 2,
+          "position": 3981
+        },
+        "endLoc": {
+          "line": 409,
+          "column": 4,
+          "position": 4350
+        }
+      },
+      "secondFile": {
+        "name": "src\\utils\\scheduleUtils.ts",
+        "start": 210,
+        "end": 241,
+        "startLoc": {
+          "line": 210,
+          "column": 2,
+          "position": 2254
+        },
+        "endLoc": {
+          "line": 241,
+          "column": 13,
+          "position": 2623
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 8,
+      "fragment": "();\n    byLocality.forEach((localPubs, locality) => {\n      const deadlines = localPubs\n        .map(getDeadlineDate)\n        .filter((d): d is Date => Boolean(d))\n        .filter((d) => normalizeDateOnly(d) >= normalizeDateOnly(date))\n        .sort((a, b) => normalizeDateOnly(a) - normalizeDateOnly(b));\n      if (deadlines.length === 0) return",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\utils\\scheduleUtils.ts",
+        "start": 409,
+        "end": 416,
+        "startLoc": {
+          "line": 409,
+          "column": 3,
+          "position": 4357
+        },
+        "endLoc": {
+          "line": 416,
+          "column": 7,
+          "position": 4479
+        }
+      },
+      "secondFile": {
+        "name": "src\\utils\\scheduleUtils.ts",
+        "start": 241,
+        "end": 248,
+        "startLoc": {
+          "line": 241,
+          "column": 2,
+          "position": 2625
+        },
+        "endLoc": {
+          "line": 248,
+          "column": 2,
+          "position": 2747
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 15,
+      "fragment": "const required = localPubs.filter((pub) => {\n          const d = getDeadlineDate(pub);\n          if (!d) return false;\n          return normalizeDateOnly(d) <= normalizeDateOnly(deadlineDate);\n        }).length;\n        const capEnd =\n          normalizeDateOnly(deadlineDate) < normalizeDateOnly(endDate)\n            ? deadlineDate\n            : endDate;\n        const capacity =\n          countBusinessDaysInclusive(date, capEnd) *\n          slotsPerDay *\n          (localityShare[locality] ?? 0);\n        const ratio = required / Math.max(1, capacity);\n        ratioMap",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\utils\\scheduleUtils.ts",
+        "start": 424,
+        "end": 438,
+        "startLoc": {
+          "line": 424,
+          "column": 9,
+          "position": 4570
+        },
+        "endLoc": {
+          "line": 438,
+          "column": 9,
+          "position": 4728
+        }
+      },
+      "secondFile": {
+        "name": "src\\utils\\scheduleUtils.ts",
+        "start": 272,
+        "end": 286,
+        "startLoc": {
+          "line": 272,
+          "column": 9,
+          "position": 2969
+        },
+        "endLoc": {
+          "line": 286,
+          "column": 3,
+          "position": 3127
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 12,
+      "fragment": ") => (\r\n                <li key={index} className=\"flex items-start\">\r\n                  <span className=\"inline-block w-2 h-2 mt-2 mr-2 rounded-full bg-neon-blue\" />\r\n                  <span className=\"text-white\">\r\n                    <strong className=\"text-white\">{title}</strong> {desc}\r\n                  </span>\r\n                </li>\r\n              ))}\r\n            </ul>\r\n          </div>\r\n\r\n          <div className=\"animated-border bg-gradient-to-r from-eggplant-800/90 via-dark-800/95 to-eggplant-800/90 backdrop-blur-sm rounded-lg p-6",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\pages\\About.tsx",
+        "start": 110,
+        "end": 121,
+        "startLoc": {
+          "line": 110,
+          "column": 6,
+          "position": 966
+        },
+        "endLoc": {
+          "line": 121,
+          "column": 121,
+          "position": 1077
+        }
+      },
+      "secondFile": {
+        "name": "src\\pages\\About.tsx",
+        "start": 69,
+        "end": 80,
+        "startLoc": {
+          "line": 69,
+          "column": 2,
+          "position": 570
+        },
+        "endLoc": {
+          "line": 80,
+          "column": 126,
+          "position": 681
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 30,
+      "fragment": ";\r\n\r\n// Service state management\r\nclass MapsService {\r\n  private static instance: MapsService;\r\n  private placesService: google.maps.places.PlacesService | null = null;\r\n  private geocoder: google.maps.Geocoder | null = null;\r\n  private isLoaded = false;\r\n  private loadError: Error | null = null;\r\n\r\n  private constructor() {}\r\n\r\n  static getInstance(): MapsService {\r\n    if (!MapsService.instance) {\r\n      MapsService.instance = new MapsService();\r\n    }\r\n    return MapsService.instance;\r\n  }\r\n\r\n  async initialize(): Promise<void> {\r\n    if (this.loadError) {\r\n      throw this.loadError;\r\n    }\r\n\r\n    if (this.isLoaded) {\r\n      return;\r\n    }\r\n\r\n    try {\r\n      await",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\hooks\\useMapsService.ts",
+        "start": 14,
+        "end": 43,
+        "startLoc": {
+          "line": 14,
+          "column": 2,
+          "position": 115
+        },
+        "endLoc": {
+          "line": 43,
+          "column": 6,
+          "position": 365
+        }
+      },
+      "secondFile": {
+        "name": "src\\utils\\googleMaps.ts",
+        "start": 1,
+        "end": 30,
+        "startLoc": {
+          "line": 1,
+          "column": 15,
+          "position": 14
+        },
+        "endLoc": {
+          "line": 30,
+          "column": 6,
+          "position": 264
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 15,
+      "fragment": ".load();\r\n      \r\n      // Initialize services\r\n      const div = document.createElement('div');\r\n      this.placesService = new google.maps.places.PlacesService(div);\r\n      this.geocoder = new google.maps.Geocoder();\r\n      \r\n      this.isLoaded = true;\r\n    } catch (error) {\r\n      this.loadError = this.handleError(error);\r\n      throw this.loadError;\r\n    }\r\n  }\r\n\r\n  private",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\hooks\\useMapsService.ts",
+        "start": 43,
+        "end": 57,
+        "startLoc": {
+          "line": 43,
+          "column": 11,
+          "position": 368
+        },
+        "endLoc": {
+          "line": 57,
+          "column": 8,
+          "position": 499
+        }
+      },
+      "secondFile": {
+        "name": "src\\utils\\googleMaps.ts",
+        "start": 31,
+        "end": 45,
+        "startLoc": {
+          "line": 31,
+          "column": 7,
+          "position": 282
+        },
+        "endLoc": {
+          "line": 45,
+          "column": 17,
+          "position": 413
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 22,
+      "fragment": "}\r\n\r\n  getPlacesService(): google.maps.places.PlacesService | null {\r\n    return this.placesService;\r\n  }\r\n\r\n  getGeocoder(): google.maps.Geocoder | null {\r\n    return this.geocoder;\r\n  }\r\n\r\n  isInitialized(): boolean {\r\n    return this.isLoaded;\r\n  }\r\n\r\n  hasError(): boolean {\r\n    return this.loadError !== null;\r\n  }\r\n\r\n  getError(): Error | null {\r\n    return this.loadError;\r\n  }\r\n}",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\hooks\\useMapsService.ts",
+        "start": 81,
+        "end": 102,
+        "startLoc": {
+          "line": 81,
+          "column": 3,
+          "position": 716
+        },
+        "endLoc": {
+          "line": 102,
+          "column": 2,
+          "position": 875
+        }
+      },
+      "secondFile": {
+        "name": "src\\utils\\googleMaps.ts",
+        "start": 43,
+        "end": 65,
+        "startLoc": {
+          "line": 43,
+          "column": 3,
+          "position": 407
+        },
+        "endLoc": {
+          "line": 65,
+          "column": 8,
+          "position": 569
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 32,
+      "fragment": "let seed = pubName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);\r\n  const rand = () => {\r\n    seed = (seed * 9301 + 49297) % 233280;\r\n    return seed / 233280;\r\n  };\r\n\r\n  const rating = 3.5 + rand() * 1.5;\r\n  const totalRatings = Math.floor(50 + rand() * 200);\r\n  const phoneNumber = `020 ${Math.floor(1000 + rand() * 9000)} ${Math.floor(1000 + rand() * 9000)}`;\r\n  const openingHours = [\r\n    'Monday: 11:00 AM - 11:00 PM',\r\n    'Tuesday: 11:00 AM - 11:00 PM',\r\n    'Wednesday: 11:00 AM - 11:00 PM',\r\n    'Thursday: 11:00 AM - 11:00 PM',\r\n    'Friday: 11:00 AM - 12:00 AM',\r\n    'Saturday: 11:00 AM - 12:00 AM',\r\n    'Sunday: 12:00 PM - 10:30 PM'\r\n  ];\r\n\r\n  const normalizedName = pubName.toLowerCase().replace(/[^a-z0-9]/g, '');\r\n  const email = `info@${normalizedName}.co.uk`;\r\n  const website = `https://www.${normalizedName}.co.uk`;\r\n\r\n  return {\r\n    rating,\r\n    totalRatings,\r\n    phoneNumber,\r\n    email,\r\n    openingHours,\r\n    website\r\n  };\r\n};",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\hooks\\useMapsService.ts",
+        "start": 108,
+        "end": 139,
+        "startLoc": {
+          "line": 108,
+          "column": 3,
+          "position": 922
+        },
+        "endLoc": {
+          "line": 139,
+          "column": 2,
+          "position": 1262
+        }
+      },
+      "secondFile": {
+        "name": "src\\utils\\mockData.ts",
+        "start": 28,
+        "end": 59,
+        "startLoc": {
+          "line": 28,
+          "column": 3,
+          "position": 194
+        },
+        "endLoc": {
+          "line": 59,
+          "column": 2,
+          "position": 534
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 12,
+      "fragment": ") => (\r\n  <svg\r\n    xmlns=\"http://www.w3.org/2000/svg\"\r\n    width=\"24\"\r\n    height=\"24\"\r\n    viewBox=\"0 0 24 24\"\r\n    fill=\"none\"\r\n    stroke=\"currentColor\"\r\n    strokeWidth=\"2\"\r\n    strokeLinecap=\"round\"\r\n    strokeLinejoin=\"round\"\r\n  ",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\VehicleSelector.tsx",
+        "start": 9,
+        "end": 20,
+        "startLoc": {
+          "line": 9,
+          "column": 2,
+          "position": 77
+        },
+        "endLoc": {
+          "line": 20,
+          "column": 3,
+          "position": 141
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\icons\\MonopolyIcons.tsx",
+        "start": 4,
+        "end": 15,
+        "startLoc": {
+          "line": 4,
+          "column": 6,
+          "position": 44
+        },
+        "endLoc": {
+          "line": 15,
+          "column": 5,
+          "position": 108
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 22,
+      "fragment": "</div>\r\n              </div>\r\n              <button\r\n                onClick={() => setShowPostcodeFixes(true)}\r\n                className=\"px-3 py-1.5 text-xs font-medium text-white bg-neon-purple rounded-lg hover:bg-neon-purple/90\"\r\n              >\r\n                Review fixes\r\n              </button>\r\n            </div>\r\n          </div>\r\n        )}\r\n\r\n        {showPostcodeFixes && pendingFixes.length > 0 && (\r\n          <PostcodeFixesDialog\r\n            isOpen={showPostcodeFixes}\r\n            issues={pendingFixes}\r\n            onCancel={() => setShowPostcodeFixes(false)}\r\n            onConfirm={applyPostcodeUpdates}\r\n          />\r\n        )}\r\n\r\n        {",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\RepStatsPanel.tsx",
+        "start": 456,
+        "end": 477,
+        "startLoc": {
+          "line": 456,
+          "column": 17,
+          "position": 4635
+        },
+        "endLoc": {
+          "line": 477,
+          "column": 2,
+          "position": 4770
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\RepStatsPanel.tsx",
+        "start": 196,
+        "end": 216,
+        "startLoc": {
+          "line": 196,
+          "column": 17,
+          "position": 2091
+        },
+        "endLoc": {
+          "line": 216,
+          "column": 3,
+          "position": 2224
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 17,
+      "fragment": "[]) => void;\r\n  onCancel: () => void;\r\n};\r\n\r\nconst statusLabels: Record<ParsedPostcode[\"status\"], string> = {\r\n  OK: \"OK\",\r\n  ODDBALL: \"Oddball\",\r\n  INVALID: \"Invalid\",\r\n};\r\n\r\nconst statusStyles: Record<ParsedPostcode[\"status\"], string> = {\r\n  OK: \"bg-green-500/20 text-green-200 border-green-500/40\",\r\n  ODDBALL: \"bg-yellow-500/20 text-yellow-200 border-yellow-500/40\",\r\n  INVALID: \"bg-red-500/20 text-red-200 border-red-500/40\",\r\n};\r\n\r\nconst",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\PostcodeFixesDialog.tsx",
+        "start": 25,
+        "end": 41,
+        "startLoc": {
+          "line": 25,
+          "column": 18,
+          "position": 241
+        },
+        "endLoc": {
+          "line": 41,
+          "column": 6,
+          "position": 372
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\PostcodeReviewDialog.tsx",
+        "start": 30,
+        "end": 46,
+        "startLoc": {
+          "line": 30,
+          "column": 23,
+          "position": 279
+        },
+        "endLoc": {
+          "line": 46,
+          "column": 7,
+          "position": 410
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 10,
+      "fragment": "</div>\r\n            </div>\r\n            <Dialog.Close className=\"text-eggplant-400 hover:text-eggplant-100\">\r\n              <X className=\"h-5 w-5\" />\r\n            </Dialog.Close>\r\n          </div>\r\n\r\n          <div className=\"px-6 py-4 overflow-y-auto max-h-[60vh] space-y-4\">\r\n            {issues.map((issue) => {\r\n              const edit = edits[issue.uuid",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\PostcodeFixesDialog.tsx",
+        "start": 104,
+        "end": 113,
+        "startLoc": {
+          "line": 104,
+          "column": 15,
+          "position": 1152
+        },
+        "endLoc": {
+          "line": 113,
+          "column": 5,
+          "position": 1240
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\PostcodeReviewDialog.tsx",
+        "start": 144,
+        "end": 153,
+        "startLoc": {
+          "line": 144,
+          "column": 15,
+          "position": 1466
+        },
+        "endLoc": {
+          "line": 153,
+          "column": 3,
+          "position": 1554
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 16,
+      "fragment": ">\r\n                  </div>\r\n\r\n                  <div className=\"mt-4 grid gap-3 md:grid-cols-[220px,1fr]\">\r\n                    <div className=\"text-xs text-eggplant-300\">Postcode (editable)</div>\r\n                    <div className=\"space-y-2\">\r\n                      <input\r\n                        value={edit?.postcode ?? issue.zip}\r\n                        onChange={(e) => handlePostcodeChange(issue, e.target.value)}\r\n                        className=\"w-full bg-eggplant-950/60 border border-eggplant-600/50 rounded-lg px-3 py-2 text-sm text-eggplant-100\"\r\n                      />\r\n                      <div className=\"text-xs text-eggplant-300 flex items-center gap-2\">\r\n                        <AlertTriangle className=\"h-3 w-3 text-yellow-300\" />\r\n                        Normalized: {parsed.normalized ?? \"—\"}\r\n                      </div>\r\n                      {",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\PostcodeFixesDialog.tsx",
+        "start": 136,
+        "end": 151,
+        "startLoc": {
+          "line": 136,
+          "column": 5,
+          "position": 1427
+        },
+        "endLoc": {
+          "line": 151,
+          "column": 2,
+          "position": 1578
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\PostcodeReviewDialog.tsx",
+        "start": 207,
+        "end": 224,
+        "startLoc": {
+          "line": 207,
+          "column": 4,
+          "position": 1945
+        },
+        "endLoc": {
+          "line": 224,
+          "column": 3,
+          "position": 2097
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 8,
+      "fragment": "<div className=\"mt-4 border border-eggplant-700/40 rounded-lg overflow-hidden\">\r\n                      {headers.map((header) => {\r\n                        const normalizedHeader = String(header).trim().toLowerCase();\r\n                        const isPostcodeHeader = [\"postcode\", \"post code\", \"post_code\", \"zip\"].includes(\r\n                          normalizedHeader\r\n                        );\r\n                        const value = isPostcodeHeader\r\n                          ? edit?.postcode ?? issue.zip",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\PostcodeFixesDialog.tsx",
+        "start": 161,
+        "end": 168,
+        "startLoc": {
+          "line": 161,
+          "column": 21,
+          "position": 1681
+        },
+        "endLoc": {
+          "line": 168,
+          "column": 4,
+          "position": 1785
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\PostcodeReviewDialog.tsx",
+        "start": 227,
+        "end": 234,
+        "startLoc": {
+          "line": 227,
+          "column": 19,
+          "position": 2111
+        },
+        "endLoc": {
+          "line": 234,
+          "column": 9,
+          "position": 2215
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 12,
+      "fragment": ">\r\n                            <div className=\"text-eggplant-300\">{header}</div>\r\n                            <div className=\"col-span-2 text-eggplant-100 break-words\">\r\n                              {value !== undefined && value !== null && String(value).trim().length > 0\r\n                                ? String(value)\r\n                                : \"—\"}\r\n                            </div>\r\n                          </div>\r\n                        );\r\n                      })}\r\n                    </div>\r\n                  )",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\PostcodeFixesDialog.tsx",
+        "start": 174,
+        "end": 185,
+        "startLoc": {
+          "line": 174,
+          "column": 27,
+          "position": 1834
+        },
+        "endLoc": {
+          "line": 185,
+          "column": 2,
+          "position": 1947
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\PostcodeReviewDialog.tsx",
+        "start": 240,
+        "end": 251,
+        "startLoc": {
+          "line": 240,
+          "column": 25,
+          "position": 2262
+        },
+        "endLoc": {
+          "line": 251,
+          "column": 3,
+          "position": 2375
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": "}</div>\r\n                    <div className=\"space-y-1\">\r\n                      {values.map((value, index) => (\r\n                        <div key={index} className=\"flex items-center gap-2 text-xs\">\r\n                          <span className=\"text-eggplant-400\">\r\n                            {pub.sources?.find(s => s.sourceId === pub",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\OriginalValues.tsx",
+        "start": 77,
+        "end": 82,
+        "startLoc": {
+          "line": 77,
+          "column": 4,
+          "position": 827
+        },
+        "endLoc": {
+          "line": 82,
+          "column": 4,
+          "position": 912
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\OriginalValues.tsx",
+        "start": 52,
+        "end": 57,
+        "startLoc": {
+          "line": 52,
+          "column": 6,
+          "position": 527
+        },
+        "endLoc": {
+          "line": 57,
+          "column": 6,
+          "position": 612
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 8,
+      "fragment": ") {\r\n      return (\r\n        <div className=\"min-h-screen bg-eggplant-900 flex items-center justify-center p-4\">\r\n          <div className=\"bg-eggplant-800 rounded-lg shadow-xl p-6 max-w-md w-full\">\r\n            <div className=\"flex items-center gap-3 mb-4\">\r\n              <AlertTriangle className=\"h-6 w-6 text-red-400\" />\r\n              <h2 className=\"text-xl font-semibold text-eggplant-100\">\r\n                Something",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\ErrorBoundary.tsx",
+        "start": 37,
+        "end": 44,
+        "startLoc": {
+          "line": 37,
+          "column": 9,
+          "position": 308
+        },
+        "endLoc": {
+          "line": 44,
+          "column": 10,
+          "position": 381
+        }
+      },
+      "secondFile": {
+        "name": "src\\context\\PubDataContext.tsx",
+        "start": 552,
+        "end": 559,
+        "startLoc": {
+          "line": 552,
+          "column": 20,
+          "position": 4778
+        },
+        "endLoc": {
+          "line": 559,
+          "column": 15,
+          "position": 4851
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 12,
+      "fragment": ">\r\n            Add Your Lists\r\n          </span>\r\n          <span className=\"text-xs text-eggplant-300 ml-2\">\r\n            (\r\n            {Object.entries(fileCountByType)\r\n              .filter(([type]) => type !== \"masterhouse\")\r\n              .reduce((sum, [_, count]) => sum + (count as number), 0)}\r\n            /{maxFiles})\r\n          </span>\r\n        </button>\r\n      </",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\EnhancementSelector.tsx",
+        "start": 317,
+        "end": 328,
+        "startLoc": {
+          "line": 317,
+          "column": 11,
+          "position": 2953
+        },
+        "endLoc": {
+          "line": 328,
+          "column": 3,
+          "position": 3073
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\EnhancementSelector.tsx",
+        "start": 278,
+        "end": 289,
+        "startLoc": {
+          "line": 278,
+          "column": 2,
+          "position": 2701
+        },
+        "endLoc": {
+          "line": 289,
+          "column": 2,
+          "position": 2821
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 23,
+      "fragment": ";\r\n\r\n// Custom icon for fairy\r\nconst FairyIcon = () => (\r\n  <svg\r\n    xmlns=\"http://www.w3.org/2000/svg\"\r\n    width=\"24\"\r\n    height=\"24\"\r\n    viewBox=\"0 0 24 24\"\r\n    fill=\"none\"\r\n    stroke=\"currentColor\"\r\n    strokeWidth=\"2\"\r\n    strokeLinecap=\"round\"\r\n    strokeLinejoin=\"round\"\r\n  >\r\n    <path d=\"M12 2l1.5 5h5l-4 3 1.5 5-4-3-4 3 1.5-5-4-3h5z\" />\r\n    <path d=\"M12 16v6\" />\r\n    <path d=\"M8 14l-4 4\" />\r\n    <path d=\"M16 14l4 4\" />\r\n  </svg>\r\n);\r\n\r\nconst",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\DriveTimeBar.tsx",
+        "start": 22,
+        "end": 44,
+        "startLoc": {
+          "line": 22,
+          "column": 11,
+          "position": 145
+        },
+        "endLoc": {
+          "line": 44,
+          "column": 6,
+          "position": 292
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\VehicleSelector.tsx",
+        "start": 6,
+        "end": 28,
+        "startLoc": {
+          "line": 6,
+          "column": 28,
+          "position": 62
+        },
+        "endLoc": {
+          "line": 28,
+          "column": 25,
+          "position": 209
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 18,
+      "fragment": ".length} items</div>\r\n                  <div className=\"flex gap-2\">\r\n                    <button\r\n                      className=\"px-2 py-1 text-xs bg-neon-purple/20 text-neon-purple rounded hover:bg-neon-purple/30\"\r\n                      onClick={() => bulkSet(filteredAutoMergeIds, 'merge')}\r\n                    >\r\n                      All Merge\r\n                    </button>\r\n                    <button\r\n                      className=\"px-2 py-1 text-xs bg-eggplant-600/50 text-eggplant-300 rounded hover:bg-eggplant-600/70\"\r\n                      onClick={() => bulkSet(filteredAutoMergeIds, 'skip')}\r\n                    >\r\n                      All Skip\r\n                    </button>\r\n                  </div>\r\n                </div>\r\n\r\n                {/* Cards for the right column */",
+      "tokens": 0,
+      "firstFile": {
+        "name": "src\\components\\DedupReviewDialog.tsx",
+        "start": 451,
+        "end": 468,
+        "startLoc": {
+          "line": 451,
+          "column": 21,
+          "position": 5138
+        },
+        "endLoc": {
+          "line": 468,
+          "column": 33,
+          "position": 5260
+        }
+      },
+      "secondFile": {
+        "name": "src\\components\\DedupReviewDialog.tsx",
+        "start": 413,
+        "end": 430,
+        "startLoc": {
+          "line": 413,
+          "column": 23,
+          "position": 4826
+        },
+        "endLoc": {
+          "line": 430,
+          "column": 32,
+          "position": 4948
+        }
+      }
+    }
+  ],
+  "filename": "C:\\Users\\ritno\\dev\\icjourney\\node_modules\\@jscpd\\html-reporter\\dist\\templates\\main.pug"
+}
