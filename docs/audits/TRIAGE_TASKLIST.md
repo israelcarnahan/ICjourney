@@ -1,7 +1,7 @@
 # Audit Triage Tasklist
 
 **Date**: 2026-01-14  
-**Status**: Planning/Triage Phase - NO DELETIONS YET
+**Status**: Triage Phase
 
 ## Audit Artifacts
 
@@ -12,100 +12,9 @@
 
 ## Knip Findings Summary
 
-### Unused Files (10)
+### Archived Files (10)
 
-**Verification Method**: Searched `src/` for import statements, JSX usage (`<ComponentName`), and string/path mentions. Excluded matches within the file itself. Evidence shows file:line references or explicit "no references found" confirmation.
-
-#### ARCHIVE
-
-- **File:** `src/components/CoverageHeatMap.tsx`
-
-  - **INTENT:** Coverage heat map by postcode area.
-  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
-  - **INTENT DUPLICATION:** None found; no active heatmap component exists.
-  - **HIDDEN COUPLING RISK:** None found.
-  - **LOGIC SALVAGE:** Optional: reuse area grouping + color scaling in [`src/components/RepStatsPanel.tsx`](../../src/components/RepStatsPanel.tsx).
-  - **VERDICT:** ARCHIVE
-
-- **File:** `src/components/ProgressBar.tsx`
-
-  - **INTENT:** Radix-based progress indicator.
-  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
-  - **INTENT DUPLICATION:** None found.
-  - **HIDDEN COUPLING RISK:** None found.
-  - **LOGIC SALVAGE:** Optional: wire into long-running flows in [`src/components/FileUploader.tsx`](../../src/components/FileUploader.tsx).
-  - **VERDICT:** ARCHIVE
-
-- **File:** `src/components/RemovePubDialog.tsx`
-
-  - **INTENT:** Confirm-and-replace dialog for removing a visit.
-  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
-  - **INTENT DUPLICATION:** Replacement logic exists without dialog UI in [`src/components/ScheduleDisplay.tsx`](../../src/components/ScheduleDisplay.tsx).
-  - **HIDDEN COUPLING RISK:** None found.
-  - **LOGIC SALVAGE:** Optional: reuse the dialog UX with `handleVisitReplace` in [`src/components/ScheduleDisplay.tsx`](../../src/components/ScheduleDisplay.tsx).
-  - **VERDICT:** ARCHIVE
-
-- **File:** `src/components/RescheduleDialog.tsx`
-
-  - **INTENT:** Reschedule dialog with postcode-based regeneration.
-  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
-  - **INTENT DUPLICATION:** None found; no active reschedule UI exists.
-  - **HIDDEN COUPLING RISK:** None found.
-  - **LOGIC SALVAGE:** Optional: integrate with day actions in [`src/components/ScheduleDisplay.tsx`](../../src/components/ScheduleDisplay.tsx).
-  - **VERDICT:** ARCHIVE
-
-- **File:** `src/components/EnhancementSelector.tsx`
-
-  - **INTENT:** Legacy upload flow with list options, Excel parsing, postcode validation, and file configuration.
-  - **REAL USAGE CHECK:** Only a commented-out JSX reference in [`src/pages/PlannerDashboard.tsx`](../../src/pages/PlannerDashboard.tsx); no live imports.
-  - **INTENT DUPLICATION:** Active upload flow is [`src/components/FileUploader.tsx`](../../src/components/FileUploader.tsx) with selection UI in [`src/components/FileTypeDialog.tsx`](../../src/components/FileTypeDialog.tsx).
-  - **HIDDEN COUPLING RISK:** Low; references [`src/config/maps.ts`](../../src/config/maps.ts) which is already used elsewhere.
-  - **LOGIC SALVAGE:** Optional: reuse the option-card UX or simplified parser in [`src/components/FileUploader.tsx`](../../src/components/FileUploader.tsx).
-  - **VERDICT:** ARCHIVE
-
-- **File:** `src/utils/rtmColors.ts`
-
-  - **INTENT:** RTM-to-color mapping for UI badges.
-  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
-  - **INTENT DUPLICATION:** None found.
-  - **HIDDEN COUPLING RISK:** None found.
-  - **LOGIC SALVAGE:** Optional: use for RTM badges in [`src/components/RepStatsPanel.tsx`](../../src/components/RepStatsPanel.tsx) if that UI returns.
-  - **VERDICT:** ARCHIVE
-
-- **File:** `src/hooks/useMapsService.ts`
-
-  - **INTENT:** Real Google Maps loader/service singleton with error handling.
-  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
-  - **INTENT DUPLICATION:** Placeholder service is active in [`src/config/maps.ts`](../../src/config/maps.ts) (used by [`src/components/FileUploader.tsx`](../../src/components/FileUploader.tsx)).
-  - **HIDDEN COUPLING RISK:** None found.
-  - **LOGIC SALVAGE:** Optional: reuse error handling and real API init in [`src/config/maps.ts`](../../src/config/maps.ts) if integration resumes.
-  - **VERDICT:** ARCHIVE
-
-- **File:** `src/services/maps.ts`
-
-  - **INTENT:** Maps service singleton using a custom loader.
-  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
-  - **INTENT DUPLICATION:** Placeholder maps service exists at [`src/config/maps.ts`](../../src/config/maps.ts).
-  - **HIDDEN COUPLING RISK:** None found.
-  - **LOGIC SALVAGE:** Optional: reuse API initialization patterns in [`src/config/maps.ts`](../../src/config/maps.ts).
-  - **VERDICT:** ARCHIVE
-
-- **File:** `src/utils/googleMaps.ts`
-
-  - **INTENT:** Thin re-export of schedule utilities for maps-related use.
-  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
-  - **INTENT DUPLICATION:** Direct utilities are available in [`src/utils/scheduleUtils.ts`](../../src/utils/scheduleUtils.ts).
-  - **HIDDEN COUPLING RISK:** None found.
-  - **LOGIC SALVAGE:** None.
-  - **VERDICT:** ARCHIVE
-
-- **File:** `src/utils/mapsLoader.ts`
-  - **INTENT:** Placeholder MapsLoader for postcode-only mode.
-  - **REAL USAGE CHECK:** Only referenced by [`src/services/maps.ts`](../../src/services/maps.ts), which is unused.
-  - **INTENT DUPLICATION:** Placeholder loader behavior already exists in [`src/config/maps.ts`](../../src/config/maps.ts).
-  - **HIDDEN COUPLING RISK:** None found.
-  - **LOGIC SALVAGE:** None.
-  - **VERDICT:** ARCHIVE
+- **Path** Now lives in project root `_archive` for reference when ready for resurrection work
 
 ### Guardrails: Do Not Delete Yet
 
@@ -120,7 +29,7 @@
 
 - **File:** `src/types/xlsx-js-style.d.ts`
 - **Tag:** [VERIFIED: live reference]
-- **Evidence:** [`src/components/FileUploader.tsx:3`](src/components/FileUploader.tsx#L3), [`src/components/EnhancementSelector.tsx:9`](src/components/EnhancementSelector.tsx#L9), [`src/components/ScheduleDisplay.tsx:18`](src/components/ScheduleDisplay.tsx#L18)
+- **Evidence:** [`src/components/FileUploader.tsx:3`](src/components/FileUploader.tsx#L3), [`_archive/src/components/EnhancementSelector.tsx:9`](_archive/src/components/EnhancementSelector.tsx#L9), [`src/components/ScheduleDisplay.tsx:18`](src/components/ScheduleDisplay.tsx#L18)
 - **Notes:** Type definitions for `xlsx-js-style` library (actively used by 3 components)
 - **Intent:** TypeScript declaration file for xlsx-js-style library. Provides type definitions for Excel file reading/writing operations including WorkBook, WorkSheet, and utility functions.
 - **Proposed Fate:** **Keep**

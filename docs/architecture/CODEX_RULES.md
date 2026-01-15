@@ -1,4 +1,6 @@
-# Codex Operating Rules
+# ...pending...Codex Operating Rules
+
+!! This file is pending improvement. These are not actual rules yet. please ignore this file 'CODEX_RULES.md' unless otherwise requested (or this note isn't here)!!
 
 ## Purpose
 

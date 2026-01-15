@@ -1,4 +1,4 @@
 {
   "entry": ["src/main.tsx"],
-  "ignore": ["docs/**", "dist/**", "node_modules/**"]
+  "ignore": ["_archive/**", "docs/**", "dist/**", "node_modules/**"]
 }
