@@ -12,179 +12,281 @@
 
 ## Knip Findings Summary
 
-### Unused Files (32) — Verified Entries
+### Unused Files (30)
 
 **Verification Method**: Searched `src/` for import statements, JSX usage (`<ComponentName`), and string/path mentions. Excluded matches within the file itself. Evidence shows file:line references or explicit "no references found" confirmation.
 
-#### Unused Component Cluster
-
-**Cluster Evidence**: These components form a dependency chain where each is only referenced by other unused components in the cluster.
-
-- **File:** `src/components/ListCriteriaDialog.tsx`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Dialog for configuring list criteria (deadline, priority level, follow-up days).
-- **Fate:** **Delete** (exists healthier in `src/components/FileTypeDialog.tsx`)
-
-- **File:** `src/components/ui/button.tsx`
-- **Evidence:** [`src/components/ListCriteriaDialog.tsx:5`](src/components/ListCriteriaDialog.tsx#L5) (imported by unused component)
-- **Intent:** Reusable button component with default and outline variants. Wraps standard button element with consistent styling and focus states.
-- **Fate:** **Delete**
-
-- **File:** `src/components/ui/input.tsx`
-- **Evidence:** [`src/components/ListCriteriaDialog.tsx:6`](src/components/ListCriteriaDialog.tsx#L6) (commented out import)
-- **Intent:** Reusable input field component with consistent styling, focus states, and disabled states. Wraps standard input element.
-- **Fate:** **Delete**
-
-- **File:** `src/components/ui/label.tsx`
-- **Evidence:** [`src/components/ListCriteriaDialog.tsx:7`](src/components/ListCriteriaDialog.tsx#L7) (commented out import)
-- **Intent:** Reusable label component for form inputs. Provides consistent typography and disabled state styling.
-- **Fate:** **Delete**
-
-- **File:** `src/components/ui/radio-group.tsx`
-- **Evidence:** ❌ No references found outside file (only imports `lib/utils.ts` internally)
-- **Intent:** Radio group component wrapper around Radix UI RadioGroup. Provides styled radio button groups for form selections.
-- **Fate:** **Delete**
-
-- **File:** `src/lib/utils.ts`
-- **Evidence:** [`src/components/ListCriteriaDialog.tsx:8`](src/components/ListCriteriaDialog.tsx#L8) (commented), [`src/components/ui/button.tsx:2`](src/components/ui/button.tsx#L2), [`src/components/ui/input.tsx:2`](src/components/ui/input.tsx#L2), [`src/components/ui/label.tsx:2`](src/components/ui/label.tsx#L2), [`src/components/ui/radio-group.tsx:3`](src/components/ui/radio-group.tsx#L3), [`src/components/ProgressBar.tsx:2`](src/components/ProgressBar.tsx#L2)
-- **Notes:** Only used by unused components. Provides `cn` utility for className merging
-- **Intent:** Utility function for merging CSS class names. Filters out falsy values and joins remaining classes into a single string.
-- **Fate:** **Delete**
-
-- **File:** `src/components/ProgressBar.tsx`
-- **Evidence:** ❌ No references found outside file
-- **Notes:** Imports `lib/utils.ts` for `cn` utility
-- **Intent:** Displays a visual upload/scheduling progress indicator.
-- **Fate:** **Archive**
-
-#### Standalone Unused Components
-
-- **File:** `src/components/CoverageHeatMap.tsx`
-- **Evidence:** ❌ No references found outside file
-- **Notes:** Component exists but not imported anywhere
-- **Intent:** Visual heat map component showing coverage statistics by postcode area. Displays scheduled vs total pubs per area with color-coded intensity levels.
-- **Fate:** **Archive**
-
-- **File:** `src/components/DeleteButton.tsx`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Delete button component with hover tooltip. Designed for removing schedule days, appears on hover with red gradient styling and trash icon.
-- **Fate:** **Delete**
-
-- **File:** `src/components/EnhancementSelector.tsx`
-- **Evidence:** [`src/pages/PlannerDashboard.tsx:833`](src/pages/PlannerDashboard.tsx#L833) (commented out)
-- **Intent:** Handles file parsing, postcode validation, Google Maps place data lookup, and configuration of deadlines/priorities.
-- **Proposed Fate:** **Delete** (this exists healthier in `src/components/FileUploader.tsx`. **Validate** not 100% to delete, likely so... Contains valuable logic, currently commented out in PlannerDashboard, need to review.)
-
-- **File:** `src/components/OpeningHoursIndicator.tsx`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Tooltip indicator component showing pub opening hours status. Displays open/closed state with clock icon and full schedule details on hover.
-- **Fate:** **Delete** (same intent exists `UnscheduledPubsPanel.tsx:273-274`, `VisitScheduler.tsx:342-353`, `DriveTimeBar.tsx:408,434`, `ScheduleDisplay.tsx:1107-1128`. These use mock data `getMockPlaceData` or real data `businessData.openingHours`, `checkPubOpeningHours`)
-
-- **File:** `src/components/RemovePubDialog.tsx`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Confirmation dialog for removing a pub visit from the schedule. Includes warning message and option to find a replacement pub in the same area.
-- **Fate:** **Review** (exists `ScheduleDisplay.tsx:73`1 — handleVisitReplace. but without warning message/same area option, merge logic and prove where deleted pub goes)
-
-- **File:** `src/components/RescheduleDialog.tsx`
-- **Evidence:** ❌ No references found outside file
-- **Notes:** Large dialog component (623 lines) for rescheduling visits
-- **Intent:** for rescheduling an entire day's visits. Allows postcode-based search and regenerates schedule with new constraints.
-- **Fate:** **Review** (this this exists as another version elsewhere certaintly, but where? **Validate** and compare logic)
-
-- **File:** `src/components/ScheduleOverview.tsx`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Simple display component showing the total number of days in the schedule. Minimal UI element for schedule count summary.
-- **Fate:** **Delete** (exists in `src/components/RepStatsPanel.tsx:372-383`)
-
-- **File:** `src/components/ScheduleReport.tsx`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** report component showing scheduled vs total pubs by priority/driver buckets.
-- **Fate:** **Delete** (exsists in `RepStatsPanel.tsx:126-167`)
+#### DELETE
 
 - **File:** `src/components/SparkleButton.tsx`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Animated button component with sparkle particle effects on click. Generates multiple sparkle animations at click position for visual feedback.
-- **Fate:** **Delete**
+
+  - **INTENT:** Click-triggered sparkle animation button for visual feedback.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** None found.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: reuse sparkle animation logic for CTAs in [`src/components/FileUploader.tsx`](../../src/components/FileUploader.tsx).
+  - **VERDICT:** DELETE
 
 - **File:** `src/components/SwipeToDelete.tsx`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Swipe gesture component for mobile deletion interactions.
-- **Fate:** **Delete**
 
-- **File:** `src/components/TerritoryMap.tsx`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Map component for visualizing territory coverage. Currently contains mock data generator for place information rather than actual map rendering.
-- **Proposed Fate:** **Delete** (likely delete. is this the same intent as `CoverageHeatMap.tsx`, but with mock data?)
+  - **INTENT:** Swipe/drag-to-delete wrapper for mobile interactions.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** None found.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: reuse touch + mouse gesture handling for list items in [`src/components/ScheduleDisplay.tsx`](../../src/components/ScheduleDisplay.tsx).
+  - **VERDICT:** DELETE
+
+- **File:** `src/components/DeleteButton.tsx`
+
+  - **INTENT:** Hover-revealed delete button with tooltip.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** None found; active delete actions are inline.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: reuse tooltip + hover affordance for delete actions in [`src/components/ScheduleDisplay.tsx`](../../src/components/ScheduleDisplay.tsx).
+  - **VERDICT:** DELETE
 
 - **File:** `src/components/icons/MonopolyIcons.tsx`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Custom icon set with Monopoly-themed SVG icons (boot, top hat, thimble, etc.). Provides themed visual elements for UI components.
-- **Fate:** **Delete** (provided by lucide-react library)
 
-#### Barrel Files
+  - **INTENT:** Custom Monopoly-themed SVG icons.
+  - **REAL USAGE CHECK:** No imports found; only a text mention in [`src/pages/PlannerDashboard.tsx`](../../src/pages/PlannerDashboard.tsx).
+  - **INTENT DUPLICATION:** None; `lucide-react` is used elsewhere for icons.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** DELETE
 
-- **File:** `src/components/index.ts`
-- **Evidence:** Exports `ListTypeDialog`, `FileUploader`, `PlannerDashboard` but no imports found
-- **Intent:** Barrel file for exporting multiple components from a single import path. Provides convenience for importing multiple components from the components directory.
-- **Fate:** **Delete** (Not used. Components are imported directly. If barrel files are desired, create a new one when needed.)
+- **File:** `src/components/TerritoryMap.tsx`
+
+  - **INTENT:** Mock place data generator (misnamed as territory map).
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** Equivalent mock data helper exists in [`src/utils/mockData.ts`](../../src/utils/mockData.ts).
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** DELETE
+
+- **File:** `src/components/ScheduleOverview.tsx`
+
+  - **INTENT:** Minimal N days planned schedule summary.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** Covered by the richer schedule overview in [`src/components/RepStatsPanel.tsx`](../../src/components/RepStatsPanel.tsx).
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** DELETE
+
+- **File:** `src/components/ScheduleReport.tsx`
+
+  - **INTENT:** Scheduled vs total pubs report by list buckets.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** Similar reporting exists in [`src/components/RepStatsPanel.tsx`](../../src/components/RepStatsPanel.tsx).
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: reuse bucket config or status messaging in [`src/components/RepStatsPanel.tsx`](../../src/components/RepStatsPanel.tsx).
+  - **VERDICT:** DELETE
+
+- **File:** `src/components/OpeningHoursIndicator.tsx`
+
+  - **INTENT:** Tooltip badge for opening-hours status with mock data.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** Opening-hours handling is active in [`src/components/ScheduleDisplay.tsx`](../../src/components/ScheduleDisplay.tsx) and status cues appear in [`src/components/DriveTimeBar.tsx`](../../src/components/DriveTimeBar.tsx) and [`src/components/UnscheduledPubsPanel.tsx`](../../src/components/UnscheduledPubsPanel.tsx).
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: reuse tooltip copy in [`src/components/ScheduleDisplay.tsx`](../../src/components/ScheduleDisplay.tsx).
+  - **VERDICT:** DELETE
 
 - **File:** `src/components/ListTypeDialog.tsx`
-- **Tag:** [INFERRED]
-- **Evidence:** [`src/components/index.ts:2`](src/components/index.ts#L2) (exported but index.ts not imported)
-- **Intent:** Dialog component for selecting list type when uploading files.
-- **Proposed Fate:** **Delete** (**Validate** exists `src/components/FileTypeDialog.tsx:38-367*`)
+
+  - **INTENT:** Basic list-type selection dialog for uploads.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** Replaced by [`src/components/FileTypeDialog.tsx`](../../src/components/FileTypeDialog.tsx), which is actively used.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** DELETE
+
+- **File:** `src/components/index.ts`
+
+  - **INTENT:** Barrel exports for components/pages.
+  - **REAL USAGE CHECK:** No imports found for this barrel in the repo.
+  - **INTENT DUPLICATION:** Direct imports are the active pattern.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** DELETE
 
 - **File:** `src/context/index.ts`
-- **Evidence:** Exports `PubDataProvider`, `usePubData` but no imports found
-- **Intent:** Barrel file for exporting context providers and hooks. Re-exports PubDataProvider and usePubData from PubDataContext.
-- **Fate:** **Delete** (Not used, exports are imported directly from `PubDataContext.tsx`)
+
+  - **INTENT:** Barrel exports for context provider/hook.
+  - **REAL USAGE CHECK:** No imports found for this barrel in the repo.
+  - **INTENT DUPLICATION:** Direct imports from [`src/context/PubDataContext.tsx`](../../src/context/PubDataContext.tsx) are used.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** DELETE
 
 - **File:** `src/types/index.ts`
-- **Evidence:** Types imported from `../types` (types.ts) not `../types/index`
-- **Intent:** Barrel file for exporting TypeScript type definitions. Intended to provide centralized type exports but types are imported directly from types.ts instead.
-- **Fate:** **Delete** (Not used, types are imported directly from `types.ts`)
 
-#### Maps/Google Places Cluster (Defer Until Integration Complete)
+  - **INTENT:** Barrel types for visits/schedule models.
+  - **REAL USAGE CHECK:** No imports of this barrel; imports resolve to [`src/types.ts`](../../src/types.ts) or [`src/types/import.ts`](../../src/types/import.ts).
+  - **INTENT DUPLICATION:** Types are already defined in [`src/types.ts`](../../src/types.ts).
+  - **HIDDEN COUPLING RISK:** Low; note the folder/file name collision, but there are no references to the barrel.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** DELETE
 
-- **File:** `src/hooks/useMapsService.ts`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** React hook for Google Maps service singleton. Provides initialized PlacesService and Geocoder instances with error handling and loading state management.
-- **Proposed Fate:** **Delete** (**Validate** `src/config/maps.ts` is actively used (`FileUploader.tsx:10` imports `mapsService` from `config/maps`).)
+- **File:** `src/components/ui/button.tsx`
 
-- **File:** `src/services/maps.ts`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Maps service singleton for managing Google Maps API initialization. Handles PlacesService and Geocoder setup with error handling and mock data fallback.
-- **Proposed Fate:** **Delete** (**Validate** `src/config/maps.ts` is actively used `FileUploader.tsx:10`. `services/maps.ts` appears to be an older/unused versiod)
+  - **INTENT:** Styled button wrapper with variants.
+  - **REAL USAGE CHECK:** No imports found outside the unused cluster.
+  - **INTENT DUPLICATION:** Active components use inline button styling instead of wrappers.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** DELETE
 
-- **File:** `src/utils/googleMaps.ts`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Re-exports postcode-based utilities from scheduleUtils. Thin wrapper for Google Maps-related utility functions.
-- **Proposed Fate:** **Delete** (**Validate** `src/utils/googleMaps.ts:2` — Re-exports from scheduleUtils (thin wrapper))
+- **File:** `src/components/ui/input.tsx`
 
-- **File:** `src/utils/mapsLoader.ts`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Maps loader singleton class for Google Maps API initialization. Currently returns resolved promise (postcode-based version) without actual API loading.
-- **Proposed Fate:** **Delete** (**Validate** `src/config/maps.ts:4-69` — MapsService handles initialization.)
+  - **INTENT:** Styled input wrapper.
+  - **REAL USAGE CHECK:** No imports found outside the unused cluster (only commented reference).
+  - **INTENT DUPLICATION:** Inputs are styled inline in active components.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** DELETE
 
-#### Utilities
+- **File:** `src/components/ui/label.tsx`
+
+  - **INTENT:** Styled label wrapper.
+  - **REAL USAGE CHECK:** No imports found outside the unused cluster (only commented reference).
+  - **INTENT DUPLICATION:** Labels are styled inline in active components.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** DELETE
+
+- **File:** `src/components/ui/radio-group.tsx`
+
+  - **INTENT:** Styled Radix RadioGroup wrapper.
+  - **REAL USAGE CHECK:** No imports found anywhere in the repo.
+  - **INTENT DUPLICATION:** Radix RadioGroup is used directly in [`src/components/FileTypeDialog.tsx`](../../src/components/FileTypeDialog.tsx).
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: reuse styling in [`src/components/FileTypeDialog.tsx`](../../src/components/FileTypeDialog.tsx) if standardizing.
+  - **VERDICT:** DELETE
+
+- **File:** `src/components/ListCriteriaDialog.tsx`
+
+  - **INTENT:** Criteria dialog for hitlist/wins scheduling (priority/deadline/follow-up).
+  - **REAL USAGE CHECK:** No imports or references found outside this file.
+  - **INTENT DUPLICATION:** Covered by the active upload flow in [`src/components/FileTypeDialog.tsx`](../../src/components/FileTypeDialog.tsx).
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: reuse the priority grid or follow-up messaging in [`src/components/FileTypeDialog.tsx`](../../src/components/FileTypeDialog.tsx).
+  - **VERDICT:** DELETE
+
+- **File:** `src/lib/utils.ts`
+
+  - **INTENT:** `cn` utility for className joining.
+  - **REAL USAGE CHECK:** No imports found outside unused components; only a type shim reference in [`src/types/shims.d.ts`](../../src/types/shims.d.ts).
+  - **INTENT DUPLICATION:** `clsx` is used in active components such as [`src/components/UnscheduledPubsPanel.tsx`](../../src/components/UnscheduledPubsPanel.tsx).
+  - **HIDDEN COUPLING RISK:** Type-only module declaration at [`src/types/shims.d.ts`](../../src/types/shims.d.ts); no runtime usage.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** DELETE
 
 - **File:** `src/utils/routeOptimization.ts`
-- **Evidence:** ❌ No references found outside file
-- **Notes:** Route optimization algorithms (imports `Visit` from `../types` but not imported itself)
-- **Intent:** Groups visits by postcode proximity, respects scheduled time constraints, and minimizes travel distance between visits.
-- **Fate:** **Delete** (exists in `src/utils/scheduleUtils.ts:812-878` — optimizeRoute)
 
-- **File:** `src/utils/rtmColors.ts`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Returns hex colors for different pub chains (Greene King, Admiral, Punch, Stonegate, Trust) for UI theming.
-- **Fate:** **Archive**
-
-#### Configuration
+  - **INTENT:** Route optimization using postcode proximity and schedule constraints.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** Another `optimizeRoute` exists in [`src/utils/scheduleUtils.ts`](../../src/utils/scheduleUtils.ts).
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: if preferred, merge postcode grouping logic into [`src/utils/scheduleUtils.ts`](../../src/utils/scheduleUtils.ts).
+  - **VERDICT:** DELETE
 
 - **File:** `src/config/environment.ts`
-- **Evidence:** ❌ No references found outside file
-- **Intent:** Environment configuration object for debug settings. Currently exports a debug configuration with log level, intended for build-time or runtime configuration.
-- **Fate:** **Delete** (Vite's `import.meta.env` is the active pattern for environment configuration)
+  - **INTENT:** Static debug configuration export.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** Environment checks use `import.meta.env` in [`src/utils/devLog.ts`](../../src/utils/devLog.ts) and [`src/context/LoginGate.tsx`](../../src/context/LoginGate.tsx).
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** DELETE
+
+#### ARCHIVE
+
+- **File:** `src/components/CoverageHeatMap.tsx`
+
+  - **INTENT:** Coverage heat map by postcode area.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** None found; no active heatmap component exists.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: reuse area grouping + color scaling in [`src/components/RepStatsPanel.tsx`](../../src/components/RepStatsPanel.tsx).
+  - **VERDICT:** ARCHIVE
+
+- **File:** `src/components/ProgressBar.tsx`
+
+  - **INTENT:** Radix-based progress indicator.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** None found.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: wire into long-running flows in [`src/components/FileUploader.tsx`](../../src/components/FileUploader.tsx).
+  - **VERDICT:** ARCHIVE
+
+- **File:** `src/components/RemovePubDialog.tsx`
+
+  - **INTENT:** Confirm-and-replace dialog for removing a visit.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** Replacement logic exists without dialog UI in [`src/components/ScheduleDisplay.tsx`](../../src/components/ScheduleDisplay.tsx).
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: reuse the dialog UX with `handleVisitReplace` in [`src/components/ScheduleDisplay.tsx`](../../src/components/ScheduleDisplay.tsx).
+  - **VERDICT:** ARCHIVE
+
+- **File:** `src/components/RescheduleDialog.tsx`
+
+  - **INTENT:** Reschedule dialog with postcode-based regeneration.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** None found; no active reschedule UI exists.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: integrate with day actions in [`src/components/ScheduleDisplay.tsx`](../../src/components/ScheduleDisplay.tsx).
+  - **VERDICT:** ARCHIVE
+
+- **File:** `src/components/EnhancementSelector.tsx`
+
+  - **INTENT:** Legacy upload flow with list options, Excel parsing, postcode validation, and file configuration.
+  - **REAL USAGE CHECK:** Only a commented-out JSX reference in [`src/pages/PlannerDashboard.tsx`](../../src/pages/PlannerDashboard.tsx); no live imports.
+  - **INTENT DUPLICATION:** Active upload flow is [`src/components/FileUploader.tsx`](../../src/components/FileUploader.tsx) with selection UI in [`src/components/FileTypeDialog.tsx`](../../src/components/FileTypeDialog.tsx).
+  - **HIDDEN COUPLING RISK:** Low; references [`src/config/maps.ts`](../../src/config/maps.ts) which is already used elsewhere.
+  - **LOGIC SALVAGE:** Optional: reuse the option-card UX or simplified parser in [`src/components/FileUploader.tsx`](../../src/components/FileUploader.tsx).
+  - **VERDICT:** ARCHIVE
+
+- **File:** `src/utils/rtmColors.ts`
+
+  - **INTENT:** RTM-to-color mapping for UI badges.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** None found.
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: use for RTM badges in [`src/components/RepStatsPanel.tsx`](../../src/components/RepStatsPanel.tsx) if that UI returns.
+  - **VERDICT:** ARCHIVE
+
+- **File:** `src/hooks/useMapsService.ts`
+
+  - **INTENT:** Real Google Maps loader/service singleton with error handling.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** Placeholder service is active in [`src/config/maps.ts`](../../src/config/maps.ts) (used by [`src/components/FileUploader.tsx`](../../src/components/FileUploader.tsx)).
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: reuse error handling and real API init in [`src/config/maps.ts`](../../src/config/maps.ts) if integration resumes.
+  - **VERDICT:** ARCHIVE
+
+- **File:** `src/services/maps.ts`
+
+  - **INTENT:** Maps service singleton using a custom loader.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** Placeholder maps service exists at [`src/config/maps.ts`](../../src/config/maps.ts).
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** Optional: reuse API initialization patterns in [`src/config/maps.ts`](../../src/config/maps.ts).
+  - **VERDICT:** ARCHIVE
+
+- **File:** `src/utils/googleMaps.ts`
+
+  - **INTENT:** Thin re-export of schedule utilities for maps-related use.
+  - **REAL USAGE CHECK:** No imports or references found anywhere in the repo.
+  - **INTENT DUPLICATION:** Direct utilities are available in [`src/utils/scheduleUtils.ts`](../../src/utils/scheduleUtils.ts).
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** ARCHIVE
+
+- **File:** `src/utils/mapsLoader.ts`
+  - **INTENT:** Placeholder MapsLoader for postcode-only mode.
+  - **REAL USAGE CHECK:** Only referenced by [`src/services/maps.ts`](../../src/services/maps.ts), which is unused.
+  - **INTENT DUPLICATION:** Placeholder loader behavior already exists in [`src/config/maps.ts`](../../src/config/maps.ts).
+  - **HIDDEN COUPLING RISK:** None found.
+  - **LOGIC SALVAGE:** None.
+  - **VERDICT:** ARCHIVE
 
 ### Guardrails: Do Not Delete Yet
 
