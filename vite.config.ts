@@ -58,11 +58,7 @@ export default defineConfig({
         assetFileNames: "assets/[name].[hash].[ext]",
         manualChunks: {
           "react-vendor": ["react", "react-dom", "react-router-dom"],
-          "ui-vendor": [
-            "lucide-react",
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-label",
-          ],
+          "ui-vendor": ["lucide-react", "@radix-ui/react-dialog"],
           "utils-vendor": [
             "date-fns",
             "class-variance-authority",
