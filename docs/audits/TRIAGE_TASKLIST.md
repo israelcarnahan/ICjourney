@@ -47,9 +47,6 @@
 - `@types/react-virtualized`
 - `@typescript-eslint/eslint-plugin`
 - `@typescript-eslint/parser`
-- `dependency-cruiser`
-- `jscpd` (note: used for audits, but not in runtime)
-- `madge`
 
 ### Unlisted Dependencies (2)
 
