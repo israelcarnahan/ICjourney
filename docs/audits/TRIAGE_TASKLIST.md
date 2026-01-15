@@ -1,14 +1,6 @@
-# Audit Triage Tasklist
+# Audit Triage Task list
 
-**Date**: 2026-01-14  
-**Status**: Triage Phase
-
-## Audit Artifacts
-
-- **Knip Output**: `docs/audits/knip/knip-2026-01-14-entryfix.txt`
-- **JSCPD HTML Report**: `docs/audits/JSCPD/html/index.html`
-- **JSCPD JSON Report**: `docs/audits/JSCPD/html/jscpd-report.json`
-- **Knip Config**: `knip.json`
+**Date**: 2026-01-14
 
 ## Knip Findings Summary
 
