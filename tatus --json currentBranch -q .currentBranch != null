@@ -1,3 +1,0 @@
-[33m205980b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfix/wizard-status-indicators[m[33m, [m[1;31morigin/fix/wizard-status-indicators[m[33m)[m feat(wizard): footer chips for required vs optional mapping, confirm gated by required
-[33m11d1b9d[m[33m ([m[1;31morigin/fix/wizard-all-headers[m[33m, [m[1;32mfix/wizard-all-headers[m[33m)[m fix(wizard): show all headers with independent scroll + filter + progress
-[33m01a668c[m[33m ([m[1;31morigin/feat/wizard-ui-polish[m[33m, [m[1;32mfeat/wizard-ui-polish[m[33m)[m feat(wizard): file name, hide lat/lng, DnD mapping, sticky header/footer, a11y, stable keys
