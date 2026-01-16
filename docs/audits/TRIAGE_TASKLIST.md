@@ -1,7 +1,5 @@
 # Audit Triage Task list
 
-**Date**: 2026-01-14
-
 ## Knip Findings Summary
 
 ### Archived Files (10)
@@ -26,65 +24,201 @@
 - **Intent:** TypeScript declaration file for xlsx-js-style library. Provides type definitions for Excel file reading/writing operations including WorkBook, WorkSheet, and utility functions.
 - **Proposed Fate:** **Keep**
 
-### Unused Dependencies (13)
+### Unused Exports & Types — Audit Results
 
-- `@googlemaps/js-api-loader`
-- `@radix-ui/react-alert-dialog`
-- `@radix-ui/react-label`
-- `@radix-ui/react-popover`
-- `@radix-ui/react-progress`
-- `@radix-ui/react-switch`
-- `class-variance-authority`
-- `react-virtualized`
-- `tailwind-merge`
-- `tailwindcss-animate`
-- `uk-postcode-validator`
-- `uuid`
-- `yup`
+✅ Safe Internalize Candidates
+These are exported but only used internally.
+Safe to remove export without changing runtime behavior.
 
-### Unused devDependencies (6)
+#### Context & Providers
 
-- `@types/react-virtualized`
-- `@typescript-eslint/eslint-plugin`
-- `@typescript-eslint/parser`
+PubDataContext
+File: src/context/PubDataContext.tsx
+Intent: React context for pub data state.
+Usage: No external imports; consumers use usePubData / PubDataProvider.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
 
-### Unlisted Dependencies (2)
+PubDataContextType
+File: src/context/PubDataContext.tsx
+Intent: Type for context value shape.
+Usage: Internal only.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
 
-- `@eslint/js` - used in `eslint.config.js:1:17`
-- `globals` - used in `eslint.config.js:2:22`
+FallbackProvider (class)
+File: src/api/fallbackProvider.ts
+Intent: Best-effort business data provider.
+Usage: Only the instance is imported, not the class.
+Risk: Low
+Action: 🔒 Internalize class (keep instance export)
+Order: Early
 
-### Unused Exports (22)
+NominatimProvider (class)
+File: src/api/nominatimProvider.ts
+Intent: Nominatim enrichment provider.
+Usage: Instance only.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
 
-See full list in `docs/audits/knip/knip-2026-01-14-entryfix.txt` (lines 58-80)
+PostcodesProvider (class)
+File: src/api/postcodesProvider.ts
+Intent: Postcodes API provider.
+Usage: Instance only.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
 
-### Unused Exported Types (9)
+#### Utilities & Helpers
 
-See full list in `docs/audits/knip/knip-2026-01-14-entryfix.txt` (lines 81-90)
+SYNONYMS
+File: src/utils/columnSynonyms.ts
+Intent: Header regex map for auto-mapping.
+Usage: Used only within same file.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
 
-## Verification Summary
+buildSourceRef
+File: src/utils/lineageMerge.ts
+Intent: Build lineage metadata.
+Usage: Internal only.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
 
-All 32 files from Knip's "Unused files" list have been verified against the codebase. See the [Verified Entries](#unused-files-32--verified-entries) section above for detailed evidence.
+recomputeEffectivePlan
+File: src/utils/lineageMerge.ts
+Intent: Compute effective scheduling plan.
+Usage: Internal only.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
 
-### Key Findings
+normalizePostcode
+File: src/utils/postcodeUtils.ts
+Intent: Normalize postcode format.
+Usage: Internal; dedupe uses a different helper.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
 
-**Confirmed Unused Cluster** (can be archived together):
+getPrimaryDriverInfo
+File: src/utils/sourceDetails.ts
+Intent: Determine primary schedule driver.
+Usage: Internal only.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
 
-- `ListCriteriaDialog.tsx` → `ui/button.tsx` → `lib/utils.ts` → `ui/input.tsx`, `ui/label.tsx`, `ui/radio-group.tsx` → `ProgressBar.tsx`
-- All components in this cluster are only referenced within the cluster itself (mostly commented references)
-- Safe to archive as a group if desired
+isNonEmptyString
+File: src/utils/typeGuards.ts
+Intent: String guard.
+Usage: Used only internally.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
 
-**Notable Exceptions**:
+generateICSFile
+File: src/utils/calendarUtils.ts
+Intent: Build ICS content.
+Usage: Called by internal download helper.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
 
-- `EnhancementSelector.tsx`: [VERIFIED: commented reference] in [`PlannerDashboard.tsx:833`](src/pages/PlannerDashboard.tsx#L833) - contains valuable logic, consider **Restore**
-- `xlsx-js-style.d.ts`: [VERIFIED: live reference] - actively used by 3 components - **Keep**
-- `types/index.ts`: Not used (types imported from `types.ts` directly) - safe to archive
-- `components/index.ts` and `context/index.ts`: Barrel files not imported - may be intentional for future use
+extractNumericPart
+File: src/utils/scheduleUtils.ts
+Intent: Numeric extraction for grouping.
+Usage: Internal only.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
 
-**Maps/Google Places Cluster** (defer until integration complete):
+toScheduleDay
+File: src/utils/scheduleMappers.ts
+Intent: Map loose → strict schedule day.
+Usage: Used by exported function in same file.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
 
-- `services/maps.ts`, `utils/googleMaps.ts`, `utils/mapsLoader.ts`, `hooks/useMapsService.ts`
-- Related to incomplete Google Places integration (see `feat/api-google-places` branch)
-- Archive after integration is complete or confirmed abandoned
+extractTokens
+File: src/utils/fuzzy.ts
+Intent: Tokenization helper.
+Usage: Internal only.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
+
+#### Components & Types
+
+VisitScheduler (named export)
+File: src/components/VisitScheduler.tsx
+Intent: Scheduler component.
+Usage: Only default import is used.
+Risk: Low
+Action: 🔒 Remove named export (keep default)
+Order: Early
+
+DriverBucket
+File: src/utils/sourceDetails.ts
+Intent: Driver bucket union type.
+Usage: Internal only.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
+
+DaySchedule
+File: src/utils/scheduleMappers.ts
+Intent: Loose schedule day shape.
+Usage: Internal only.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
+
+PostcodeReviewDialogProps
+File: src/components/PostcodeReviewDialog.tsx
+Intent: Props typing.
+Usage: Internal only.
+Risk: Low
+Action: 🔒 Internalize
+Order: Early
+
+#### Delete Candidates (After Internalize Pass)
+
+**Notice** Safe to delete once internalization is complete.
+
+notNil — src/utils/typeGuards.ts
+
+getPriorityOrder — src/utils/scheduleUtils.ts
+
+ScheduleEntry — src/types.ts
+
+EnhancedScheduleDay — src/types.ts
+
+SuggestionResult — src/utils/dedupe.ts
+
+REQUIRED_FIELDS — src/utils/columnSynonyms.ts
+
+#### Medium / Future-facing deletions (do later, intentionally)
+
+**Notice** Delete only if you’re confident the feature won’t be revived soon.
+
+collectSources — src/utils/lineageMerge.ts
+
+getCanonicalFieldValue — src/utils/lineageMerge.ts
+
+optimizeRoute — src/utils/scheduleUtils.ts
+
+clearMappings — src/services/persistence.ts
+
+BusinessHours — src/types.ts
+
+YourListField — src/api/types.ts
 
 ## Safety Ritual (Before Any Move/Delete)
 
@@ -97,68 +231,8 @@ Before moving or deleting any file:
 
 **Dependency cleanup**: Wait until all file deletions are complete and verified. Then review unused dependencies from Knip output and remove via `npm uninstall`.
 
-**ESLint fix**: Update `package.json` lint script to remove `--ext` flag (flat config doesn't support it). Add missing deps: `npm install --save-dev @eslint/js globals`.
-
 ## Next: JSCPD Review Steps
 
 1. Open HTML report: `docs/audits/JSCPD/html/index.html`
 2. Identify top duplicate code clusters
 3. Record findings in a short summary (no refactors yet)
-
-## How to Re-run Audits
-
-### Knip
-
-**Command**:
-
-```bash
-npx knip -c knip.json
-```
-
-**Save output**:
-
-```bash
-# PowerShell
-npx knip -c knip.json | Tee-Object -FilePath "docs/audits/knip/knip-$(Get-Date -Format 'yyyy-MM-dd').txt"
-
-# Bash
-npx knip -c knip.json | tee "docs/audits/knip/knip-$(date +%Y-%m-%d).txt"
-```
-
-**What it does**: Analyzes unused files, dependencies, exports, and types in the codebase.
-
-**Config**: `knip.json` specifies entry point (`src/main.tsx`) and ignore patterns.
-
-### JSCPD
-
-**Command**:
-
-```bash
-npx jscpd src/ --reporters html --reporters json --output docs/audits/JSCPD/html
-```
-
-**Alternative** (if configured in package.json):
-
-```bash
-npm run jscpd
-```
-
-**What it does**: Detects code duplication (copy-paste detection) across the codebase.
-
-**Output**: HTML report at `docs/audits/JSCPD/html/index.html` and JSON report at `docs/audits/JSCPD/html/jscpd-report.json`.
-
-**Note**: `jscpd` is listed as a devDependency but may not have a script in package.json. Add one if needed:
-
-```json
-"jscpd": "jscpd src/ --reporters html --reporters json --output docs/audits/JSCPD/html"
-```
-
-## Next Actions
-
-1. ✅ Complete triage document (this file)
-2. ⏳ Review JSCPD HTML report for duplicate clusters
-3. ⏳ Fix ESLint lint script (remove `--ext` flag) and add missing dependencies
-4. ⏳ Begin execution: Restore EnhancementSelector.tsx
-5. ⏳ Archive ListCriteriaDialog cluster
-6. ⏳ Archive standalone components
-7. ⏳ Clean up dependencies after file deletions are complete
