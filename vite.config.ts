@@ -75,7 +75,6 @@ export default defineConfig({
       "react-dom",
       "react-router-dom",
       "date-fns",
-      "react-virtualized",
       "@radix-ui/react-dialog",
       "@radix-ui/react-tooltip",
       "lucide-react",
