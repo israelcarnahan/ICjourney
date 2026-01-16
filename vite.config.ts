@@ -59,12 +59,7 @@ export default defineConfig({
         manualChunks: {
           "react-vendor": ["react", "react-dom", "react-router-dom"],
           "ui-vendor": ["lucide-react", "@radix-ui/react-dialog"],
-          "utils-vendor": [
-            "date-fns",
-            "class-variance-authority",
-            "clsx",
-            "tailwind-merge",
-          ],
+          "utils-vendor": ["date-fns", "clsx"],
         },
       },
     },
