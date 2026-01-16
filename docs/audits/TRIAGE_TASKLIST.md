@@ -33,7 +33,7 @@ Safe to remove export without changing runtime behavior.
 #### Context & Providers
 
 PubDataContext
-File: src/context/PubDataContext.tsx
+**File:** src/context/PubDataContext.tsx
 Intent: React context for pub data state.
 Usage: No external imports; consumers use usePubData / PubDataProvider.
 Risk: Low
@@ -41,7 +41,7 @@ Action: 🔒 Internalize
 Order: Early
 
 PubDataContextType
-File: src/context/PubDataContext.tsx
+**File:** src/context/PubDataContext.tsx
 Intent: Type for context value shape.
 Usage: Internal only.
 Risk: Low
@@ -49,7 +49,7 @@ Action: 🔒 Internalize
 Order: Early
 
 FallbackProvider (class)
-File: src/api/fallbackProvider.ts
+**File:**: src/api/fallbackProvider.ts
 Intent: Best-effort business data provider.
 Usage: Only the instance is imported, not the class.
 Risk: Low
@@ -57,7 +57,7 @@ Action: 🔒 Internalize class (keep instance export)
 Order: Early
 
 NominatimProvider (class)
-File: src/api/nominatimProvider.ts
+**File:**: src/api/nominatimProvider.ts
 Intent: Nominatim enrichment provider.
 Usage: Instance only.
 Risk: Low
@@ -65,7 +65,7 @@ Action: 🔒 Internalize
 Order: Early
 
 PostcodesProvider (class)
-File: src/api/postcodesProvider.ts
+**File:**: src/api/postcodesProvider.ts
 Intent: Postcodes API provider.
 Usage: Instance only.
 Risk: Low
@@ -75,7 +75,7 @@ Order: Early
 #### Utilities & Helpers
 
 SYNONYMS
-File: src/utils/columnSynonyms.ts
+**File:**: src/utils/columnSynonyms.ts
 Intent: Header regex map for auto-mapping.
 Usage: Used only within same file.
 Risk: Low
@@ -83,7 +83,7 @@ Action: 🔒 Internalize
 Order: Early
 
 buildSourceRef
-File: src/utils/lineageMerge.ts
+**File:**: src/utils/lineageMerge.ts
 Intent: Build lineage metadata.
 Usage: Internal only.
 Risk: Low
@@ -91,7 +91,7 @@ Action: 🔒 Internalize
 Order: Early
 
 recomputeEffectivePlan
-File: src/utils/lineageMerge.ts
+**File:**: src/utils/lineageMerge.ts
 Intent: Compute effective scheduling plan.
 Usage: Internal only.
 Risk: Low
@@ -99,7 +99,7 @@ Action: 🔒 Internalize
 Order: Early
 
 normalizePostcode
-File: src/utils/postcodeUtils.ts
+**File:**: src/utils/postcodeUtils.ts
 Intent: Normalize postcode format.
 Usage: Internal; dedupe uses a different helper.
 Risk: Low
@@ -107,7 +107,7 @@ Action: 🔒 Internalize
 Order: Early
 
 getPrimaryDriverInfo
-File: src/utils/sourceDetails.ts
+**File:**: src/utils/sourceDetails.ts
 Intent: Determine primary schedule driver.
 Usage: Internal only.
 Risk: Low
@@ -115,7 +115,7 @@ Action: 🔒 Internalize
 Order: Early
 
 isNonEmptyString
-File: src/utils/typeGuards.ts
+**File:**: src/utils/typeGuards.ts
 Intent: String guard.
 Usage: Used only internally.
 Risk: Low
@@ -123,7 +123,7 @@ Action: 🔒 Internalize
 Order: Early
 
 generateICSFile
-File: src/utils/calendarUtils.ts
+**File:**: src/utils/calendarUtils.ts
 Intent: Build ICS content.
 Usage: Called by internal download helper.
 Risk: Low
@@ -131,7 +131,7 @@ Action: 🔒 Internalize
 Order: Early
 
 extractNumericPart
-File: src/utils/scheduleUtils.ts
+**File:**: src/utils/scheduleUtils.ts
 Intent: Numeric extraction for grouping.
 Usage: Internal only.
 Risk: Low
@@ -139,7 +139,7 @@ Action: 🔒 Internalize
 Order: Early
 
 toScheduleDay
-File: src/utils/scheduleMappers.ts
+**File:**: src/utils/scheduleMappers.ts
 Intent: Map loose → strict schedule day.
 Usage: Used by exported function in same file.
 Risk: Low
@@ -147,7 +147,7 @@ Action: 🔒 Internalize
 Order: Early
 
 extractTokens
-File: src/utils/fuzzy.ts
+**File:**: src/utils/fuzzy.ts
 Intent: Tokenization helper.
 Usage: Internal only.
 Risk: Low
@@ -157,7 +157,7 @@ Order: Early
 #### Components & Types
 
 VisitScheduler (named export)
-File: src/components/VisitScheduler.tsx
+**File:**: src/components/VisitScheduler.tsx
 Intent: Scheduler component.
 Usage: Only default import is used.
 Risk: Low
@@ -165,7 +165,7 @@ Action: 🔒 Remove named export (keep default)
 Order: Early
 
 DriverBucket
-File: src/utils/sourceDetails.ts
+**File:**: src/utils/sourceDetails.ts
 Intent: Driver bucket union type.
 Usage: Internal only.
 Risk: Low
@@ -173,7 +173,7 @@ Action: 🔒 Internalize
 Order: Early
 
 DaySchedule
-File: src/utils/scheduleMappers.ts
+**File:**: src/utils/scheduleMappers.ts
 Intent: Loose schedule day shape.
 Usage: Internal only.
 Risk: Low
@@ -181,7 +181,7 @@ Action: 🔒 Internalize
 Order: Early
 
 PostcodeReviewDialogProps
-File: src/components/PostcodeReviewDialog.tsx
+**File:**: src/components/PostcodeReviewDialog.tsx
 Intent: Props typing.
 Usage: Internal only.
 Risk: Low
@@ -192,33 +192,33 @@ Order: Early
 
 **Notice** Safe to delete once internalization is complete.
 
-notNil — src/utils/typeGuards.ts
+- notNil — src/utils/typeGuards.ts
 
-getPriorityOrder — src/utils/scheduleUtils.ts
+- getPriorityOrder — src/utils/scheduleUtils.ts
 
-ScheduleEntry — src/types.ts
+- ScheduleEntry — src/types.ts
 
-EnhancedScheduleDay — src/types.ts
+- EnhancedScheduleDay — src/types.ts
 
-SuggestionResult — src/utils/dedupe.ts
+- SuggestionResult — src/utils/dedupe.ts
 
-REQUIRED_FIELDS — src/utils/columnSynonyms.ts
+- REQUIRED_FIELDS — src/utils/columnSynonyms.ts
 
 #### Medium / Future-facing deletions (do later, intentionally)
 
 **Notice** Delete only if you’re confident the feature won’t be revived soon.
 
-collectSources — src/utils/lineageMerge.ts
+- collectSources — src/utils/lineageMerge.ts
 
-getCanonicalFieldValue — src/utils/lineageMerge.ts
+- getCanonicalFieldValue — src/utils/lineageMerge.ts
 
-optimizeRoute — src/utils/scheduleUtils.ts
+- optimizeRoute — src/utils/scheduleUtils.ts
 
-clearMappings — src/services/persistence.ts
+- clearMappings — src/services/persistence.ts
 
-BusinessHours — src/types.ts
+- BusinessHours — src/types.ts
 
-YourListField — src/api/types.ts
+- YourListField — src/api/types.ts
 
 ## Safety Ritual (Before Any Move/Delete)
 
