@@ -2,7 +2,7 @@ import { BusinessData, BusinessDataProvider } from "./types";
 import { API_CFG } from "../config/api";
 import { getJson } from "./http";
 
-export class PostcodesProvider implements BusinessDataProvider {
+class PostcodesProvider implements BusinessDataProvider {
   async get(_pubId: string, seed: Partial<BusinessData>): Promise<BusinessData> {
     const out: BusinessData = { ...(seed as any) };
     const postcode = seed.postcode?.trim();

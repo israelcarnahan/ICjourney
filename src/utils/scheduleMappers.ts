@@ -2,7 +2,7 @@ import { toArray, coerceString } from "./typeGuards";
 import { Pub, ScheduleDay } from "../context/PubDataContext";
 
 // Type for the loose schedule data that comes from planVisits
-export type DaySchedule = {
+type DaySchedule = {
   date?: string;
   visits?: Pub[] | undefined;
   totalMileage?: number;
@@ -15,7 +15,7 @@ export type DaySchedule = {
 };
 
 // Map DaySchedule (loose) -> ScheduleDay (strict)
-export const toScheduleDay = (d: DaySchedule): ScheduleDay => ({
+const toScheduleDay = (d: DaySchedule): ScheduleDay => ({
   date: coerceString(d.date, ''),
   visits: toArray(d.visits).map(visit => ({
     ...visit,

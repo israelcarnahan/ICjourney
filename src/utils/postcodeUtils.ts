@@ -37,7 +37,7 @@ Status flags:
 */
 
 // Normalizes common postcode formats for parsing and display. Keeps deterministic output.
-export function normalizePostcode(raw: string | null | undefined): string | null {
+function normalizePostcode(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const trimmed = String(raw).trim().toUpperCase();
   if (!trimmed) return null;

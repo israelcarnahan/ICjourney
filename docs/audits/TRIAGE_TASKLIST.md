@@ -24,215 +24,189 @@
 - **Intent:** TypeScript declaration file for xlsx-js-style library. Provides type definitions for Excel file reading/writing operations including WorkBook, WorkSheet, and utility functions.
 - **Proposed Fate:** **Keep**
 
-### Unused Exports & Types — Audit Results
+### Unused Exports & Types
 
-✅ Safe Internalize Candidates
-These are exported but only used internally.
-Safe to remove export without changing runtime behavior.
+#### B) DELETE LATER (high confidence unused)
 
-#### Context & Providers
+- **SYMBOL:** notNil
+  - **FILE:** [`src/utils/typeGuards.ts`](../../src/utils/typeGuards.ts)
+  - **INTENT:** Null/undefined guard.
+  - **REAL USAGE CHECK:**
+    - USED CROSS-FILE?: No.
+    - USED INTERNALLY?: No (not referenced in file).
+    - TYPE-ONLY USAGE?: No.
+    - COMMENT-ONLY REFERENCES?: No.
+  - **INTENT DUPLICATION:** None.
+  - **FUTURE VALUE:** None.
+  - **HIDDEN COUPLING RISK:** Low.
+  - **LOGIC SALVAGE:** Minimal; recreate if needed later.
+  - **RECOMMENDATION:** DELETE-LATER.
+  - **SAFEST EXECUTION ORDER:** 20 � safe removal after internalize pass.
 
-PubDataContext
-**File:** src/context/PubDataContext.tsx
-Intent: React context for pub data state.
-Usage: No external imports; consumers use usePubData / PubDataProvider.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
+- **SYMBOL:** getPriorityOrder
+  - **FILE:** [`src/utils/scheduleUtils.ts`](../../src/utils/scheduleUtils.ts)
+  - **INTENT:** Compute priority ordering for visits.
+  - **REAL USAGE CHECK:**
+    - USED CROSS-FILE?: No.
+    - USED INTERNALLY?: No (not referenced in file).
+    - TYPE-ONLY USAGE?: No.
+    - COMMENT-ONLY REFERENCES?: No.
+  - **INTENT DUPLICATION:** None.
+  - **FUTURE VALUE:** None.
+  - **HIDDEN COUPLING RISK:** Low.
+  - **LOGIC SALVAGE:** If priority sorting returns, implement where needed in schedule flow.
+  - **RECOMMENDATION:** DELETE-LATER.
+  - **SAFEST EXECUTION ORDER:** 21 � unused and isolated.
 
-PubDataContextType
-**File:** src/context/PubDataContext.tsx
-Intent: Type for context value shape.
-Usage: Internal only.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
+- **SYMBOL:** ScheduleEntry
+  - **FILE:** [`src/types.ts`](../../src/types.ts)
+  - **INTENT:** Schedule entry shape.
+  - **REAL USAGE CHECK:**
+    - USED CROSS-FILE?: No (no imports).
+    - USED INTERNALLY?: No.
+    - TYPE-ONLY USAGE?: No.
+    - COMMENT-ONLY REFERENCES?: Yes (commented usage in UI files like [`src/components/DriveTimeBar.tsx`](../../src/components/DriveTimeBar.tsx) and [`src/components/ScheduleDisplay.tsx`](../../src/components/ScheduleDisplay.tsx)).
+  - **INTENT DUPLICATION:** Domain types live in `src/context/PubDataContext.tsx` and component-local types.
+  - **FUTURE VALUE:** None.
+  - **HIDDEN COUPLING RISK:** Low.
+  - **LOGIC SALVAGE:** Can recreate if schedule model is re-centralized.
+  - **RECOMMENDATION:** DELETE-LATER.
+  - **SAFEST EXECUTION ORDER:** 22 � only comment references.
 
-FallbackProvider (class)
-**File:**: src/api/fallbackProvider.ts
-Intent: Best-effort business data provider.
-Usage: Only the instance is imported, not the class.
-Risk: Low
-Action: 🔒 Internalize class (keep instance export)
-Order: Early
+- **SYMBOL:** EnhancedScheduleDay
+  - **FILE:** [`src/types.ts`](../../src/types.ts)
+  - **INTENT:** Schedule day with mileage fields.
+  - **REAL USAGE CHECK:**
+    - USED CROSS-FILE?: No.
+    - USED INTERNALLY?: No.
+    - TYPE-ONLY USAGE?: No.
+    - COMMENT-ONLY REFERENCES?: No.
+  - **INTENT DUPLICATION:** Similar shape exists on schedule items in UI logic.
+  - **FUTURE VALUE:** None.
+  - **HIDDEN COUPLING RISK:** Low.
+  - **LOGIC SALVAGE:** If mileage summary is standardized, define closer to schedule utils.
+  - **RECOMMENDATION:** DELETE-LATER.
+  - **SAFEST EXECUTION ORDER:** 23 � unused type.
 
-NominatimProvider (class)
-**File:**: src/api/nominatimProvider.ts
-Intent: Nominatim enrichment provider.
-Usage: Instance only.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
+- **SYMBOL:** SuggestionResult
+  - **FILE:** [`src/utils/dedupe.ts`](../../src/utils/dedupe.ts)
+  - **INTENT:** Type for dedupe suggestions.
+  - **REAL USAGE CHECK:**
+    - USED CROSS-FILE?: No.
+    - USED INTERNALLY?: No.
+    - TYPE-ONLY USAGE?: No.
+    - COMMENT-ONLY REFERENCES?: No.
+  - **INTENT DUPLICATION:** Dedupe types are defined locally in `src/utils/dedupe.ts`.
+  - **FUTURE VALUE:** None.
+  - **HIDDEN COUPLING RISK:** Low.
+  - **LOGIC SALVAGE:** Recreate if dedupe API is formalized.
+  - **RECOMMENDATION:** DELETE-LATER.
+  - **SAFEST EXECUTION ORDER:** 24 � unused type.
 
-PostcodesProvider (class)
-**File:**: src/api/postcodesProvider.ts
-Intent: Postcodes API provider.
-Usage: Instance only.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
+- **SYMBOL:** REQUIRED_FIELDS
+  - **FILE:** [`src/utils/columnSynonyms.ts`](../../src/utils/columnSynonyms.ts)
+  - **INTENT:** List of required canonical fields for mapping/validation.
+  - **REAL USAGE CHECK:**
+    - USED CROSS-FILE?: No.
+    - USED INTERNALLY?: No.
+    - TYPE-ONLY USAGE?: No.
+    - COMMENT-ONLY REFERENCES?: No.
+  - **INTENT DUPLICATION:** Validation currently happens in UI logic, not centralized.
+  - **FUTURE VALUE:** Maybe � could support stricter mapping validation.
+  - **HIDDEN COUPLING RISK:** Low.
+  - **LOGIC SALVAGE:** Reintroduce if validation rules are centralized in mapping flow.
+  - **RECOMMENDATION:** DELETE-LATER.
+  - **SAFEST EXECUTION ORDER:** 25 � unused constant.
 
-#### Utilities & Helpers
+#### C) POSTPONE / ROADMAP (future value; revisit intentionally)
 
-SYNONYMS
-**File:**: src/utils/columnSynonyms.ts
-Intent: Header regex map for auto-mapping.
-Usage: Used only within same file.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
+- **SYMBOL:** getCanonicalFieldValue
+  - **FILE:** [`src/utils/lineageMerge.ts`](../../src/utils/lineageMerge.ts)
+  - **INTENT:** Resolve canonical field value from lineage metadata.
+  - **REAL USAGE CHECK:**
+    - USED CROSS-FILE?: No.
+    - USED INTERNALLY?: No.
+    - TYPE-ONLY USAGE?: No.
+    - COMMENT-ONLY REFERENCES?: No.
+  - **INTENT DUPLICATION:** None; would complement `mergeIntoCanonical`.
+  - **FUTURE VALUE:** Roadmap � likely needed if lineage UI/merge inspection returns.
+  - **HIDDEN COUPLING RISK:** Med � intertwined with lineage data model.
+  - **LOGIC SALVAGE:** Keep in mind for a future lineage panel; would plug into `src/utils/lineageMerge.ts` outputs.
+  - **RECOMMENDATION:** POSTPONE / ROADMAP.
+  - **SAFEST EXECUTION ORDER:** 26 � defer until lineage roadmap is clear.
 
-buildSourceRef
-**File:**: src/utils/lineageMerge.ts
-Intent: Build lineage metadata.
-Usage: Internal only.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
+- **SYMBOL:** collectSources
+  - **FILE:** [`src/utils/lineageMerge.ts`](../../src/utils/lineageMerge.ts)
+  - **INTENT:** Collect source list names from pub/visit records.
+  - **REAL USAGE CHECK:**
+    - USED CROSS-FILE?: No.
+    - USED INTERNALLY?: No.
+    - TYPE-ONLY USAGE?: No.
+    - COMMENT-ONLY REFERENCES?: No.
+  - **INTENT DUPLICATION:** Similar data is derived in [`src/utils/sourceDetails.ts`](../../src/utils/sourceDetails.ts).
+  - **FUTURE VALUE:** Roadmap � useful for chips/summary if lineage UI returns.
+  - **HIDDEN COUPLING RISK:** Med � tied to lineage shapes.
+  - **LOGIC SALVAGE:** Would plug into source label/chip UI (see `getSourceDetails`).
+  - **RECOMMENDATION:** POSTPONE / ROADMAP.
+  - **SAFEST EXECUTION ORDER:** 27 � defer until UI plan is clear.
 
-recomputeEffectivePlan
-**File:**: src/utils/lineageMerge.ts
-Intent: Compute effective scheduling plan.
-Usage: Internal only.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
+- **SYMBOL:** optimizeRoute
+  - **FILE:** [`src/utils/scheduleUtils.ts`](../../src/utils/scheduleUtils.ts)
+  - **INTENT:** Route optimization routine.
+  - **REAL USAGE CHECK:**
+    - USED CROSS-FILE?: No.
+    - USED INTERNALLY?: No.
+    - TYPE-ONLY USAGE?: No.
+    - COMMENT-ONLY REFERENCES?: No.
+  - **INTENT DUPLICATION:** None.
+  - **FUTURE VALUE:** Roadmap � potential scheduling optimization feature.
+  - **HIDDEN COUPLING RISK:** Med � algorithm is large and touches schedule assumptions.
+  - **LOGIC SALVAGE:** Could reattach to scheduling flow in `src/utils/scheduleUtils.ts` when route optimization is re-scoped.
+  - **RECOMMENDATION:** POSTPONE / ROADMAP.
+  - **SAFEST EXECUTION ORDER:** 28 � hold until roadmap.
 
-normalizePostcode
-**File:**: src/utils/postcodeUtils.ts
-Intent: Normalize postcode format.
-Usage: Internal; dedupe uses a different helper.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
+- **SYMBOL:** clearMappings
+  - **FILE:** [`src/services/persistence.ts`](../../src/services/persistence.ts)
+  - **INTENT:** Clear persisted column mappings for a user.
+  - **REAL USAGE CHECK:**
+    - USED CROSS-FILE?: No.
+    - USED INTERNALLY?: No.
+    - TYPE-ONLY USAGE?: No.
+    - COMMENT-ONLY REFERENCES?: Yes (commented TODO in [`src/context/PubDataContext.tsx`](../../src/context/PubDataContext.tsx)).
+  - **INTENT DUPLICATION:** None.
+  - **FUTURE VALUE:** Maybe � useful for user reset flows.
+  - **HIDDEN COUPLING RISK:** Med � tied to persistence keys and reset semantics.
+  - **LOGIC SALVAGE:** If reset flows return, wire into the reset path in `PubDataContext`.
+  - **RECOMMENDATION:** POSTPONE / ROADMAP.
+  - **SAFEST EXECUTION ORDER:** 29 � wait for reset UX decision.
 
-getPrimaryDriverInfo
-**File:**: src/utils/sourceDetails.ts
-Intent: Determine primary schedule driver.
-Usage: Internal only.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
+- **SYMBOL:** BusinessHours
+  - **FILE:** [`src/types.ts`](../../src/types.ts)
+  - **INTENT:** Business hours type (open/close time).
+  - **REAL USAGE CHECK:**
+    - USED CROSS-FILE?: No.
+    - USED INTERNALLY?: No.
+    - TYPE-ONLY USAGE?: No.
+    - COMMENT-ONLY REFERENCES?: No.
+  - **INTENT DUPLICATION:** Similar types exist in [`src/context/PubDataContext.tsx`](../../src/context/PubDataContext.tsx) and [`src/components/DriveTimeBar.tsx`](../../src/components/DriveTimeBar.tsx).
+  - **FUTURE VALUE:** Maybe � could become a shared domain type if consolidated.
+  - **HIDDEN COUPLING RISK:** Med � type consolidation could affect multiple components.
+  - **LOGIC SALVAGE:** If standardizing domain types, relocate to a single shared types module later.
+  - **RECOMMENDATION:** POSTPONE / ROADMAP.
+  - **SAFEST EXECUTION ORDER:** 30 � defer until type consolidation is planned.
 
-isNonEmptyString
-**File:**: src/utils/typeGuards.ts
-Intent: String guard.
-Usage: Used only internally.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
+- **SYMBOL:** YourListField
+  - **FILE:** [`src/api/types.ts`](../../src/api/types.ts)
+  - **INTENT:** Allowed field names from "Your Lists" ingest.
+  - **REAL USAGE CHECK:**
+    - USED CROSS-FILE?: No.
+    - USED INTERNALLY?: No.
+    - TYPE-ONLY USAGE?: No.
+    - COMMENT-ONLY REFERENCES?: No.
+  - **INTENT DUPLICATION:** None explicit; validation happens ad hoc.
+  - **FUTURE VALUE:** Maybe � could be used for validation/typing in upload flow.
+  - **HIDDEN COUPLING RISK:** Med � would influence ingest validation expectations.
+  - **LOGIC SALVAGE:** Reintroduce if upload validation is formalized in [`src/components/FileUploader.tsx`](../../src/components/FileUploader.tsx).
+  - **RECOMMENDATION:** POSTPONE / ROADMAP.
+  - **SAFEST EXECUTION ORDER:** 31 � defer until upload validation is planned.
 
-generateICSFile
-**File:**: src/utils/calendarUtils.ts
-Intent: Build ICS content.
-Usage: Called by internal download helper.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
-
-extractNumericPart
-**File:**: src/utils/scheduleUtils.ts
-Intent: Numeric extraction for grouping.
-Usage: Internal only.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
-
-toScheduleDay
-**File:**: src/utils/scheduleMappers.ts
-Intent: Map loose → strict schedule day.
-Usage: Used by exported function in same file.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
-
-extractTokens
-**File:**: src/utils/fuzzy.ts
-Intent: Tokenization helper.
-Usage: Internal only.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
-
-#### Components & Types
-
-VisitScheduler (named export)
-**File:**: src/components/VisitScheduler.tsx
-Intent: Scheduler component.
-Usage: Only default import is used.
-Risk: Low
-Action: 🔒 Remove named export (keep default)
-Order: Early
-
-DriverBucket
-**File:**: src/utils/sourceDetails.ts
-Intent: Driver bucket union type.
-Usage: Internal only.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
-
-DaySchedule
-**File:**: src/utils/scheduleMappers.ts
-Intent: Loose schedule day shape.
-Usage: Internal only.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
-
-PostcodeReviewDialogProps
-**File:**: src/components/PostcodeReviewDialog.tsx
-Intent: Props typing.
-Usage: Internal only.
-Risk: Low
-Action: 🔒 Internalize
-Order: Early
-
-#### Delete Candidates (After Internalize Pass)
-
-**Notice** Safe to delete once internalization is complete.
-
-- notNil — src/utils/typeGuards.ts
-
-- getPriorityOrder — src/utils/scheduleUtils.ts
-
-- ScheduleEntry — src/types.ts
-
-- EnhancedScheduleDay — src/types.ts
-
-- SuggestionResult — src/utils/dedupe.ts
-
-- REQUIRED_FIELDS — src/utils/columnSynonyms.ts
-
-#### Medium / Future-facing deletions (do later, intentionally)
-
-**Notice** Delete only if you’re confident the feature won’t be revived soon.
-
-- collectSources — src/utils/lineageMerge.ts
-
-- getCanonicalFieldValue — src/utils/lineageMerge.ts
-
-- optimizeRoute — src/utils/scheduleUtils.ts
-
-- clearMappings — src/services/persistence.ts
-
-- BusinessHours — src/types.ts
-
-- YourListField — src/api/types.ts
-
-## Safety Ritual (Before Any Move/Delete)
-
-Before moving or deleting any file:
-
-1. Run `npm run typecheck` and `npm run build` — verify no breakage
-2. Run `npx knip -c knip.json` — confirm file still flagged as unused
-3. Commit in small batches — one cluster or logical group per commit
-4. Test after each commit — ensure app still works
-
-**Dependency cleanup**: Wait until all file deletions are complete and verified. Then review unused dependencies from Knip output and remove via `npm uninstall`.
-
-## Next: JSCPD Review Steps
-
-1. Open HTML report: `docs/audits/JSCPD/html/index.html`
-2. Identify top duplicate code clusters
-3. Record findings in a short summary (no refactors yet)

@@ -15,7 +15,7 @@ const toDateTuple = (d: Date): DateTuple => [
   d.getMinutes(),
 ];
 
-export const generateICSFile = (schedule: ScheduleDay[]): Promise<string> => {
+const generateICSFile = (schedule: ScheduleDay[]): Promise<string> => {
   return new Promise((resolve, reject) => {
     const events = toArray(schedule).flatMap(day => {
       const startDate = parseISO(String(day?.date ?? ''));

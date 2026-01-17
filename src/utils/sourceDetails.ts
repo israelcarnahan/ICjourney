@@ -13,7 +13,7 @@ export type SourceDetail = {
   extras: Record<string, string | number | boolean | null | undefined>;
 };
 
-export type DriverBucket = 'deadline' | 'followup' | 'priority' | 'master';
+type DriverBucket = 'deadline' | 'followup' | 'priority' | 'master';
 
 export function formatPriorityForUser(meta: any): string | null {
   // Keep logic consistent with FileTypeDialog: priority|deadline|followup
@@ -38,7 +38,7 @@ const formatPrimaryLabel = (bucket: DriverBucket, meta: any): string => {
   return meta?.Priority || 'Masterfile';
 };
 
-export function getPrimaryDriverInfo(pubOrVisit: any): {
+function getPrimaryDriverInfo(pubOrVisit: any): {
   bucket: DriverBucket;
   label: string;
 } {

@@ -207,7 +207,7 @@ export type VehicleColor =
   | "orange"
   | "yellow";
 
-export interface PubDataContextType {
+interface PubDataContextType {
   userFiles: UserFiles;
   schedule: ScheduleDay[];
   visitsPerDay: number;
@@ -293,7 +293,7 @@ const defaultContext: PubDataContextType = {
   initializationError: null,
 };
 
-export const PubDataContext = createContext<PubDataContextType>(defaultContext);
+const PubDataContext = createContext<PubDataContextType>(defaultContext);
 
 export const usePubData = (): PubDataContextType => {
   const context = useContext(PubDataContext);

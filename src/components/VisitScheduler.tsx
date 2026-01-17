@@ -451,5 +451,4 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
   );
 };
 
-export { VisitScheduler };
 export default VisitScheduler;

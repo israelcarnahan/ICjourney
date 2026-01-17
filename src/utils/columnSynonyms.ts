@@ -1,7 +1,7 @@
 import type { CanonicalField } from "../types/import";
 
 // all regex are case-insensitive; match common header variants
-export const SYNONYMS: Record<CanonicalField, RegExp[]> = {
+const SYNONYMS: Record<CanonicalField, RegExp[]> = {
   name: [/^(pub|name|venue|business|account|outlet)$/i],
   postcode: [/^(zip|postcode|post\s*code|postal\s*code|zip\s*code)$/i],
   rtm: [/^(rtm|route\s*to\s*market|channel|tier)$/i],

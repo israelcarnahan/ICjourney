@@ -5,7 +5,7 @@ import { devLog } from './devLog';
 /**
  * Build a SourceRef from an incoming pub row
  */
-export function buildSourceRef(
+function buildSourceRef(
   incomingPub: Pub,
   rowIndex: number,
   mappedValues: Record<string, string>,
@@ -29,7 +29,7 @@ export function buildSourceRef(
 /**
  * Recompute effective plan based on precedence rules
  */
-export function recomputeEffectivePlan(
+function recomputeEffectivePlan(
   canonicalPub: Pub,
   newSourceRef: SourceRef
 ): EffectivePlan {

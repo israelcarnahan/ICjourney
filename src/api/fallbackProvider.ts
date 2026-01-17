@@ -29,7 +29,7 @@ function makeIsOpenAt(oh?: OpeningHours | null) {
 
 
 
-export class FallbackProvider implements BusinessDataProvider {
+class FallbackProvider implements BusinessDataProvider {
   async get(_pubId: string, seed: Partial<BusinessData>): Promise<BusinessData> {
     const name = seed.name ?? "";
     const postcode = seed.postcode ?? null;

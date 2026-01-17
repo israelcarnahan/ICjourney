@@ -16,7 +16,7 @@ function parseOpeningHours(s?: string): OpeningHours|null {
 const buildQuery = (name: string, postcode?: string|null, town?: string|null) =>
   [name, postcode, town].filter(Boolean).join(", ");
 
-export class NominatimProvider implements BusinessDataProvider {
+class NominatimProvider implements BusinessDataProvider {
   async get(_pubId: string, seed: Partial<BusinessData>): Promise<BusinessData> {
     const out: BusinessData = { ...(seed as any) };
     const name = seed.name?.trim();

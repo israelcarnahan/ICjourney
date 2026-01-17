@@ -20,7 +20,7 @@ export type PostcodeReviewDecision = {
   parsed: ParsedPostcode;
 };
 
-export type PostcodeReviewDialogProps = {
+type PostcodeReviewDialogProps = {
   isOpen: boolean;
   fileName: string;
   intentLabel: string;

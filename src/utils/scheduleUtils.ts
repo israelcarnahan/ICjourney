@@ -3,7 +3,7 @@ import { format, addBusinessDays } from "date-fns";
 import { Visit } from "../types";
 import { devLog } from "./devLog";
 
-export const extractNumericPart = (postcode: string): [string, number] => {
+const extractNumericPart = (postcode: string): [string, number] => {
   // Extract the first part of the postcode (letters + number)
   const match = postcode
     .trim()

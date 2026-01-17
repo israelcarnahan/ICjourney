@@ -27,7 +27,7 @@ export function normalizeString(str: string): string {
 /**
  * Extract tokens from a string (words, numbers)
  */
-export function extractTokens(str: string): string[] {
+function extractTokens(str: string): string[] {
   if (!str) return [];
   return str
     .toLowerCase()
