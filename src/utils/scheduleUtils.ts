@@ -52,21 +52,6 @@ export const findNearestPubs = (
     .sort((a, b) => (a.distance || 0) - (b.distance || 0));
 };
 
-export const getPriorityOrder = (pub: Visit): number => {
-  switch (pub.Priority?.toLowerCase()) {
-    case "repslywin":
-    case "recent win":
-      return 1;
-    case "wishlist":
-    case "hit list":
-      return 2;
-    case "unvisited":
-      return 3;
-    default:
-      return 4;
-  }
-};
-
 interface DaySchedule extends Partial<ScheduleDay> {
   date: string;
   visits: Pub[];

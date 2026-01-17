@@ -35,11 +35,6 @@ export interface DedupeResult {
   needsReview: DedupeCandidate[];
 }
 
-export interface SuggestionResult {
-  autoMerge: Suggestion[];
-  needsReview: Suggestion[];
-}
-
 /**
  * Generate candidates for deduplication based on postcode and address rules
  */

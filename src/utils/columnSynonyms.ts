@@ -18,7 +18,6 @@ export const CANONICAL_ORDER: CanonicalField[] = [
   'name', 'postcode', 'rtm', 'address', 'town', 'phone', 'email', 'lat', 'lng', 'notes'
 ];
 
-export const REQUIRED_FIELDS: CanonicalField[] = ['name', 'postcode'];
 
 export function autoGuessMapping(headers: string[]): Partial<Record<CanonicalField, string>> {
   const result: Partial<Record<CanonicalField, string>> = {};

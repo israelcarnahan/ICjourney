@@ -17,13 +17,6 @@ export interface BusinessHours {
   closeTime: string;
 }
 
-export interface ScheduleEntry {
-  pub: string;
-  arrival: Date;
-  departure: Date;
-  driveTime: number;
-  isScheduled: boolean;
-}
 
 export interface Visit extends Pub {
   driveTimeToNext?: number;
@@ -44,8 +37,3 @@ export interface ScheduleDay {
   schedulingErrors?: string[];
 }
 
-export interface EnhancedScheduleDay extends ScheduleDay {
-  totalMileage: number;
-  startMileage: number;
-  endMileage: number;
-}
