@@ -17,7 +17,6 @@
     "prepush": "npm run typecheck"
   },
   "dependencies": {
-    "@googlemaps/js-api-loader": "^1.16.10",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-radio-group": "^1.1.3",
     "@radix-ui/react-tooltip": "^1.0.7",
@@ -31,8 +30,6 @@
     "react-dom": "^18.3.1",
     "react-dropzone": "^14.2.3",
     "react-router-dom": "^6.22.3",
-    "uk-postcode-validator": "^1.1.3",
-    "uuid": "^9.0.1",
     "xlsx-js-style": "^1.2.0"
   },
   "devDependencies": {
@@ -46,13 +43,11 @@
     "@typescript-eslint/parser": "^7.0.2",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",
-    "dependency-cruiser": "^17.3.6",
     "eslint": "^8.56.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
     "globals": "^17.0.0",
     "jscpd": "^4.0.7",
-    "madge": "^8.0.0",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.21.0",

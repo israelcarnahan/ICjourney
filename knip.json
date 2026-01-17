@@ -1,4 +1,4 @@
 {
   "entry": ["src/main.tsx"],
-  "ignore": ["_archive/**", "docs/**", "dist/**", "node_modules/**"]
+  "ignore": ["_archive/**", "docs/**", "dist/**", "node_modules/**", "src/types/shims.d.ts**", "src/types/xlsx-js-style.d.ts**"]
 }

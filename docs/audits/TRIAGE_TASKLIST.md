@@ -1,28 +1,13 @@
-# Audit Triage Task list
-
-## Knip Findings Summary
+# Archive Code to resurrect
 
 ### Archived Files (10)
 
 - **Path** Now lives in project root `_archive` for reference when ready for resurrection work
-
-### Guardrails: Do Not Delete Yet
-
-**⚠️ CRITICAL**: These TypeScript declaration files (`.d.ts`) are required for type checking and build processes. **DO NOT DELETE** without first verifying via `npm run typecheck` and `npm run build` after removal. These files provide essential type definitions that may not be detected by static analysis tools.
-
-- **File:** `src/types/shims.d.ts`
-- **Tag:** [GUARDRAIL]
-- **Evidence:** TypeScript declaration file (build-time dependency)
-- **Notes:** Provides type shims for build process. Required for TypeScript compilation.
-- **Intent:** TypeScript declaration file providing type definitions for external libraries without types. Includes shims for Google Maps API, Radix UI Progress, and path aliases to prevent build-time type errors.
-- **Proposed Fate:** **Keep** (verify via typecheck/build before considering removal)
-
-- **File:** `src/types/xlsx-js-style.d.ts`
-- **Tag:** [VERIFIED: live reference]
-- **Evidence:** [`src/components/FileUploader.tsx:3`](src/components/FileUploader.tsx#L3), [`_archive/src/components/EnhancementSelector.tsx:9`](_archive/src/components/EnhancementSelector.tsx#L9), [`src/components/ScheduleDisplay.tsx:18`](src/components/ScheduleDisplay.tsx#L18)
-- **Notes:** Type definitions for `xlsx-js-style` library (actively used by 3 components)
-- **Intent:** TypeScript declaration file for xlsx-js-style library. Provides type definitions for Excel file reading/writing operations including WorkBook, WorkSheet, and utility functions.
-- **Proposed Fate:** **Keep**
+  - **Tag:** [VERIFIED: live reference]
+  - **Evidence:** [`src/components/FileUploader.tsx:3`](src/components/FileUploader.tsx#L3), [`_archive/src/components/EnhancementSelector.tsx:9`](_archive/src/components/EnhancementSelector.tsx#L9), [`src/components/ScheduleDisplay.tsx:18`](src/components/ScheduleDisplay.tsx#L18)
+  - **Notes:** Type definitions for `xlsx-js-style` library (actively used by 3 components)
+  - **Intent:** TypeScript declaration file for xlsx-js-style library. Provides type definitions for Excel file reading/writing operations including WorkBook, WorkSheet, and utility functions.
+  - **Proposed Fate:** **Keep**
 
 ### Unused Exports & Types (Archived/Postponed)
 
