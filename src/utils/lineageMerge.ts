@@ -179,7 +179,13 @@ export function mergeIntoCanonical(
 /**
  * Get the canonical field value based on precedence rules
  */
-export function getCanonicalFieldValue(
+/**
+ * @ARCHIVED
+ * Reason: Knip flags this symbol as unused (no internal/cross-file references).
+ * Status: Roadmap/postpone. Keep for future resurrection.
+ * Notes: Resolve canonical field values from lineage data for review panels.
+ */
+function getCanonicalFieldValue(
   pub: Pub,
   field: string
 ): string | undefined {
@@ -196,6 +202,7 @@ export function getCanonicalFieldValue(
   // For now, just return the first value (can be enhanced later)
   return values[0].value;
 }
+void getCanonicalFieldValue;
 
 /**
  * Get all extras from all sources
@@ -235,7 +242,13 @@ export function getSourceInfo(pub: Pub): { count: number; fileNames: string[] } 
 /**
  * Collect unique source list names from visits or pub metadata
  */
-export function collectSources(visitsOrPubs: Array<Pub | Visit>): string[] {
+/**
+ * @ARCHIVED
+ * Reason: Knip flags this symbol as unused (no internal/cross-file references).
+ * Status: Roadmap/postpone. Keep for future resurrection.
+ * Notes: Aggregate source list names for chips/summary displays.
+ */
+function collectSources(visitsOrPubs: Array<Pub | Visit>): string[] {
   const allSources = new Set<string>();
   
   visitsOrPubs.forEach(item => {
@@ -270,4 +283,5 @@ export function collectSources(visitsOrPubs: Array<Pub | Visit>): string[] {
   
   return sortedSources;
 }
+void collectSources;
 

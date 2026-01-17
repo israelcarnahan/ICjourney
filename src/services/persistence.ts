@@ -62,7 +62,13 @@ export function saveMappings(map: Record<string, any>, userId: string) {
   }
 }
 
-export function clearMappings(userId: string) {
+/**
+ * @ARCHIVED
+ * Reason: Knip flags this symbol as unused (no internal/cross-file references).
+ * Status: Roadmap/postpone. Keep for future resurrection.
+ * Notes: Intended for reset flows to clear saved mapping state.
+ */
+function clearMappings(userId: string) {
   try {
     const KEY_MAPPINGS = `jp.${VERSION}.mappings::${userId}`;
     remove(KEY_MAPPINGS);
@@ -70,3 +76,4 @@ export function clearMappings(userId: string) {
     devLog('[Persistence] Failed to clear mappings for userId:', userId, error);
   }
 }
+void clearMappings;

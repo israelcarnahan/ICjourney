@@ -24,9 +24,9 @@
 - **Intent:** TypeScript declaration file for xlsx-js-style library. Provides type definitions for Excel file reading/writing operations including WorkBook, WorkSheet, and utility functions.
 - **Proposed Fate:** **Keep**
 
-### Unused Exports & Types
+### Unused Exports & Types (Archived/Postponed)
 
-#### C) POSTPONE / ROADMAP (future value; revisit intentionally)
+**Handled** Archived in each symbols relevant file with **@ARCHIVED, JSDoc, void**, plus minimal no-op references to satisfy noUnusedLocals without changing runtime behavior. Resurrect its future value.
 
 - **SYMBOL:** getCanonicalFieldValue
   - **FILE:** [`src/utils/lineageMerge.ts`](../../src/utils/lineageMerge.ts)
@@ -37,11 +37,9 @@
     - TYPE-ONLY USAGE?: No.
     - COMMENT-ONLY REFERENCES?: No.
   - **INTENT DUPLICATION:** None; would complement `mergeIntoCanonical`.
-  - **FUTURE VALUE:** Roadmap � likely needed if lineage UI/merge inspection returns.
-  - **HIDDEN COUPLING RISK:** Med � intertwined with lineage data model.
+  - **FUTURE VALUE:** Roadmap - likely needed if lineage UI/merge inspection returns.
+  - **HIDDEN COUPLING RISK:** Med - intertwined with lineage data model.
   - **LOGIC SALVAGE:** Keep in mind for a future lineage panel; would plug into `src/utils/lineageMerge.ts` outputs.
-  - **RECOMMENDATION:** POSTPONE / ROADMAP.
-  - **SAFEST EXECUTION ORDER:** 26 � defer until lineage roadmap is clear.
 
 - **SYMBOL:** collectSources
   - **FILE:** [`src/utils/lineageMerge.ts`](../../src/utils/lineageMerge.ts)
@@ -52,11 +50,9 @@
     - TYPE-ONLY USAGE?: No.
     - COMMENT-ONLY REFERENCES?: No.
   - **INTENT DUPLICATION:** Similar data is derived in [`src/utils/sourceDetails.ts`](../../src/utils/sourceDetails.ts).
-  - **FUTURE VALUE:** Roadmap � useful for chips/summary if lineage UI returns.
-  - **HIDDEN COUPLING RISK:** Med � tied to lineage shapes.
+  - **FUTURE VALUE:** Roadmap - useful for chips/summary if lineage UI returns.
+  - **HIDDEN COUPLING RISK:** Med - tied to lineage shapes.
   - **LOGIC SALVAGE:** Would plug into source label/chip UI (see `getSourceDetails`).
-  - **RECOMMENDATION:** POSTPONE / ROADMAP.
-  - **SAFEST EXECUTION ORDER:** 27 � defer until UI plan is clear.
 
 - **SYMBOL:** optimizeRoute
   - **FILE:** [`src/utils/scheduleUtils.ts`](../../src/utils/scheduleUtils.ts)
@@ -67,11 +63,9 @@
     - TYPE-ONLY USAGE?: No.
     - COMMENT-ONLY REFERENCES?: No.
   - **INTENT DUPLICATION:** None.
-  - **FUTURE VALUE:** Roadmap � potential scheduling optimization feature.
-  - **HIDDEN COUPLING RISK:** Med � algorithm is large and touches schedule assumptions.
+  - **FUTURE VALUE:** Roadmap - potential scheduling optimization feature.
+  - **HIDDEN COUPLING RISK:** Med - algorithm is large and touches schedule assumptions.
   - **LOGIC SALVAGE:** Could reattach to scheduling flow in `src/utils/scheduleUtils.ts` when route optimization is re-scoped.
-  - **RECOMMENDATION:** POSTPONE / ROADMAP.
-  - **SAFEST EXECUTION ORDER:** 28 � hold until roadmap.
 
 - **SYMBOL:** clearMappings
   - **FILE:** [`src/services/persistence.ts`](../../src/services/persistence.ts)
@@ -82,11 +76,9 @@
     - TYPE-ONLY USAGE?: No.
     - COMMENT-ONLY REFERENCES?: Yes (commented TODO in [`src/context/PubDataContext.tsx`](../../src/context/PubDataContext.tsx)).
   - **INTENT DUPLICATION:** None.
-  - **FUTURE VALUE:** Maybe � useful for user reset flows.
-  - **HIDDEN COUPLING RISK:** Med � tied to persistence keys and reset semantics.
-  - **LOGIC SALVAGE:** If reset flows return, wire into the reset path in `PubDataContext`.
-  - **RECOMMENDATION:** POSTPONE / ROADMAP.
-  - **SAFEST EXECUTION ORDER:** 29 � wait for reset UX decision.
+  - **FUTURE VALUE:** Maybe - useful for user reset flows.
+  - **HIDDEN COUPLING RISK:** Med - tied to persistence keys and reset semantics.
+  - **LOGIC SALVAGE:** If reset flows return, wire into the reset path in `PubDataContext`..
 
 - **SYMBOL:** BusinessHours
   - **FILE:** [`src/types.ts`](../../src/types.ts)
@@ -97,11 +89,9 @@
     - TYPE-ONLY USAGE?: No.
     - COMMENT-ONLY REFERENCES?: No.
   - **INTENT DUPLICATION:** Similar types exist in [`src/context/PubDataContext.tsx`](../../src/context/PubDataContext.tsx) and [`src/components/DriveTimeBar.tsx`](../../src/components/DriveTimeBar.tsx).
-  - **FUTURE VALUE:** Maybe � could become a shared domain type if consolidated.
-  - **HIDDEN COUPLING RISK:** Med � type consolidation could affect multiple components.
+  - **FUTURE VALUE:** Maybe - could become a shared domain type if consolidated.
+  - **HIDDEN COUPLING RISK:** Med - type consolidation could affect multiple components.
   - **LOGIC SALVAGE:** If standardizing domain types, relocate to a single shared types module later.
-  - **RECOMMENDATION:** POSTPONE / ROADMAP.
-  - **SAFEST EXECUTION ORDER:** 30 � defer until type consolidation is planned.
 
 - **SYMBOL:** YourListField
   - **FILE:** [`src/api/types.ts`](../../src/api/types.ts)
@@ -112,9 +102,6 @@
     - TYPE-ONLY USAGE?: No.
     - COMMENT-ONLY REFERENCES?: No.
   - **INTENT DUPLICATION:** None explicit; validation happens ad hoc.
-  - **FUTURE VALUE:** Maybe � could be used for validation/typing in upload flow.
-  - **HIDDEN COUPLING RISK:** Med � would influence ingest validation expectations.
+  - **FUTURE VALUE:** Maybe - could be used for validation/typing in upload flow.
+  - **HIDDEN COUPLING RISK:** Med - would influence ingest validation expectations.
   - **LOGIC SALVAGE:** Reintroduce if upload validation is formalized in [`src/components/FileUploader.tsx`](../../src/components/FileUploader.tsx).
-  - **RECOMMENDATION:** POSTPONE / ROADMAP.
-  - **SAFEST EXECUTION ORDER:** 31 � defer until upload validation is planned.
-

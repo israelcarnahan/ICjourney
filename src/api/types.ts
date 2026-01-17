@@ -3,7 +3,13 @@ export type OpeningHours = {
   weekly: (readonly [string, string] | null)[];
 };
 
-export type YourListField =
+/**
+ * @ARCHIVED
+ * Reason: Knip flags this symbol as unused (no internal/cross-file references).
+ * Status: Roadmap/postpone. Keep for future resurrection.
+ * Notes: Intended for stricter typing/validation of upload fields.
+ */
+type YourListField =
   | "phone"
   | "email"
   | "notes"
@@ -12,6 +18,8 @@ export type YourListField =
   | "town"
   | "postcode"
   | string; // allow arbitrary extras
+const archivedYourListField: YourListField | null = null;
+void archivedYourListField;
 
 export type SourceTag = {
   listName: string;

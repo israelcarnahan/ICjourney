@@ -794,7 +794,13 @@ export function buildSchedulingDebugSummary(
   };
 }
 
-export const optimizeRoute = (
+/**
+ * @ARCHIVED
+ * Reason: Knip flags this symbol as unused (no internal/cross-file references).
+ * Status: Roadmap/postpone. Keep for future resurrection.
+ * Notes: Route optimization helper for future scheduling improvements.
+ */
+const optimizeRoute = (
   visits: Visit[],
   homeAddress: string,
   maxDriveTime: number = 90 // Maximum drive time between visits in minutes
@@ -861,6 +867,7 @@ export const optimizeRoute = (
 
   return [...morningVisits, ...optimizedRoute, ...afternoonVisits];
 };
+void optimizeRoute;
 
 const parseTimeString = (time: string): number => {
   const [hours, minutes] = time.split(":").map(Number);
