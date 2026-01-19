@@ -5,12 +5,14 @@ import crypto from "node:crypto";
 import xlsx from "xlsx-js-style";
 import { planVisits } from "../src/utils/scheduleUtils.ts";
 import { parsePostcode } from "../src/utils/postcodeUtils.ts";
+import { getProximityScore } from "../src/geo/mockGeo.ts";
 
 const XLSX = xlsx?.default ?? xlsx;
 const DEFAULT_CONFIG = "scripts/audit-config.json";
 
 const args = process.argv.slice(2);
 const configPathArgIndex = args.findIndex((arg) => arg === "--config");
+const testDirArgIndex = args.findIndex((arg) => arg === "--testDir");
 const configPath =
   configPathArgIndex >= 0 && args[configPathArgIndex + 1]
     ? args[configPathArgIndex + 1]
@@ -20,7 +22,14 @@ const config = JSON.parse(
   fs.readFileSync(path.resolve(process.cwd(), configPath), "utf8")
 );
 const defaults = config.defaults ?? {};
-const testDir = path.resolve(process.cwd(), defaults.testDir ?? "testFiles");
+const testDirOverride =
+  testDirArgIndex >= 0 && args[testDirArgIndex + 1]
+    ? args[testDirArgIndex + 1]
+    : process.env.TEST_DIR;
+const testDir = path.resolve(
+  process.cwd(),
+  testDirOverride ?? defaults.testDir ?? "testFiles"
+);
 const fileConfigs = config.files ?? {};
 
 const visitsPerDay = defaults.visitsPerDay ?? 5;
@@ -28,7 +37,7 @@ const businessDays = defaults.businessDays ?? 5;
 const startDate = new Date(defaults.startDate ?? new Date());
 
 const canonicalFields = {
-  name: ["name", "pub", "pub name", "account", "account name"],
+  name: ["name", "pub", "pub name", "account", "account name", "place"],
   postcode: ["postcode", "post code", "post_code", "zip", "zip code"],
   rtm: ["rtm"],
   address: ["address", "addr", "street"],
@@ -183,6 +192,47 @@ const schedule = await planVisits(
   (entry) => debugDays.push(entry)
 );
 
+const geoDebug = schedule.map((day) => {
+  const visits = day.visits || [];
+  if (visits.length === 0) {
+    return {
+      date: day.date,
+      seed: null,
+      tierCounts: {},
+      ineligibleCount: 0,
+      samples: [],
+    };
+  }
+  const seed = visits[0];
+  const tierCounts = {};
+  let ineligibleCount = 0;
+  const samples = visits.slice(0, 5).map((visit) => {
+    const score = getProximityScore(seed.zip, visit.zip);
+    if (!score.eligible) ineligibleCount += 1;
+    tierCounts[score.tier] = (tierCounts[score.tier] ?? 0) + 1;
+    return {
+      pub: visit.pub,
+      postcode: visit.zip,
+      tier: score.tier,
+      eligible: score.eligible,
+    };
+  });
+
+  visits.slice(5).forEach((visit) => {
+    const score = getProximityScore(seed.zip, visit.zip);
+    if (!score.eligible) ineligibleCount += 1;
+    tierCounts[score.tier] = (tierCounts[score.tier] ?? 0) + 1;
+  });
+
+  return {
+    date: day.date,
+    seed: { pub: seed.pub, postcode: seed.zip },
+    tierCounts,
+    ineligibleCount,
+    samples,
+  };
+});
+
 const flatSchedule = schedule.flatMap((day) =>
   (day.visits || []).map((visit) => ({
     Date: day.date,
@@ -203,12 +253,15 @@ XLSX.writeFile(workbook, outputPath);
 
 const debugPath = path.join(testDir, "schedule_debug.json");
 fs.writeFileSync(debugPath, JSON.stringify(debugDays, null, 2));
+const geoDebugPath = path.join(testDir, "schedule_geo_debug.json");
+fs.writeFileSync(geoDebugPath, JSON.stringify(geoDebug, null, 2));
 
 console.log(
   JSON.stringify(
     {
       scheduleFile: outputPath,
       debugFile: debugPath,
+      geoDebugFile: geoDebugPath,
       days: schedule.length,
       visits: flatSchedule.length,
     },
