@@ -2,12 +2,27 @@
 
 ### Archived Files (10)
 
-- **Path** Now lives in project root `_archive` for reference when ready for resurrection work
-  - **Tag:** [VERIFIED: live reference]
-  - **Evidence:** [`src/components/FileUploader.tsx:3`](src/components/FileUploader.tsx#L3), [`_archive/src/components/EnhancementSelector.tsx:9`](_archive/src/components/EnhancementSelector.tsx#L9), [`src/components/ScheduleDisplay.tsx:18`](src/components/ScheduleDisplay.tsx#L18)
-  - **Notes:** Type definitions for `xlsx-js-style` library (actively used by 3 components)
-  - **Intent:** TypeScript declaration file for xlsx-js-style library. Provides type definitions for Excel file reading/writing operations including WorkBook, WorkSheet, and utility functions.
-  - **Proposed Fate:** **Keep**
+- **Path** `_archive` for reference when ready for resurrection work
+
+  _ARCHIVE
+  └───src
+      ├───components
+      │       CoverageHeatMap.tsx
+      │       EnhancementSelector.tsx
+      │       ProgressBar.tsx
+      │       RemovePubDialog.tsx
+      │       RescheduleDialog.tsx
+      │
+      ├───hooks
+      │       useMapsService.ts
+      │
+      ├───services
+      │       maps.ts
+      │
+      └───utils
+              googleMaps.ts
+              mapsLoader.ts
+              rtmColors.ts
 
 ### Unused Exports & Types (Archived/Postponed)
 
