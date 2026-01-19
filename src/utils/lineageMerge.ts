@@ -38,7 +38,7 @@ function recomputeEffectivePlan(
   
   // Precedence for primary driver: deadline -> followup -> priority
   // For deadline: earliest wins
-  // For priority: highest wins
+  // For priority: lowest wins (P1 beats P2)
   // For followup: earliest wins
   
   let effectiveDeadline: string | undefined;
@@ -58,7 +58,7 @@ function recomputeEffectivePlan(
   const priorities = allSources
     .map(s => s.priority)
     .filter((p): p is number => p !== undefined && p > 0)
-    .sort((a, b) => b - a); // Descending
+    .sort((a, b) => a - b); // Ascending
   if (priorities.length > 0) {
     effectivePriority = priorities[0];
   }
