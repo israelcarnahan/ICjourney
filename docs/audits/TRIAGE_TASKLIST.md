@@ -119,16 +119,9 @@
   - **HIDDEN COUPLING RISK:** Low.
   - **LOGIC SALVAGE:** De-export to satisfy Knip; if needed later, move to a shared geo types module and re-export.
 
-## ESLint Phase 1 Triage (2026-01-20)
+## ESLint Phase 1 (Completed, 2026-01-20)
 
-Reports generated on branch `lint-triage`:
-- `docs/audits/knip_lint/eslint_report_latest.txt`
-- `docs/audits/knip_lint/knip_report_latest.txt`
-
-Knip summary:
-- Unused file: `scripts/run-schedule.mjs`
-- Unused devDependencies: `@typescript-eslint/eslint-plugin`, `@typescript-eslint/parser`, `jscpd`
-- Unused exported type: `LocalityTier` in `src/geo/mockGeo.ts`
+- Status: Completed (runtime `@typescript-eslint/no-explicit-any` remains `error`, Option 1).
 
 ### After Phase 1 Fixes (2026-01-20)
 
@@ -156,67 +149,17 @@ Hotspot files (top 10 by total findings):
 9. `src/api/http.ts` (4)
 10. `src/pages/PlannerDashboard.tsx` (4)
 
-### Classification Summary (Phase 1)
+### Phase 1 Completed Notes
 
-- FIX (mechanical, no behavior change):
-  - `@typescript-eslint/no-unused-vars`
-  - `no-empty` (add comments; keep swallow semantics)
-  - `prefer-const`
-- RELAX (scoped overrides only, with exit plan):
-  - `@typescript-eslint/no-explicit-any` in `*.d.ts` only
-  - `react-refresh/only-export-components` in `src/context` only
-- POSTPONE (behavior-sensitive; backlog):
-  - `react-hooks/exhaustive-deps`
-  - `@typescript-eslint/no-explicit-any` in runtime code
-  - `@typescript-eslint/no-namespace`
+**Classification Summary (Phase 1)**
+- FIX (mechanical, no behavior change): `@typescript-eslint/no-unused-vars`, `no-empty`, `prefer-const`.
+- RELAX (scoped overrides only, with exit plan): `@typescript-eslint/no-explicit-any` in `*.d.ts` only; `react-refresh/only-export-components` in `src/context` only.
+- POSTPONE (behavior-sensitive; moved to Phase 2 backlog): `react-hooks/exhaustive-deps`, runtime `@typescript-eslint/no-explicit-any`, `@typescript-eslint/no-namespace`.
 
-### Scoped ESLint Config Edits (Exact Patch Suggestion)
+**Scoped ESLint Config Edits (Applied)**
+- Exit plan: replace `any` in `*.d.ts` with concrete types once upstream typings are clarified; split non-component exports in `src/context` into a separate module, then re-enable `react-refresh/only-export-components`.
 
-Edit `eslint.config.js`:
-```js
-export default tseslint.config(
-  { ignores: ['_archive/**', 'dist'] },
-  {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
-    files: ['**/*.{ts,tsx}'],
-    languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
-    },
-    plugins: {
-      'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
-    },
-    rules: {
-      ...reactHooks.configs.recommended.rules,
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
-    },
-  },
-  {
-    files: ['**/*.d.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
-    },
-  },
-  {
-    files: ['src/context/**/*.{ts,tsx}'],
-    rules: {
-      'react-refresh/only-export-components': 'off',
-    },
-  }
-);
-```
-
-Exit plan:
-- Replace `any` in `*.d.ts` with concrete types once upstream typings are clarified.
-- Split non-component exports in `src/context` into a separate module, then re-enable `react-refresh/only-export-components`.
-
-### FIX: Unused Vars/Params (DELETE vs UNDERSCORE)
-
+**FIX: Unused Vars/Params (Decisions Applied)**
 - DELETE (safe, no behavior change):
   - `src/App.tsx:40` replace `const [_mousePosition, setMousePosition]` with `const [, setMousePosition]` to keep setter only.
   - `src/api/nominatimProvider.ts:11` replace `const [_, open, close]` with `const [, open, close]`.
@@ -225,13 +168,10 @@ Exit plan:
 - DELETE (safe, no behavior change; keep call-site evaluation intact):
   - `src/components/DriveTimeBar.tsx:85` keep `_pubIndex` and add `void _pubIndex;` so the call site still evaluates the argument.
   - `src/config/maps.ts:37` keep `_query` and add `void _query;` so the call site still evaluates the argument.
-- UNDERSCORE (only if signature must remain):
-  - Add a local `// eslint-disable-next-line @typescript-eslint/no-unused-vars` on the parameter line, or use `void param;` with an explanatory comment.
-- RELAX in `*.d.ts`:
-  - `src/types/shims.d.ts:3` keep `declare namespace google` and `declare const google` (type-only usage); handle via `*.d.ts` override.
+- UNDERSCORE (only if signature must remain): add a local `// eslint-disable-next-line @typescript-eslint/no-unused-vars` on the parameter line, or use `void param;` with an explanatory comment.
+- RELAX in `*.d.ts`: `src/types/shims.d.ts:3` keep `declare namespace google` and `declare const google` (type-only usage); handle via `*.d.ts` override.
 
-### FIX: Empty Blocks (REMOVE vs KEEP+COMMENT)
-
+**FIX: Empty Blocks (Decisions Applied)**
 - KEEP+COMMENT (behavior-preserving swallow):
   - `src/api/nominatimProvider.ts:50` keep `catch {}` and add comment like `// Intentionally ignore network/provider errors; fallback to seed.`.
   - `src/api/postcodesProvider.ts:23` keep `catch {}` with comment (same rationale).
@@ -240,27 +180,39 @@ Exit plan:
   - `src/utils/storage.ts:11` keep `catch {}` with comment (localStorage can throw).
   - `src/utils/storage.ts:14` keep `catch {}` with comment (localStorage can throw).
 
-### POSTPONE Backlog (Behavior-Sensitive)
+**Phase 1 Execution Checklist (Completed)**
+1) Add scoped ESLint overrides for `*.d.ts` and `src/context`.
+2) Apply mechanical `no-unused-vars` fixes (delete unused bindings or remove unused params without changing runtime effects).
+3) Add intent comments to empty blocks (`no-empty`).
+4) Apply `prefer-const` change in `src/components/RepStatsPanel.tsx:344`.
+5) Re-run `npm run lint` and confirm only Phase 2 backlog warnings remain.
+6) Validate with `npm run typecheck` and `npm run build`.
 
-- react-hooks/exhaustive-deps
-  - `src/api/useBusinessData.ts:32` (missing `seed`, complex dep): Plan: extract dependency variables, stabilize memoization, verify effect behavior with sample data. Validate: run `npm run typecheck`, `npm run build`, smoke-test data fetch flow.
-  - `src/components/DedupReviewDialog.tsx:136` (missing deps): Plan: identify stable callbacks or wrap with `useCallback`, ensure memoization is intentional. Validate: dialog flow, auto-merge, and apply actions.
-  - `src/components/FileUploader.tsx:619` (missing deps): Plan: memoize `commitImport`/`processExcelFile`, confirm no infinite re-renders. Validate: upload flow for CSV/XLSX.
-  - `src/components/ScheduleDisplay.tsx:466` (missing `openingHours`): Plan: confirm effect should re-run on schedule data changes. Validate: schedule panel render and open hours display.
-  - `src/context/PubDataContext.tsx:316` (unstable `initialState` deps), `src/context/PubDataContext.tsx:422` (missing deps): Plan: hoist initial state into `useMemo`, review effects for stale closures. Validate: app init + state persistence.
-  - `src/pages/PlannerDashboard.tsx:500` (missing deps): Plan: decide which deps are stable vs intentionally excluded. Validate: planner dashboard data refresh after uploads.
-- @typescript-eslint/no-explicit-any (runtime)
-  - Plan: replace with explicit types or `unknown` + narrowing once source shapes are documented.
-  - Validate: run `npm run typecheck` and targeted feature smoke tests (upload flow, schedule render, API fetch).
-- @typescript-eslint/no-namespace
-  - `src/context/PubDataContext.tsx:17`: Plan: confirm namespace use is type-only; migrate to ES module types if safe.
-  - Validate: typecheck + build; ensure no runtime changes from type re-org.
+## ESLint Phase 2 Backlog (Active)
 
-### Phase 1 Execution Checklist (Ordered)
+Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit-any` remains `error` (Option 1).
 
-1) Done: Add scoped ESLint overrides for `*.d.ts` and `src/context` (see patch above).
-2) Done: Apply mechanical `no-unused-vars` fixes (delete unused bindings or remove unused params without changing runtime effects).
-3) Done: Add intent comments to empty blocks (`no-empty`).
-4) Done: Apply `prefer-const` change in `src/components/RepStatsPanel.tsx:344`.
-5) Done: Re-run `npm run lint` and confirm only POSTPONE warnings remain.
-6) Done: Validate with `npm run typecheck` and `npm run build`.
+### Runtime `any` backlog packages (grouped by boundary)
+
+- **FileUploader boundary:** `src/components/FileUploader.tsx`. Plan: define upload row + mapping DTOs, replace `any` with typed models or `unknown` + narrowing. Validate: upload CSV/XLSX, run `npm run typecheck`, run `npm run build`.
+- **API/http/providers:** `src/api/fallbackProvider.ts`, `src/api/http.ts`, `src/api/nominatimProvider.ts`, `src/api/postcodesProvider.ts`, `src/api/useBusinessData.ts`. Plan: type API response shapes and shared fetch helpers. Validate: provider flows and business data fetches.
+- **Storage/persistence:** `src/services/persistence.ts`. Plan: define persisted shapes and key-specific interfaces; replace `any` with typed records. Validate: load/save flows + state reset.
+- **Parsing/sourceDetails:** `src/utils/sourceDetails.ts`, `src/utils/openingHours.ts`, `src/utils/normalizeFile.ts`, `src/utils/scheduleMappers.ts`, `src/utils/seedFromPub.ts`, `src/utils/calendarUtils.ts`, `src/utils/dedupe.ts`. Plan: introduce parse result types + guards; narrow `unknown` instead of `any`. Validate: schedule mapping and opening hours parsing.
+- **UI panels:** `src/components/DedupReviewDialog.tsx`, `src/components/RepStatsPanel.tsx`, `src/components/ScheduleDisplay.tsx`, `src/components/UnscheduledPubsPanel.tsx`, `src/components/PostcodeReviewDialog.tsx`, `src/components/VisitScheduler.tsx`, `src/pages/PlannerDashboard.tsx`, `src/components/DriveTimeBar.tsx`. Plan: define props/view models; replace `any` with typed interfaces and derived types. Validate: dialog flows + scheduler panels.
+- **Maps/config edge:** `src/config/maps.ts`. Plan: define a minimal `PlaceDetails` shape for mock returns. Validate: maps-dependent UI still renders.
+
+### react-hooks/exhaustive-deps backlog (9 warnings)
+
+- `src/api/useBusinessData.ts:32` missing dependency `seed`. Plan: extract dependency variables, stabilize memoization. Validate: business data fetch flow.
+- `src/api/useBusinessData.ts:32` complex dependency expression. Plan: extract expression to a stable variable. Validate: same effect behavior across renders.
+- `src/components/DedupReviewDialog.tsx:136` missing deps (`autoMerge`, `countBy`, `handleApply`, `needsReview`). Plan: memoize callbacks or inline carefully. Validate: dialog open/apply/auto-merge.
+- `src/components/FileUploader.tsx:619` missing deps (`commitImport`, `processExcelFile`). Plan: memoize or include deps, avoid infinite re-renders. Validate: upload flow.
+- `src/components/ScheduleDisplay.tsx:466` missing `openingHours`. Plan: confirm effect dependency and add if safe. Validate: schedule display updates.
+- `src/context/PubDataContext.tsx:316` unstable `initialState` in useEffect deps. Plan: wrap in `useMemo`. Validate: app init.
+- `src/context/PubDataContext.tsx:316` unstable `initialState` in useCallback deps. Plan: wrap in `useMemo`. Validate: actions and callbacks.
+- `src/context/PubDataContext.tsx:422` missing deps (`businessDays`, `isInitialized`, `resetAllData`, `searchRadius`, `visitsPerDay`). Plan: add deps or document intentional exclusions. Validate: persistence and reset flows.
+- `src/pages/PlannerDashboard.tsx:500` missing deps (`masterfilePubs`, `repslyDeadline`, `repslyWins`, `setUserFiles`, `unvisitedPubs`, `wishlistPubs`). Plan: stabilize derived lists with `useMemo`. Validate: dashboard refresh after uploads.
+
+### @typescript-eslint/no-namespace investigation (1)
+
+- `src/context/PubDataContext.tsx:17`. Plan: confirm namespace use is type-only and migrate to ES module types if safe. Validate: `npm run typecheck` + `npm run build` with no runtime changes.
