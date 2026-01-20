@@ -27,7 +27,9 @@ export function formatPriorityForUser(meta: any): string | null {
       return `Visit by ${meta.deadline}`;
     if (meta?.schedulingMode === 'followup' && meta?.followUpDays)
       return `Follow-up ${meta.followUpDays}d`;
-  } catch {}
+  } catch {
+    // Intentionally ignore malformed metadata.
+  }
   return null;
 }
 

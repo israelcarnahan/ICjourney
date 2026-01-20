@@ -20,7 +20,9 @@ class PostcodesProvider implements BusinessDataProvider {
         out.extras["postcode_area"] ??= result.codes?.admin_district;
         out.extras["postcode_region"] ??= result.codes?.admin_county;
       }
-    } catch {}
+    } catch {
+      // Intentionally ignore provider errors; fallback to seed data.
+    }
     return out;
   }
 }

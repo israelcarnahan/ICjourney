@@ -37,7 +37,7 @@ interface ScheduleVisit extends ExtendedPub {
 const PlannerDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [_unscheduledPubs, setUnscheduledPubs] = useState<ExtendedPub[]>([]);
+  const [, setUnscheduledPubs] = useState<ExtendedPub[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<FileMetadata[]>([]);
   const [selectedPub, setSelectedPub] = useState<ExtendedPub | null>(null);

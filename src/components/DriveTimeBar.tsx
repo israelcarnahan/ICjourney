@@ -83,6 +83,7 @@ const BUSINESS_HOURS_DISTRIBUTION: BusinessHours[] = [
 
 // Function to get business hours for a pub based on its index
 const getPubBusinessHours = (_pubIndex: number): BusinessHours => {
+  void _pubIndex;
   const random = Math.random() * 100;
   if (random < 75) return BUSINESS_HOURS_DISTRIBUTION[0];
   if (random < 85) return BUSINESS_HOURS_DISTRIBUTION[1];

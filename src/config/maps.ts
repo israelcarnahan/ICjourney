@@ -35,6 +35,7 @@ class MapsService {
   }
 
   getPlaceDetails(_query: string) {
+    void _query;
     return {
       isOpen: true,
       openNow: true,

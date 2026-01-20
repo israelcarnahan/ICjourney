@@ -8,7 +8,7 @@ function parseOpeningHours(s?: string): OpeningHours|null {
   if (!s) return null;
   const m = s.match(/(\d{2}:\d{2})\s*[-–]\s*(\d{2}:\d{2})/);
   if (!m) return null;
-  const [_, open, close] = m;
+  const [, open, close] = m;
   const weekly = Array(7).fill(null).map(() => [open, close] as [string,string]);
   return { weekly: weekly as any };
 }
@@ -47,7 +47,9 @@ class NominatimProvider implements BusinessDataProvider {
       out.extras ||= {};
       out.extras["nominatim_id"] ??= hit.osm_id;
       out.extras["nominatim_type"] ??= hit.osm_type;
-    } catch {}
+    } catch {
+      // Intentionally ignore provider errors; fallback to seed data.
+    }
     return out;
   }
 }

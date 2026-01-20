@@ -341,7 +341,7 @@ const RepStatsPanel: React.FC = () => {
   const getStatusMessage = (stat: any) => {
     if (!stat) return "";
 
-    let scheduledText = stat.isExhausted
+    const scheduledText = stat.isExhausted
       ? `All ${stat.total} scheduled`
       : stat.scheduled === 0
       ? "None scheduled"

@@ -30,7 +30,9 @@ class ErrorBoundary extends Component<Props, State> {
         const { devLog } = await import("../utils/devLog");
         devLog("Uncaught error:", error, errorInfo);
       })();
-    } catch {}
+    } catch {
+      // Intentionally ignore logging failures.
+    }
   }
 
   public render() {
