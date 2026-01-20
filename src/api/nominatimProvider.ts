@@ -4,13 +4,31 @@ import { getJson } from "./http";
 
 const CONTACT_EMAIL = "support@example.com"; // replace later
 
-function parseOpeningHours(s?: string): OpeningHours|null {
+type NominatimTags = Record<string, unknown>;
+type NominatimAddress = Record<string, unknown>;
+type NominatimHit = {
+  extratags?: unknown;
+  address?: unknown;
+  osm_id?: unknown;
+  osm_type?: unknown;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const readString = (value: unknown): string | null =>
+  typeof value === "string" ? value : null;
+
+function parseOpeningHours(s?: string): OpeningHours | null {
   if (!s) return null;
   const m = s.match(/(\d{2}:\d{2})\s*[-–]\s*(\d{2}:\d{2})/);
   if (!m) return null;
   const [, open, close] = m;
-  const weekly = Array(7).fill(null).map(() => [open, close] as [string,string]);
-  return { weekly: weekly as any };
+  const weekly: OpeningHours["weekly"] = Array.from(
+    { length: 7 },
+    () => [open, close] as const
+  );
+  return { weekly };
 }
 
 const buildQuery = (name: string, postcode?: string|null, town?: string|null) =>
@@ -18,7 +36,7 @@ const buildQuery = (name: string, postcode?: string|null, town?: string|null) =>
 
 class NominatimProvider implements BusinessDataProvider {
   async get(_pubId: string, seed: Partial<BusinessData>): Promise<BusinessData> {
-    const out: BusinessData = { ...(seed as any) };
+    const out = { ...seed } as BusinessData;
     const name = seed.name?.trim();
     if (!name) return out;
 
@@ -31,22 +49,41 @@ class NominatimProvider implements BusinessDataProvider {
       u.searchParams.set("limit", "1");
       u.searchParams.set("email", CONTACT_EMAIL); // identify app (browser-safe)
 
-      const arr = await getJson(u.toString(), { "Accept-Language": "en" }) as any[];
+      const arr = await getJson(u.toString(), { "Accept-Language": "en" });
       const hit = Array.isArray(arr) ? arr[0] : null;
-      if (!hit) return out;
+      if (!isRecord(hit)) return out;
 
-      const tags = hit.extratags || {};
-      out.phone ||= tags.phone || tags["contact:phone"] || null;
-      out.email ||= tags.email || tags["contact:email"] || null;
-      if (!out.openingHours) out.openingHours = parseOpeningHours(tags.opening_hours || tags["opening_hours"]);
+      const tags = isRecord(hit.extratags) ? (hit.extratags as NominatimTags) : {};
+      const phone = readString(tags["phone"]) ?? readString(tags["contact:phone"]);
+      const email = readString(tags["email"]) ?? readString(tags["contact:email"]);
+      if (!out.phone && phone) out.phone = phone;
+      if (!out.email && email) out.email = email;
+      if (!out.openingHours) {
+        const opening = readString(tags["opening_hours"]);
+        out.openingHours = parseOpeningHours(opening ?? undefined);
+      }
 
-      const addr = hit.address || {};
-      out.address ||= [addr.house_number, addr.road, addr.suburb].filter(Boolean).join(" ") || null;
-      out.town ||= addr.town || addr.city || addr.village || addr.hamlet || null;
+      const addr = isRecord(hit.address) ? (hit.address as NominatimAddress) : {};
+      const addressParts = [
+        readString(addr["house_number"]),
+        readString(addr["road"]),
+        readString(addr["suburb"]),
+      ].filter(Boolean);
+      if (!out.address) out.address = addressParts.join(" ") || null;
+      if (!out.town) {
+        out.town =
+          readString(addr["town"]) ??
+          readString(addr["city"]) ??
+          readString(addr["village"]) ??
+          readString(addr["hamlet"]) ??
+          null;
+      }
 
       out.extras ||= {};
-      out.extras["nominatim_id"] ??= hit.osm_id;
-      out.extras["nominatim_type"] ??= hit.osm_type;
+      const osmId = (hit as NominatimHit).osm_id;
+      const osmType = (hit as NominatimHit).osm_type;
+      if (osmId != null) out.extras["nominatim_id"] ??= osmId;
+      if (osmType != null) out.extras["nominatim_type"] ??= osmType;
     } catch {
       // Intentionally ignore provider errors; fallback to seed data.
     }

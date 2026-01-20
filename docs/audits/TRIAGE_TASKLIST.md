@@ -1,4 +1,4 @@
-# Archive Code to resurrect
+# Knip Audit - Archived Code to resurrect
 
 ## Archived Files (10)
 
@@ -106,34 +106,45 @@
   - **HIDDEN COUPLING RISK:** Med - would influence ingest validation expectations.
   - **LOGIC SALVAGE:** Reintroduce if upload validation is formalized in [`src/components/FileUploader.tsx`](../../src/components/FileUploader.tsx).
 
-- **SYMBOL:** LocalityTier
-  - **FILE:** [`src/geo/mockGeo.ts`](../../src/geo/mockGeo.ts)
-  - **INTENT:** Model proximity tiers for mock distance scoring.
-  - **REAL USAGE CHECK:**
-    - USED CROSS-FILE?: No.
-    - USED INTERNALLY?: Yes (used throughout `mockGeo.ts`).
-    - TYPE-ONLY USAGE?: Yes.
-    - COMMENT-ONLY REFERENCES?: No.
-  - **INTENT DUPLICATION:** None noted; scoped to mock geo scoring.
-  - **FUTURE VALUE:** Maybe - could be shared if proximity tiers are reused elsewhere.
-  - **HIDDEN COUPLING RISK:** Low.
-  - **LOGIC SALVAGE:** De-export to satisfy Knip; if needed later, move to a shared geo types module and re-export.
+# Lint Triage + Lint Rules (must read rules before action)
 
-## ESLint Phase 1 (Completed, 2026-01-20)
+## Rules to follow (MUST READ AND ABIDE)
 
-- Status: Completed (runtime `@typescript-eslint/no-explicit-any` remains `error`, Option 1).
+**RULE 1** Whenever lint is run, redirect output into the repo’s canonical audit file at `docs/audits/knip_lint/eslint_report_latest.txt`.
 
-### After Phase 1 Fixes (2026-01-20)
+**RULE 2** 
+  - As each is resolved:
+    - update/replace the relevant sections, keeping the same output format as others in each related section(s). 
+      - remove from backlog
+      - add to the relevant Phases Completed section (with any notes)
+        - update/replace with current date in the sections name. 
 
-- Lint after fixes: 89 problems (80 errors, 9 warnings).
-- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (79), `react-hooks/exhaustive-deps` (9), `@typescript-eslint/no-namespace` (1).
+**RULE 3** 
+  - After rule 2 is completed:
+    - rerun ESLINT (SEE RULE 1)
+    - confirm no resolved actions from rule 2 remain in output
+    - update each relevant section of this doc, keeping the same output format as others in the related section(s). 
+      - update 'Current lint after fixes ('DATE')' section:
+        - replace date in named section with current date
+        - update and replace:
+          - lint (counts) after fixes
+          - remaining rule ids
+          - fix rules resolved (appending a quick blurb from the above Rule #2's work)
+      - update 'current eslint rule frequency ('DATE')' section: 
+        - update named sections date to current date
+        - update/replace table of rule id/count/hotspots table
+
+## Current Lint After Fixes (2026-01-20)
+
+- Lint after fixes: 74 problems (65 errors, 9 warnings).
+- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (64), `react-hooks/exhaustive-deps` (9), `@typescript-eslint/no-namespace` (1).
 - FIX rules resolved: `@typescript-eslint/no-unused-vars`, `no-empty`, `prefer-const`, `react-refresh/only-export-components` in `src/context`, and `*.d.ts` overrides.
 
-### ESLint Rule Frequency (Top)
+### Current ESLint Rule Frequency (2026-01-20)
 
-| Rule ID | Count | Hotspots (top 3 files) |
+| Rule ID | Count | Hotspots |
 | --- | ---: | --- |
-| @typescript-eslint/no-explicit-any | 79 | `src/components/FileUploader.tsx` (10), `src/components/UnscheduledPubsPanel.tsx` (7), `src/utils/sourceDetails.ts` (7) |
+| @typescript-eslint/no-explicit-any | 64 | `src/components/FileUploader.tsx` (10), `src/components/UnscheduledPubsPanel.tsx` (7), `src/utils/sourceDetails.ts` (7) |
 | react-hooks/exhaustive-deps | 9 | `src/context/PubDataContext.tsx` (3), `src/api/useBusinessData.ts` (2), `src/components/DedupReviewDialog.tsx` (1) |
 | @typescript-eslint/no-namespace | 1 | `src/context/PubDataContext.tsx` (1) |
 
@@ -142,12 +153,16 @@ Hotspot files (top 10 by total findings):
 2. `src/components/DedupReviewDialog.tsx` (7)
 3. `src/components/UnscheduledPubsPanel.tsx` (7)
 4. `src/utils/sourceDetails.ts` (7)
-5. `src/api/useBusinessData.ts` (6)
-6. `src/components/ScheduleDisplay.tsx` (6)
-7. `src/components/RepStatsPanel.tsx` (5)
-8. `src/context/PubDataContext.tsx` (5)
-9. `src/api/http.ts` (4)
-10. `src/pages/PlannerDashboard.tsx` (4)
+5. `src/components/ScheduleDisplay.tsx` (6)
+6. `src/components/RepStatsPanel.tsx` (5)
+7. `src/context/PubDataContext.tsx` (5)
+8. `src/pages/PlannerDashboard.tsx` (4)
+9. `src/config/maps.ts` (3)
+10. `src/utils/openingHours.ts` (3)
+
+## ESLint Phase 1 (Completed, 2026-01-20)
+
+- Status: Completed (runtime `@typescript-eslint/no-explicit-any` remains `error`, Option 1).
 
 ### Phase 1 Completed Notes
 
@@ -188,31 +203,90 @@ Hotspot files (top 10 by total findings):
 5) Re-run `npm run lint` and confirm only Phase 2 backlog warnings remain.
 6) Validate with `npm run typecheck` and `npm run build`.
 
-## ESLint Phase 2 Backlog (Active)
+## ESLint Phase 2 (Active)
 
 Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit-any` remains `error` (Option 1).
 
-### Runtime `any` backlog packages (grouped by boundary)
+### Phase 2 Completed Packages (2026-01-20)
 
-- **FileUploader boundary:** `src/components/FileUploader.tsx`. Plan: define upload row + mapping DTOs, replace `any` with typed models or `unknown` + narrowing. Validate: upload CSV/XLSX, run `npm run typecheck`, run `npm run build`.
-- **API/http/providers:** `src/api/fallbackProvider.ts`, `src/api/http.ts`, `src/api/nominatimProvider.ts`, `src/api/postcodesProvider.ts`, `src/api/useBusinessData.ts`. Plan: type API response shapes and shared fetch helpers. Validate: provider flows and business data fetches.
-- **Storage/persistence:** `src/services/persistence.ts`. Plan: define persisted shapes and key-specific interfaces; replace `any` with typed records. Validate: load/save flows + state reset.
-- **Parsing/sourceDetails:** `src/utils/sourceDetails.ts`, `src/utils/openingHours.ts`, `src/utils/normalizeFile.ts`, `src/utils/scheduleMappers.ts`, `src/utils/seedFromPub.ts`, `src/utils/calendarUtils.ts`, `src/utils/dedupe.ts`. Plan: introduce parse result types + guards; narrow `unknown` instead of `any`. Validate: schedule mapping and opening hours parsing.
-- **UI panels:** `src/components/DedupReviewDialog.tsx`, `src/components/RepStatsPanel.tsx`, `src/components/ScheduleDisplay.tsx`, `src/components/UnscheduledPubsPanel.tsx`, `src/components/PostcodeReviewDialog.tsx`, `src/components/VisitScheduler.tsx`, `src/pages/PlannerDashboard.tsx`, `src/components/DriveTimeBar.tsx`. Plan: define props/view models; replace `any` with typed interfaces and derived types. Validate: dialog flows + scheduler panels.
-- **Maps/config edge:** `src/config/maps.ts`. Plan: define a minimal `PlaceDetails` shape for mock returns. Validate: maps-dependent UI still renders.
+- **API/http/providers:** `src/api/http.ts`, `src/api/fallbackProvider.ts`, `src/api/nominatimProvider.ts`, `src/api/postcodesProvider.ts`, `src/api/useBusinessData.ts`.
+  - **Outcome:** boundary-safe types and `unknown` + guards; no runtime behavior changes intended.
+  - **Package completed:** `@typescript-eslint/no-explicit-any` count reduced from 79 → 64 (net -15).
+  - **Lint snapshot:** 74 problems (65 errors, 9 warnings). 
 
-### react-hooks/exhaustive-deps backlog (9 warnings)
+### Phase 2 Backlog
 
-- `src/api/useBusinessData.ts:32` missing dependency `seed`. Plan: extract dependency variables, stabilize memoization. Validate: business data fetch flow.
-- `src/api/useBusinessData.ts:32` complex dependency expression. Plan: extract expression to a stable variable. Validate: same effect behavior across renders.
-- `src/components/DedupReviewDialog.tsx:136` missing deps (`autoMerge`, `countBy`, `handleApply`, `needsReview`). Plan: memoize callbacks or inline carefully. Validate: dialog open/apply/auto-merge.
-- `src/components/FileUploader.tsx:619` missing deps (`commitImport`, `processExcelFile`). Plan: memoize or include deps, avoid infinite re-renders. Validate: upload flow.
-- `src/components/ScheduleDisplay.tsx:466` missing `openingHours`. Plan: confirm effect dependency and add if safe. Validate: schedule display updates.
-- `src/context/PubDataContext.tsx:316` unstable `initialState` in useEffect deps. Plan: wrap in `useMemo`. Validate: app init.
-- `src/context/PubDataContext.tsx:316` unstable `initialState` in useCallback deps. Plan: wrap in `useMemo`. Validate: actions and callbacks.
-- `src/context/PubDataContext.tsx:422` missing deps (`businessDays`, `isInitialized`, `resetAllData`, `searchRadius`, `visitsPerDay`). Plan: add deps or document intentional exclusions. Validate: persistence and reset flows.
-- `src/pages/PlannerDashboard.tsx:500` missing deps (`masterfilePubs`, `repslyDeadline`, `repslyWins`, `setUserFiles`, `unvisitedPubs`, `wishlistPubs`). Plan: stabilize derived lists with `useMemo`. Validate: dashboard refresh after uploads.
+#### Runtime `any` backlog packages (grouped by boundary)
 
-### @typescript-eslint/no-namespace investigation (1)
+- **FileUploader boundary:** `src/components/FileUploader.tsx`. 
+  - **Plan:** define upload row + mapping DTOs, replace `any` with typed models or `unknown` + narrowing. - **Validate:** upload CSV/XLSX, run `npm run typecheck`, run `npm run build`.
 
-- `src/context/PubDataContext.tsx:17`. Plan: confirm namespace use is type-only and migrate to ES module types if safe. Validate: `npm run typecheck` + `npm run build` with no runtime changes.
+- **Storage/persistence:** `src/services/persistence.ts`. 
+  - **Plan:** define persisted shapes and key-specific interfaces; replace `any` with typed records. 
+  - **Validate:** load/save flows + state reset.
+
+- **Parsing/sourceDetails:** `src/utils/sourceDetails.ts`, `src/utils/openingHours.ts`, `src/utils/normalizeFile.ts`, `src/utils/scheduleMappers.ts`, `src/utils/seedFromPub.ts`, `src/utils/calendarUtils.ts`, `src/utils/dedupe.ts`. 
+  - **Plan:** introduce parse result types + guards; narrow `unknown` instead of `any`. 
+  - **Validate:** schedule mapping and opening hours parsing.
+
+- **UI panels:** `src/components/DedupReviewDialog.tsx`, `src/components/RepStatsPanel.tsx`, `src/components/ScheduleDisplay.tsx`, `src/components/UnscheduledPubsPanel.tsx`, `src/components/PostcodeReviewDialog.tsx`, `src/components/VisitScheduler.tsx`, `src/pages/PlannerDashboard.tsx`, `src/components/DriveTimeBar.tsx`. 
+  - **Plan:** define props/view models; replace `any` with typed interfaces and derived types. 
+  - **Validate:** dialog flows + scheduler panels.
+
+- **Maps/config edge:** `src/config/maps.ts`. 
+  - **Plan:** define a minimal `PlaceDetails` shape for mock returns. 
+  - **Validate:** maps-dependent UI still renders.
+
+#### react-hooks/exhaustive-deps backlog (9 warnings)
+
+- `src/api/useBusinessData.ts:32` missing dependency `seed`. 
+  - **Plan:** extract dependency variables, stabilize memoization. 
+  - **Validate:** business data fetch flow.
+
+- `src/api/useBusinessData.ts:32` complex dependency expression. 
+  - **Plan:** extract expression to a stable variable. 
+  - **Validate:** same effect behavior across renders.
+
+- `src/components/DedupReviewDialog.tsx:136` missing deps (`autoMerge`, `countBy`, `handleApply`, `needsReview`). 
+  - **Plan:** memoize callbacks or inline carefully. 
+  - **Validate:** dialog open/apply/auto-merge.
+
+- `src/components/FileUploader.tsx:619` missing deps (`commitImport`, `processExcelFile`). 
+  - **Plan:** memoize or include deps, avoid infinite re-renders. 
+  - **Validate:** upload flow.
+
+- `src/components/ScheduleDisplay.tsx:466` missing `openingHours`. 
+  - **Plan:** confirm effect dependency and add if safe. 
+  - **Validate:** schedule display updates.
+
+- `src/context/PubDataContext.tsx:316` unstable `initialState` in useEffect deps. 
+  - **Plan:** wrap in `useMemo`. 
+  - **Validate:** app init.
+
+- `src/context/PubDataContext.tsx:316` unstable `initialState` in useCallback deps. 
+  - **Plan:** wrap in `useMemo`. 
+  - **Validate:** actions and callbacks.
+
+- `src/context/PubDataContext.tsx:422` missing deps (`businessDays`, `isInitialized`, `resetAllData`, `searchRadius`, `visitsPerDay`). 
+  - **Plan:** add deps or document intentional exclusions. 
+  - **Validate:** persistence and reset flows.
+
+- `src/pages/PlannerDashboard.tsx:500` missing deps (`masterfilePubs`, `repslyDeadline`, `repslyWins`, `setUserFiles`, `unvisitedPubs`, `wishlistPubs`). 
+  - **Plan:** stabilize derived lists with `useMemo`. 
+  - **Validate:** dashboard refresh after uploads.
+
+#### @typescript-eslint/no-namespace investigation (1)
+
+- `src/context/PubDataContext.tsx:17`. 
+  - **Plan:** confirm namespace use is type-only and migrate to ES module types if safe. 
+  - **Validate:** `npm run typecheck` + `npm run build` with no runtime changes.
+
+## Phase 3 Triage (Build Warnings)
+
+- **Vite devLog chunking warning:** `src/components/ErrorBoundary.tsx` dynamically imports `src/utils/devLog.ts` but the same module is statically imported elsewhere. 
+  - **Plan:** pick one import strategy (all static or all dynamic) to avoid mixed chunking; confirm no logging behavior changes. 
+  - **Validate:** `npm run build` and inspect chunk report for the warning.
+
+- **Optional: Chunk size warning:** `PlannerDashboard` chunk > 1 MB. 
+  - **Plan:** consider code-splitting heavy panels or data transforms. 
+  - **Validate:** `npm run build` and check chunk sizes.

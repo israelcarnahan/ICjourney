@@ -1,12 +1,12 @@
 import { API_CFG } from "../config/api";
 
-type CacheEntry = { t: number; data: any };
+type CacheEntry = { t: number; data: unknown };
 const mem = new Map<string, CacheEntry>();
 
 // very light per-host throttle (1 rps for nominatim)
-const hostQueues: Record<string, Promise<any>> = {};
+const hostQueues: Record<string, Promise<unknown>> = {};
 
-function enqueue(url: string, run: () => Promise<any>) {
+function enqueue(url: string, run: () => Promise<unknown>) {
   const host = new URL(url).host;
   const prev = hostQueues[host] ?? Promise.resolve();
   const delay = host.includes("nominatim.openstreetmap.org") ? 1100 : 0; // ~1 req/sec
@@ -17,13 +17,16 @@ function enqueue(url: string, run: () => Promise<any>) {
   return next;
 }
 
-export async function getJson(url: string, headers: Record<string,string> = {}) {
+export async function getJson(
+  url: string,
+  headers: Record<string, string> = {}
+): Promise<unknown> {
   const now = Date.now();
   const hit = mem.get(url);
   if (hit && (now - hit.t) < API_CFG.cacheTTLms) return hit.data;
 
   const exec = async () => {
-    const res = await fetch(url, { headers: { ...headers } as any });
+    const res = await fetch(url, { headers: { ...headers } });
     if (!res.ok) throw new Error(`GET ${url} ${res.status}`);
     const data = await res.json();
     mem.set(url, { t: Date.now(), data });

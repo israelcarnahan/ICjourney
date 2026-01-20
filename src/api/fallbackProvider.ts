@@ -5,11 +5,11 @@ function defaultHours(name: string): OpeningHours {
   // pubs/inns: 11–23, clubs: 09–17 fallback
   const lower = (name || "").toLowerCase();
   const isPub = /(pub|inn|tavern|bar|arms|hotel|head|bear|fox|bell|crown)/.test(lower);
-  const hours: OpeningHours["weekly"] = Array(7).fill(null);
+  const hours: OpeningHours["weekly"] = Array.from({ length: 7 }, () => null);
   const open = isPub ? "11:00" : "09:00";
   const close = isPub ? "23:00" : "17:00";
-  for (let i = 0; i < 7; i++) hours[i] = [open, close];
-  return { weekly: hours as any };
+  for (let i = 0; i < 7; i++) hours[i] = [open, close] as const;
+  return { weekly: hours };
 }
 
 function makeIsOpenAt(oh?: OpeningHours | null) {
@@ -44,7 +44,7 @@ class FallbackProvider implements BusinessDataProvider {
       email: seed.email ?? null,
       notes: seed.notes ?? null,
       openingHours: seed.openingHours ?? null,
-      isOpenAt: undefined as any,
+      isOpenAt: undefined,
       sources: seed.sources ?? [],
       extras: seed.extras ?? {},
     };

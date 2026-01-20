@@ -4,7 +4,7 @@ import {
   type FallbackReason,
 } from "../utils/postcodeUtils";
 
-export type LocalityTier = "unit" | "sector" | "district" | "area" | "cross_area";
+type LocalityTier = "unit" | "sector" | "district" | "area" | "cross_area";
 
 type PostcodeInput = string | ParsedPostcode | null | undefined;
 
