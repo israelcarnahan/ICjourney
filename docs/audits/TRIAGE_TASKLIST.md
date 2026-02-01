@@ -130,29 +130,29 @@
 
 ## Current Lint After Fixes (2026-02-01)
 
-- Lint after fixes: 27 problems (18 errors, 9 warnings).
-- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (17), `react-hooks/exhaustive-deps` (9), `@typescript-eslint/no-namespace` (1).
+- Lint after fixes: 22 problems (13 errors, 9 warnings).
+- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (12), `react-hooks/exhaustive-deps` (9), `@typescript-eslint/no-namespace` (1).
 - FIX rules resolved: `@typescript-eslint/no-unused-vars`, `no-empty`, `prefer-const`, `react-refresh/only-export-components` in `src/context`, and `*.d.ts` overrides.
 
 ### Current ESLint Rule Frequency (2026-02-01)
 
 | Rule ID | Count | Hotspots |
 | --- | ---: | --- |
-| @typescript-eslint/no-explicit-any | 17 | `src/components/RepStatsPanel.tsx` (5), `src/config/maps.ts` (3), `src/pages/PlannerDashboard.tsx` (3) |
+| @typescript-eslint/no-explicit-any | 12 | `src/config/maps.ts` (3), `src/pages/PlannerDashboard.tsx` (3), `src/components/DriveTimeBar.tsx` (2) |
 | react-hooks/exhaustive-deps | 9 | `src/context/PubDataContext.tsx` (3), `src/api/useBusinessData.ts` (2), `src/components/DedupReviewDialog.tsx` (1) |
 | @typescript-eslint/no-namespace | 1 | `src/context/PubDataContext.tsx` (1) |
 
 Hotspot files (top 10 by total findings):
-1. `src/components/RepStatsPanel.tsx` (5)
-2. `src/context/PubDataContext.tsx` (5)
-3. `src/pages/PlannerDashboard.tsx` (4)
-4. `src/config/maps.ts` (3)
-5. `src/api/useBusinessData.ts` (2)
-6. `src/components/DriveTimeBar.tsx` (2)
-7. `src/components/DedupReviewDialog.tsx` (1)
-8. `src/components/FileUploader.tsx` (1)
-9. `src/components/PostcodeReviewDialog.tsx` (1)
-10. `src/components/ScheduleDisplay.tsx` (1)
+1. `src/context/PubDataContext.tsx` (5)
+2. `src/pages/PlannerDashboard.tsx` (4)
+3. `src/config/maps.ts` (3)
+4. `src/api/useBusinessData.ts` (2)
+5. `src/components/DriveTimeBar.tsx` (2)
+6. `src/components/DedupReviewDialog.tsx` (1)
+7. `src/components/FileUploader.tsx` (1)
+8. `src/components/PostcodeReviewDialog.tsx` (1)
+9. `src/components/ScheduleDisplay.tsx` (1)
+10. `src/components/VisitScheduler.tsx` (1)
 
 ## ESLint Phase 1 (Completed, 2026-01-20)
 
@@ -242,11 +242,17 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
   - **Lint snapshot:** 27 problems (18 errors, 9 warnings).
   - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
 
+- **UI panel: RepStatsPanel:** `src/components/RepStatsPanel.tsx`.
+  - **Outcome:** stats list and selected details now typed with safe null handling; no runtime behavior changes intended.
+  - **Package completed:** `@typescript-eslint/no-explicit-any` count reduced from 17 to 12 (net -5).
+  - **Lint snapshot:** 22 problems (13 errors, 9 warnings).
+  - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
+
 ### Phase 2 Backlog
 
 #### Runtime `any` backlog packages (grouped by boundary)
 
-- **UI panels:** `src/components/DedupReviewDialog.tsx`, `src/components/RepStatsPanel.tsx`, `src/components/ScheduleDisplay.tsx`, `src/components/PostcodeReviewDialog.tsx`, `src/components/VisitScheduler.tsx`, `src/pages/PlannerDashboard.tsx`, `src/components/DriveTimeBar.tsx`. 
+- **UI panels:** `src/components/PostcodeReviewDialog.tsx`, `src/components/VisitScheduler.tsx`, `src/pages/PlannerDashboard.tsx`, `src/components/DriveTimeBar.tsx`. 
   - **Plan:** define props/view models; replace `any` with typed interfaces and derived types. 
   - **Validate:** dialog flows + scheduler panels.
 
