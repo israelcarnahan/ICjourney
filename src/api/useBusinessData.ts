@@ -29,7 +29,7 @@ export function useBusinessData(pubId: string, seed: Partial<BusinessData>, chai
     }
     run();
     return () => { alive = false; };
-  }, [pubId, providers, JSON.stringify(seed)]);
+  }, [pubId, providers, seed]);
 
   return data;
 }
