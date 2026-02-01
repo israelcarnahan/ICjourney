@@ -110,41 +110,35 @@
 
 ## Rules to follow (MUST READ AND ABIDE)
 
-**RULE 1** Whenever lint is run, redirect output into the repo’s canonical audit file at `docs/audits/knip_lint/eslint_report_latest.txt`.
+**RULE 1** Whenever lint is run, overwrite the repo’s canonical audit file:
+`npm run lint > docs/audits/knip_lint/eslint_report_latest.txt`
+(Note: lint will exit non-zero while errors exist; the redirected report is still the source of truth.)
 
 **RULE 2** 
   - As each is resolved:
-    - update/replace the relevant sections, keeping the same output format as others in each related section(s). 
+    - update/replace the relevant section(s), keeping the same output format as others in each related section(s). 
       - remove from backlog
-      - add to the relevant Phases Completed section (with any notes)
-        - update/replace with current date in the sections name. 
+      - add to the relevant Phases Completed  section (with any notes)
+        - update/replace with current date on the snapshot sections name. 
 
-**RULE 3** 
-  - After rule 2 is completed:
-    - rerun ESLINT (SEE RULE 1)
-    - confirm no resolved actions from rule 2 remain in output
-    - update each relevant section of this doc, keeping the same output format as others in the related section(s). 
-      - update 'Current lint after fixes ('DATE')' section:
-        - replace date in named section with current date
-        - update and replace:
-          - lint (counts) after fixes
-          - remaining rule ids
-          - fix rules resolved (appending a quick blurb from the above Rule #2's work)
-      - update 'current eslint rule frequency ('DATE')' section: 
-        - update named sections date to current date
-        - update/replace table of rule id/count/hotspots table
+**RULE 3 (clarified)** After resolving items and regenerating the canonical lint report:
+- Update the snapshot sections (date + counts + remaining rule IDs).
+- Update the triage *summary* tables:
+  - Rule ID totals + a few top hotspots
+  - “Hotspot files (top 10)”
+- Do not paste the full lint dump into this doc; the canonical lint report contains the full file-by-file detail.
 
-## Current Lint After Fixes (2026-01-20)
+## Current Lint After Fixes (2026-02-01)
 
-- Lint after fixes: 74 problems (65 errors, 9 warnings).
-- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (64), `react-hooks/exhaustive-deps` (9), `@typescript-eslint/no-namespace` (1).
+- Lint after fixes: 72 problems (63 errors, 9 warnings).
+- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (62), `react-hooks/exhaustive-deps` (9), `@typescript-eslint/no-namespace` (1).
 - FIX rules resolved: `@typescript-eslint/no-unused-vars`, `no-empty`, `prefer-const`, `react-refresh/only-export-components` in `src/context`, and `*.d.ts` overrides.
 
-### Current ESLint Rule Frequency (2026-01-20)
+### Current ESLint Rule Frequency (2026-02-01)
 
 | Rule ID | Count | Hotspots |
 | --- | ---: | --- |
-| @typescript-eslint/no-explicit-any | 64 | `src/components/FileUploader.tsx` (10), `src/components/UnscheduledPubsPanel.tsx` (7), `src/utils/sourceDetails.ts` (7) |
+| @typescript-eslint/no-explicit-any | 62 | `src/components/FileUploader.tsx` (10), `src/components/UnscheduledPubsPanel.tsx` (7), `src/utils/sourceDetails.ts` (7) |
 | react-hooks/exhaustive-deps | 9 | `src/context/PubDataContext.tsx` (3), `src/api/useBusinessData.ts` (2), `src/components/DedupReviewDialog.tsx` (1) |
 | @typescript-eslint/no-namespace | 1 | `src/context/PubDataContext.tsx` (1) |
 
@@ -164,7 +158,7 @@ Hotspot files (top 10 by total findings):
 
 - Status: Completed (runtime `@typescript-eslint/no-explicit-any` remains `error`, Option 1).
 
-### Phase 1 Completed Notes
+### Phase 1 Completed Tasks
 
 **Classification Summary (Phase 1)**
 - FIX (mechanical, no behavior change): `@typescript-eslint/no-unused-vars`, `no-empty`, `prefer-const`.
@@ -200,19 +194,23 @@ Hotspot files (top 10 by total findings):
 2) Apply mechanical `no-unused-vars` fixes (delete unused bindings or remove unused params without changing runtime effects).
 3) Add intent comments to empty blocks (`no-empty`).
 4) Apply `prefer-const` change in `src/components/RepStatsPanel.tsx:344`.
-5) Re-run `npm run lint` and confirm only Phase 2 backlog warnings remain.
-6) Validate with `npm run typecheck` and `npm run build`.
 
 ## ESLint Phase 2 (Active)
 
 Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit-any` remains `error` (Option 1).
 
-### Phase 2 Completed Packages (2026-01-20)
+### Phase 2 Completed Packages (2026-02-01)
 
 - **API/http/providers:** `src/api/http.ts`, `src/api/fallbackProvider.ts`, `src/api/nominatimProvider.ts`, `src/api/postcodesProvider.ts`, `src/api/useBusinessData.ts`.
   - **Outcome:** boundary-safe types and `unknown` + guards; no runtime behavior changes intended.
   - **Package completed:** `@typescript-eslint/no-explicit-any` count reduced from 79 → 64 (net -15).
   - **Lint snapshot:** 74 problems (65 errors, 9 warnings). 
+
+- **Storage/persistence:** `src/services/persistence.ts`.
+  - **Outcome:** persisted mappings now typed with `unknown` + guards; no runtime behavior changes intended.
+  - **Package completed:** `@typescript-eslint/no-explicit-any` count reduced from 64 ƒ+' 62 (net -2).
+  - **Lint snapshot:** 72 problems (63 errors, 9 warnings).
+  - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
 
 ### Phase 2 Backlog
 
@@ -220,10 +218,6 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
 
 - **FileUploader boundary:** `src/components/FileUploader.tsx`. 
   - **Plan:** define upload row + mapping DTOs, replace `any` with typed models or `unknown` + narrowing. - **Validate:** upload CSV/XLSX, run `npm run typecheck`, run `npm run build`.
-
-- **Storage/persistence:** `src/services/persistence.ts`. 
-  - **Plan:** define persisted shapes and key-specific interfaces; replace `any` with typed records. 
-  - **Validate:** load/save flows + state reset.
 
 - **Parsing/sourceDetails:** `src/utils/sourceDetails.ts`, `src/utils/openingHours.ts`, `src/utils/normalizeFile.ts`, `src/utils/scheduleMappers.ts`, `src/utils/seedFromPub.ts`, `src/utils/calendarUtils.ts`, `src/utils/dedupe.ts`. 
   - **Plan:** introduce parse result types + guards; narrow `unknown` instead of `any`. 
