@@ -99,16 +99,23 @@ const PlannerDashboard: React.FC = () => {
   } = usePubData();
 
   // Extract pubs by type from userFiles
-  const masterfilePubs = userFiles.pubs.filter(
-    (pub) => pub.listType === "masterhouse"
+  const masterfilePubs = useMemo(
+    () => userFiles.pubs.filter((pub) => pub.listType === "masterhouse"),
+    [userFiles.pubs]
   );
-  const repslyWins = userFiles.pubs.filter((pub) => pub.listType === "wins");
-  const wishlistPubs = userFiles.pubs.filter(
-    (pub) => pub.listType === "hitlist"
+  const repslyWins = useMemo(
+    () => userFiles.pubs.filter((pub) => pub.listType === "wins"),
+    [userFiles.pubs]
   );
-  const unvisitedPubs = userFiles.pubs.filter(
-    (pub) => pub.listType === "unvisited"
+  const wishlistPubs = useMemo(
+    () => userFiles.pubs.filter((pub) => pub.listType === "hitlist"),
+    [userFiles.pubs]
   );
+  const unvisitedPubs = useMemo(
+    () => userFiles.pubs.filter((pub) => pub.listType === "unvisited"),
+    [userFiles.pubs]
+  );
+  const totalPubs = userFiles.pubs.length;
 
   // Get deadline from wins file if it exists
   const repslyDeadline = userFiles.files?.find(
@@ -352,7 +359,7 @@ const PlannerDashboard: React.FC = () => {
 
   // Update uploaded files when pub lists change
   useEffect(() => {
-    if (!userFiles?.pubs?.length) return;
+    if (!totalPubs) return;
 
     devLog("Updating uploaded files with:", [
       {
@@ -505,7 +512,15 @@ const PlannerDashboard: React.FC = () => {
       ...prev,
       files: sortedFiles,
     }));
-  }, [userFiles.pubs]);
+  }, [
+    masterfilePubs,
+    repslyDeadline,
+    repslyWins,
+    setUserFiles,
+    totalPubs,
+    unvisitedPubs,
+    wishlistPubs,
+  ]);
 
   // Debug logging for file operations
   useEffect(() => {

@@ -130,8 +130,8 @@
 
 ## Current Lint After Fixes (2026-02-01)
 
-- Lint after fixes: 4 problems (3 errors, 1 warning).
-- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (2), `react-hooks/exhaustive-deps` (1), `@typescript-eslint/no-namespace` (1).
+- Lint after fixes: 3 problems (3 errors, 0 warnings).
+- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (2), `@typescript-eslint/no-namespace` (1).
 - FIX rules resolved: `@typescript-eslint/no-unused-vars`, `no-empty`, `prefer-const`, `react-refresh/only-export-components` in `src/context`, and `*.d.ts` overrides.
 
 ### Current ESLint Rule Frequency (2026-02-01)
@@ -139,13 +139,11 @@
 | Rule ID | Count | Hotspots |
 | --- | ---: | --- |
 | @typescript-eslint/no-explicit-any | 2 | `src/context/PubDataContext.tsx` (1), `src/utils/devLog.ts` (1) |
-| react-hooks/exhaustive-deps | 1 | `src/pages/PlannerDashboard.tsx` (1) |
 | @typescript-eslint/no-namespace | 1 | `src/context/PubDataContext.tsx` (1) |
 
 Hotspot files (top 10 by total findings):
 1. `src/context/PubDataContext.tsx` (2)
-2. `src/pages/PlannerDashboard.tsx` (1)
-3. `src/utils/devLog.ts` (1)
+2. `src/utils/devLog.ts` (1)
 
 ## ESLint Phase 1 (Completed, 2026-01-20)
 
@@ -301,6 +299,12 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
   - **Lint snapshot:** 4 problems (3 errors, 1 warning).
   - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
 
+- **Hooks deps: PlannerDashboard:** `src/pages/PlannerDashboard.tsx`.
+  - **Outcome:** uploaded-files effect now depends on memoized pub lists; no runtime behavior changes intended.
+  - **Package completed:** `react-hooks/exhaustive-deps` count reduced from 1 to 0 (net -1).
+  - **Lint snapshot:** 3 problems (3 errors, 0 warnings).
+  - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
+
 ### Phase 2 Backlog
 
 #### Runtime `any` backlog packages (grouped by boundary)
@@ -313,11 +317,7 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
   - **Plan:** define a minimal `PlaceDetails` shape for mock returns. 
   - **Validate:** maps-dependent UI still renders.
 
-#### react-hooks/exhaustive-deps backlog (1 warning)
-
-- `src/pages/PlannerDashboard.tsx:500` missing deps (`masterfilePubs`, `repslyDeadline`, `repslyWins`, `setUserFiles`, `unvisitedPubs`, `wishlistPubs`). 
-  - **Plan:** stabilize derived lists with `useMemo`. 
-  - **Validate:** dashboard refresh after uploads.
+#### react-hooks/exhaustive-deps backlog (0 warnings)
 
 #### @typescript-eslint/no-namespace investigation (1)
 
