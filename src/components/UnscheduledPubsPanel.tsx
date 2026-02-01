@@ -1,7 +1,8 @@
 import React from 'react';
 import { devLog } from "../utils/devLog";
 import { Clock, Calendar, Users, ListChecks, Plus, Phone, Mail, Star } from 'lucide-react';
-import { Pub } from '../context/PubDataContext';
+import type { Pub } from '../context/PubDataContext';
+import type { Visit } from '../types';
 import { findNearestPubs } from '../utils/scheduleUtils';
 import { format, parseISO, isValid } from 'date-fns';
 import clsx from 'clsx';
@@ -12,7 +13,7 @@ import { getPrimaryDriverLabel } from '../utils/sourceDetails';
 interface UnscheduledPubsProps {
   pubs: Pub[];
   selectedPub?: Pub | null;
-  scheduledPubs: any[];
+  scheduledPubs: Array<Pick<Pub, 'pub'> | undefined>;
   onScheduleAnyway: (pub: Pub) => void;
 }
 
@@ -51,6 +52,17 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
   scheduledPubs,
   onScheduleAnyway 
 }) => {
+  const toVisit = (pub: Pub): Visit => ({
+    ...pub,
+    Priority: pub.Priority ?? 'Unvisited',
+  });
+
+  const getSourceLabel = (pub: Pub): string | null => {
+    if (pub.sourceLists?.length) return pub.sourceLists.join(', ');
+    if (pub.sources?.length) return pub.sources.map((source) => source.fileName).join(', ');
+    return null;
+  };
+
   const [addingPub, setAddingPub] = React.useState<string | null>(null);
   const [placeDetails, setPlaceDetails] = React.useState<Record<string, {
     rating?: number;
@@ -64,12 +76,14 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
     if (!selectedPub) return [];
     
     // Create a Set of scheduled pub names for efficient lookup
-    const scheduledPubNames = new Set(scheduledPubs.map(visit => visit.pub));
+    const scheduledPubNames = new Set(
+      scheduledPubs.flatMap((visit) => (visit?.pub ? [visit.pub] : []))
+    );
     
     // Filter out already scheduled pubs before finding nearest
     const availablePubs = pubs.filter(pub => !scheduledPubNames.has(pub.pub));
     
-    return findNearestPubs(selectedPub as any, availablePubs as any[], 16);
+    return findNearestPubs(toVisit(selectedPub), availablePubs.map(toVisit), 16);
   }, [selectedPub, pubs, scheduledPubs]);
 
   React.useEffect(() => {
@@ -191,6 +205,7 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
       <div className="h-[352px] overflow-y-auto scrollbar-thin scrollbar-thumb-eggplant-700 scrollbar-track-dark-900">
         {nearbyPubs.map((pub, index) => {
           const details = placeDetails[pub.pub];
+          const sourceLabel = getSourceLabel(pub);
           
           return (
             <div 
@@ -259,9 +274,9 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
                     )}>
                       {getPrimaryDriverLabel(pub)}
                     </span>
-                    {(pub as any).sources && (
+                    {sourceLabel && (
                       <span className="text-xs px-1.5 py-0.5 rounded-full bg-eggplant-800/50 text-eggplant-200 border border-eggplant-700/50">
-                        {(pub as any).sources}
+                        {sourceLabel}
                       </span>
                     )}
                   </div>
@@ -310,10 +325,10 @@ const UnscheduledPubsPanel: React.FC<UnscheduledPubsProps> = ({
                   </div>
                 )}
 
-                {(pub as any).sources && (
+                {sourceLabel && (
                   <div className="flex items-center gap-1.5 text-eggplant-200">
                     <ListChecks className="h-3 w-3 text-neon-blue" />
-                    <span>From: {(pub as any).sources}</span>
+                    <span>From: {sourceLabel}</span>
                   </div>
                 )}
               </div>
