@@ -130,8 +130,8 @@
 
 ## Current Lint After Fixes (2026-02-01)
 
-- Lint after fixes: 10 problems (3 errors, 7 warnings).
-- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (2), `react-hooks/exhaustive-deps` (7), `@typescript-eslint/no-namespace` (1).
+- Lint after fixes: 9 problems (3 errors, 6 warnings).
+- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (2), `react-hooks/exhaustive-deps` (6), `@typescript-eslint/no-namespace` (1).
 - FIX rules resolved: `@typescript-eslint/no-unused-vars`, `no-empty`, `prefer-const`, `react-refresh/only-export-components` in `src/context`, and `*.d.ts` overrides.
 
 ### Current ESLint Rule Frequency (2026-02-01)
@@ -139,16 +139,15 @@
 | Rule ID | Count | Hotspots |
 | --- | ---: | --- |
 | @typescript-eslint/no-explicit-any | 2 | `src/context/PubDataContext.tsx` (1), `src/utils/devLog.ts` (1) |
-| react-hooks/exhaustive-deps | 7 | `src/context/PubDataContext.tsx` (3), `src/components/DedupReviewDialog.tsx` (1), `src/components/FileUploader.tsx` (1) |
+| react-hooks/exhaustive-deps | 6 | `src/context/PubDataContext.tsx` (3), `src/components/FileUploader.tsx` (1), `src/components/ScheduleDisplay.tsx` (1) |
 | @typescript-eslint/no-namespace | 1 | `src/context/PubDataContext.tsx` (1) |
 
 Hotspot files (top 10 by total findings):
 1. `src/context/PubDataContext.tsx` (5)
-2. `src/components/DedupReviewDialog.tsx` (1)
-3. `src/components/FileUploader.tsx` (1)
-4. `src/components/ScheduleDisplay.tsx` (1)
-5. `src/pages/PlannerDashboard.tsx` (1)
-6. `src/utils/devLog.ts` (1)
+2. `src/components/FileUploader.tsx` (1)
+3. `src/components/ScheduleDisplay.tsx` (1)
+4. `src/pages/PlannerDashboard.tsx` (1)
+5. `src/utils/devLog.ts` (1)
 
 ## ESLint Phase 1 (Completed, 2026-01-20)
 
@@ -280,6 +279,12 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
   - **Lint snapshot:** 10 problems (3 errors, 7 warnings).
   - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
 
+- **Hooks deps: DedupReviewDialog:** `src/components/DedupReviewDialog.tsx`.
+  - **Outcome:** escape key handler now tracks dependencies via memoized helpers; no runtime behavior changes intended.
+  - **Package completed:** `react-hooks/exhaustive-deps` count reduced from 7 to 6 (net -1).
+  - **Lint snapshot:** 9 problems (3 errors, 6 warnings).
+  - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
+
 ### Phase 2 Backlog
 
 #### Runtime `any` backlog packages (grouped by boundary)
@@ -293,10 +298,6 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
   - **Validate:** maps-dependent UI still renders.
 
 #### react-hooks/exhaustive-deps backlog (7 warnings)
-
-- `src/components/DedupReviewDialog.tsx:136` missing deps (`autoMerge`, `countBy`, `handleApply`, `needsReview`). 
-  - **Plan:** memoize callbacks or inline carefully. 
-  - **Validate:** dialog open/apply/auto-merge.
 
 - `src/components/FileUploader.tsx:619` missing deps (`commitImport`, `processExcelFile`). 
   - **Plan:** memoize or include deps, avoid infinite re-renders. 

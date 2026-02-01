@@ -117,8 +117,11 @@ export function DedupReviewDialog({
 
   // Convenience getters
   const choiceFor = (id: string) => choices[id];
-  const countBy = (ids: string[], val: Choice) =>
-    ids.reduce((n, id) => n + (choices[id] === val ? 1 : 0), 0);
+  const countBy = useCallback(
+    (ids: string[], val: Choice) =>
+      ids.reduce((n, id) => n + (choices[id] === val ? 1 : 0), 0),
+    [choices]
+  );
 
   const [searchTerm, setSearchTerm] = useState('');
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -138,23 +141,6 @@ export function DedupReviewDialog({
       }
     };
   }, []);
-
-  // Handle escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onCancel();
-      } else if (e.key === 'Enter') {
-        const mergeCount = countBy([...needsReview.map(s => s.id), ...autoMerge.map(s => s.id)], 'merge');
-        if (mergeCount > 0) {
-          handleApply();
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [choices, onCancel]);
 
   // Focus trap
   useEffect(() => {
@@ -204,6 +190,26 @@ export function DedupReviewDialog({
     
     onConfirm(decisions);
   }, [choices, needsReview, autoMerge, onConfirm]);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onCancel();
+      } else if (e.key === 'Enter') {
+        const mergeCount = countBy(
+          [...needsReview.map(s => s.id), ...autoMerge.map(s => s.id)],
+          'merge'
+        );
+        if (mergeCount > 0) {
+          handleApply();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [autoMerge, countBy, handleApply, needsReview, onCancel]);
 
   const handleBackdropClick = useCallback((e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
