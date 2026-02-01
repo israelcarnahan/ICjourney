@@ -130,19 +130,18 @@
 
 ## Current Lint After Fixes (2026-02-01)
 
-- Lint after fixes: 2 problems (2 errors, 0 warnings).
-- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (2).
+- Lint after fixes: 1 problem (1 error, 0 warnings).
+- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (1).
 - FIX rules resolved: `@typescript-eslint/no-unused-vars`, `no-empty`, `prefer-const`, `react-refresh/only-export-components` in `src/context`, and `*.d.ts` overrides.
 
 ### Current ESLint Rule Frequency (2026-02-01)
 
 | Rule ID | Count | Hotspots |
 | --- | ---: | --- |
-| @typescript-eslint/no-explicit-any | 2 | `src/context/PubDataContext.tsx` (1), `src/utils/devLog.ts` (1) |
+| @typescript-eslint/no-explicit-any | 1 | `src/utils/devLog.ts` (1) |
 
 Hotspot files (top 10 by total findings):
-1. `src/context/PubDataContext.tsx` (1)
-2. `src/utils/devLog.ts` (1)
+1. `src/utils/devLog.ts` (1)
 
 ## ESLint Phase 1 (Completed, 2026-01-20)
 
@@ -308,6 +307,12 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
   - **Outcome:** NodeJS ProcessEnv global moved to a type-only module; no runtime behavior changes intended.
   - **Package completed:** `@typescript-eslint/no-namespace` count reduced from 1 to 0 (net -1).
   - **Lint snapshot:** 2 problems (2 errors, 0 warnings).
+  - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
+
+- **Runtime any: PubDataContext:** `src/context/PubDataContext.tsx`.
+  - **Outcome:** raw row payload now typed as unknown; no runtime behavior changes intended.
+  - **Package completed:** `@typescript-eslint/no-explicit-any` count reduced from 2 to 1 (net -1).
+  - **Lint snapshot:** 1 problem (1 error, 0 warnings).
   - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
 
 ### Phase 2 Backlog

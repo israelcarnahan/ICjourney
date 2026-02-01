@@ -29,7 +29,7 @@ export interface Pub {
   // We keep it for compatibility and store normalized data in postcodeMeta.
   zip: string;
   // Full source row from import; used for pending-fix review and future audits.
-  rawRow?: Record<string, any>;
+  rawRow?: Record<string, unknown>;
   postcodeMeta?: {
     raw: string;
     normalized: string | null;
