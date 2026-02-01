@@ -30,9 +30,12 @@ interface VisitSchedulerProps {
   ) => void;
 }
 
-function SourceDetailsPanel({ visitOrPub }: { visitOrPub: any }) {
+function SourceDetailsPanel({ visitOrPub }: { visitOrPub: ScheduleVisit }) {
   const seed = seedFromPub(visitOrPub);
-  const businessData = useBusinessData(visitOrPub.pub || visitOrPub.uuid || 'unknown', seed);
+  const businessData = useBusinessData(
+    visitOrPub.pub || visitOrPub.uuid || "unknown",
+    seed
+  );
   const listSummary = getListSummary(visitOrPub);
 
   if (!businessData) {
