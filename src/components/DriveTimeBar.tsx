@@ -312,13 +312,19 @@ const DriveTimeBar: React.FC<DriveTimeBarProps> = ({
     return time;
   };
 
+  const getOptimizedTime = (visit: Visit): string | undefined => {
+    const candidate = (visit as unknown as Record<string, unknown>).optimizedTime;
+    return typeof candidate === "string" ? candidate : undefined;
+  };
+
   // Sort visits to match list view order
   const sortedVisits = [...visits]; // Keep original list view order
 
   const getVisitTime = (visit: Visit): Date => {
     // For any visit with an optimized time in the list view, use that exact time
-    if ((visit as any).optimizedTime) {
-      return getTimeFromString((visit as any).optimizedTime);
+    const optimizedTime = getOptimizedTime(visit);
+    if (optimizedTime) {
+      return getTimeFromString(optimizedTime);
     }
 
     // For scheduled visits, use their explicit time
