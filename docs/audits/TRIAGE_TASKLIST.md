@@ -130,18 +130,17 @@
 
 ## Current Lint After Fixes (2026-02-01)
 
-- Lint after fixes: 1 problem (1 error, 0 warnings).
-- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (1).
+- Lint after fixes: 0 problems (0 errors, 0 warnings).
+- Remaining rule IDs: (none).
 - FIX rules resolved: `@typescript-eslint/no-unused-vars`, `no-empty`, `prefer-const`, `react-refresh/only-export-components` in `src/context`, and `*.d.ts` overrides.
 
 ### Current ESLint Rule Frequency (2026-02-01)
 
 | Rule ID | Count | Hotspots |
 | --- | ---: | --- |
-| @typescript-eslint/no-explicit-any | 1 | `src/utils/devLog.ts` (1) |
 
 Hotspot files (top 10 by total findings):
-1. `src/utils/devLog.ts` (1)
+(none)
 
 ## ESLint Phase 1 (Completed, 2026-01-20)
 
@@ -313,6 +312,12 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
   - **Outcome:** raw row payload now typed as unknown; no runtime behavior changes intended.
   - **Package completed:** `@typescript-eslint/no-explicit-any` count reduced from 2 to 1 (net -1).
   - **Lint snapshot:** 1 problem (1 error, 0 warnings).
+  - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
+
+- **Runtime any: devLog:** `src/utils/devLog.ts`.
+  - **Outcome:** debug logger now uses unknown args at the boundary; no runtime behavior changes intended.
+  - **Package completed:** `@typescript-eslint/no-explicit-any` count reduced from 1 to 0 (net -1).
+  - **Lint snapshot:** 0 problems (0 errors, 0 warnings).
   - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
 
 ### Phase 2 Backlog
