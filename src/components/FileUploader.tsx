@@ -5,7 +5,7 @@ import { Upload, AlertCircle, Info } from "lucide-react";
 import clsx from "clsx";
 import * as Dialog from "@radix-ui/react-dialog";
 
-import type { ListType, Pub } from "../context/PubDataContext";
+import type { FileMetadata, ListType, Pub } from "../context/PubDataContext";
 import { usePubData } from "../context/PubDataContext";
 import { mapsService } from "../config/maps";
 
@@ -34,10 +34,12 @@ type ImportedRow = {
   notes?: string;
 };
 
+type RawRow = Record<string, unknown>;
+
 type ProcessedImport = {
   rows: ImportedRow[];
   mappedRows: MappedRow[];
-  rawRows: Record<string, any>[];
+  rawRows: RawRow[];
   headers: string[];
 };
 
@@ -92,7 +94,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   const [showDedupDialog, setShowDedupDialog] = useState(false);
   const [dedupSuggestions, setDedupSuggestions] = useState<{ autoMerge: Suggestion[]; needsReview: Suggestion[] }>({ autoMerge: [], needsReview: [] });
   const [pendingPubs, setPendingPubs] = useState<Pub[]>([]);
-  const [pendingFile, setPendingFile] = useState<any>(null);
+  const [pendingFile, setPendingFile] = useState<FileMetadata | null>(null);
   const [hasPendingDedup, setHasPendingDedup] = useState(false);
   const [pendingRowIndices, setPendingRowIndices] = useState<Record<string, number>>({});
   const [showFollowupBlocked, setShowFollowupBlocked] = useState(false);
@@ -121,12 +123,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     }
   };
 
-  function coerceNumber(val: any): number | null {
+  function coerceNumber(val: unknown): number | null {
     const n = Number(String(val ?? "").replace(/[^\d.-]/g, ""));
     return Number.isFinite(n) ? n : null;
   }
 
-  function mapRowToCanonical(row: Record<string, any>, mapping: ColumnMapping): MappedRow {
+  function mapRowToCanonical(row: RawRow, mapping: ColumnMapping): MappedRow {
     const pick = (field: keyof ColumnMapping) => {
       const src = mapping[field];
       if (!src) return null;
@@ -149,10 +151,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       extras: {},
     };
 
+    out.extras = out.extras ?? {};
+
     // keep anything the user didn’t map (so we never lose columns)
     for (const [k, v] of Object.entries(row)) {
       const key = String(k).trim().toLowerCase();
-      if (!used.has(key)) (out.extras as any)[key] = v;
+      if (!used.has(key)) out.extras[key] = v;
     }
     return out;
   }
@@ -213,7 +217,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
     const nextRows: ImportedRow[] = [];
     const nextMapped: MappedRow[] = [];
-    const nextRaw: Record<string, any>[] = [];
+    const nextRaw: RawRow[] = [];
 
     processed.rows.forEach((row, index) => {
       const decision = decisionMap.get(index);
@@ -494,15 +498,15 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       raw: false,
       defval: "",
       blankrows: false,
-    }) as any[][];
+    }) as unknown[][];
 
     if (raw.length < 2) throw new Error("File must contain a header row and at least one data row");
 
-    const headerRow = (raw[0] ?? []).map((h: any) => String(h ?? "").trim().toLowerCase());
+    const headerRow = (raw[0] ?? []).map((h) => String(h ?? "").trim().toLowerCase());
     const bodyRows = raw.slice(1);
 
-    const rowObjects: Record<string, any>[] = bodyRows.map((arr) => {
-      const obj: Record<string, any> = {};
+    const rowObjects: RawRow[] = bodyRows.map((arr) => {
+      const obj: RawRow = {};
       headerRow.forEach((h, i) => (obj[h] = arr[i]));
       return obj;
     });
@@ -635,6 +639,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   });
 
   const handleDedupConfirm = (decisions: Array<{ id: string; action: 'merge' | 'skip' }>) => {
+    if (!pendingFile) {
+      setShowDedupDialog(false);
+      return;
+    }
+
     setUserFiles((prev) => {
       const updatedPubs = [...prev.pubs];
       const newPubs: Pub[] = [];
