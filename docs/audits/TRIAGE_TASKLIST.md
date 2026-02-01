@@ -130,27 +130,27 @@
 
 ## Current Lint After Fixes (2026-02-01)
 
-- Lint after fixes: 38 problems (29 errors, 9 warnings).
-- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (28), `react-hooks/exhaustive-deps` (9), `@typescript-eslint/no-namespace` (1).
+- Lint after fixes: 32 problems (23 errors, 9 warnings).
+- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (22), `react-hooks/exhaustive-deps` (9), `@typescript-eslint/no-namespace` (1).
 - FIX rules resolved: `@typescript-eslint/no-unused-vars`, `no-empty`, `prefer-const`, `react-refresh/only-export-components` in `src/context`, and `*.d.ts` overrides.
 
 ### Current ESLint Rule Frequency (2026-02-01)
 
 | Rule ID | Count | Hotspots |
 | --- | ---: | --- |
-| @typescript-eslint/no-explicit-any | 28 | `src/components/DedupReviewDialog.tsx` (6), `src/components/RepStatsPanel.tsx` (5), `src/components/ScheduleDisplay.tsx` (5) |
+| @typescript-eslint/no-explicit-any | 22 | `src/components/RepStatsPanel.tsx` (5), `src/components/ScheduleDisplay.tsx` (5), `src/config/maps.ts` (3) |
 | react-hooks/exhaustive-deps | 9 | `src/context/PubDataContext.tsx` (3), `src/api/useBusinessData.ts` (2), `src/components/DedupReviewDialog.tsx` (1) |
 | @typescript-eslint/no-namespace | 1 | `src/context/PubDataContext.tsx` (1) |
 
 Hotspot files (top 10 by total findings):
-1. `src/components/DedupReviewDialog.tsx` (7)
-2. `src/components/ScheduleDisplay.tsx` (6)
-3. `src/components/RepStatsPanel.tsx` (5)
-4. `src/context/PubDataContext.tsx` (5)
-5. `src/pages/PlannerDashboard.tsx` (4)
-6. `src/config/maps.ts` (3)
-7. `src/api/useBusinessData.ts` (2)
-8. `src/components/DriveTimeBar.tsx` (2)
+1. `src/components/ScheduleDisplay.tsx` (6)
+2. `src/components/RepStatsPanel.tsx` (5)
+3. `src/context/PubDataContext.tsx` (5)
+4. `src/pages/PlannerDashboard.tsx` (4)
+5. `src/config/maps.ts` (3)
+6. `src/api/useBusinessData.ts` (2)
+7. `src/components/DriveTimeBar.tsx` (2)
+8. `src/components/DedupReviewDialog.tsx` (1)
 9. `src/components/FileUploader.tsx` (1)
 10. `src/components/PostcodeReviewDialog.tsx` (1)
 
@@ -228,6 +228,12 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
   - **Outcome:** scheduled/nearby pub boundaries now typed with `unknown` + guards; no runtime behavior changes intended.
   - **Package completed:** `@typescript-eslint/no-explicit-any` count reduced from 35 ƒ+' 28 (net -7).
   - **Lint snapshot:** 38 problems (29 errors, 9 warnings).
+  - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
+
+- **UI panel: DedupReviewDialog:** `src/components/DedupReviewDialog.tsx`.
+  - **Outcome:** existing/incoming comparison fields now typed with `unknown` + guards; no runtime behavior changes intended.
+  - **Package completed:** `@typescript-eslint/no-explicit-any` count reduced from 28 ƒ+' 22 (net -6).
+  - **Lint snapshot:** 32 problems (23 errors, 9 warnings).
   - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
 
 ### Phase 2 Backlog

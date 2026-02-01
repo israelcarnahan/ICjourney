@@ -41,9 +41,30 @@ const PRIMARY_FIELDS: Array<{ key: 'postcode'|'rtm'|'address'|'town'; label: str
   { key: 'town',     label: 'Town/City'},
 ];
 
+type PubWithExtras = Pub & { extras?: Record<string, unknown> };
+
 // Normalize + pretty print helpers
 const norm = (v?: string | null) => (v ?? '').trim();
 const isEqual = (a?: string|null, b?: string|null) => norm(a).toLowerCase() === norm(b).toLowerCase();
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const toStringValue = (value: unknown): string | undefined => {
+  if (value === null || value === undefined) return undefined;
+  return String(value);
+};
+
+const getExtras = (value: unknown): Record<string, unknown> =>
+  isRecord(value) ? value : {};
+
+const getPubValue = (pub: Pub, key: string): string | undefined => {
+  if (key === 'postcode' && pub.zip) return pub.zip;
+  const record = pub as unknown as Record<string, unknown>;
+  if (key in record) return toStringValue(record[key]);
+  const extras = getExtras((pub as PubWithExtras).extras);
+  return toStringValue(extras[key]);
+};
 
 // build a union of all keys to show in the "More details" section
 function buildExtraKeys(existing: Pub, incoming: { extras: Record<string,string> }) {
@@ -51,7 +72,7 @@ function buildExtraKeys(existing: Pub, incoming: { extras: Record<string,string>
   // include known optional fields that may live on the pub
   ['phone','email','notes','list_name','priority','dueBy','followUpDays'].forEach(k => base.add(k));
   // include any extras we've already accumulated on the canonical pub (if you store them)
-  if ((existing as any).extras) Object.keys((existing as any).extras).forEach(k => base.add(k));
+  Object.keys(getExtras((existing as PubWithExtras).extras)).forEach(k => base.add(k));
   // drop any we already render as primary
   PRIMARY_FIELDS.forEach(f => base.delete(f.key));
   base.delete('name');
@@ -274,9 +295,8 @@ export function DedupReviewDialog({
       {/* Primary details under names */}
       <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
         {PRIMARY_FIELDS.map(f => {
-          const left  = (suggestion.existing as any)[f.key] as string | undefined;
-          const right = (suggestion.incoming as any)[f.key] as string | undefined
-                      ?? suggestion.incoming.extras?.[f.key];
+          const left = getPubValue(suggestion.existing, f.key);
+          const right = toStringValue(suggestion.incoming.extras?.[f.key]);
           const same = isEqual(left, right);
           return (
             <div key={`${suggestion.id}-pf-${f.key}`} className="flex items-center gap-2">
@@ -328,9 +348,8 @@ export function DedupReviewDialog({
           </div>
 
           {buildExtraKeys(suggestion.existing, suggestion.incoming).map(key => {
-            const left  = (suggestion.existing as any)[key]
-              ?? (suggestion as any).existing?.extras?.[key];
-            const right = suggestion.incoming.extras?.[key];
+            const left = getPubValue(suggestion.existing, key);
+            const right = toStringValue(suggestion.incoming.extras?.[key]);
             return (
               <FieldRow key={`${suggestion.id}-ex-${key}`} label={key} left={left} right={right} />
             );
