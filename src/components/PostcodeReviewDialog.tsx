@@ -8,7 +8,7 @@ import { parsePostcode, type ParsedPostcode } from "../utils/postcodeUtils";
 export type PostcodeIssueRow = {
   id: string;
   rowIndex: number;
-  rawRow: Record<string, any>;
+  rawRow: Record<string, unknown>;
   postcode: string;
   parsed: ParsedPostcode;
 };
