@@ -130,8 +130,8 @@
 
 ## Current Lint After Fixes (2026-02-01)
 
-- Lint after fixes: 3 problems (3 errors, 0 warnings).
-- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (2), `@typescript-eslint/no-namespace` (1).
+- Lint after fixes: 2 problems (2 errors, 0 warnings).
+- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (2).
 - FIX rules resolved: `@typescript-eslint/no-unused-vars`, `no-empty`, `prefer-const`, `react-refresh/only-export-components` in `src/context`, and `*.d.ts` overrides.
 
 ### Current ESLint Rule Frequency (2026-02-01)
@@ -139,10 +139,9 @@
 | Rule ID | Count | Hotspots |
 | --- | ---: | --- |
 | @typescript-eslint/no-explicit-any | 2 | `src/context/PubDataContext.tsx` (1), `src/utils/devLog.ts` (1) |
-| @typescript-eslint/no-namespace | 1 | `src/context/PubDataContext.tsx` (1) |
 
 Hotspot files (top 10 by total findings):
-1. `src/context/PubDataContext.tsx` (2)
+1. `src/context/PubDataContext.tsx` (1)
 2. `src/utils/devLog.ts` (1)
 
 ## ESLint Phase 1 (Completed, 2026-01-20)
@@ -305,6 +304,12 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
   - **Lint snapshot:** 3 problems (3 errors, 0 warnings).
   - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
 
+- **Namespace cleanup:** `src/types/env.d.ts`.
+  - **Outcome:** NodeJS ProcessEnv global moved to a type-only module; no runtime behavior changes intended.
+  - **Package completed:** `@typescript-eslint/no-namespace` count reduced from 1 to 0 (net -1).
+  - **Lint snapshot:** 2 problems (2 errors, 0 warnings).
+  - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
+
 ### Phase 2 Backlog
 
 #### Runtime `any` backlog packages (grouped by boundary)
@@ -318,12 +323,6 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
   - **Validate:** maps-dependent UI still renders.
 
 #### react-hooks/exhaustive-deps backlog (0 warnings)
-
-#### @typescript-eslint/no-namespace investigation (1)
-
-- `src/context/PubDataContext.tsx:17`. 
-  - **Plan:** confirm namespace use is type-only and migrate to ES module types if safe. 
-  - **Validate:** `npm run typecheck` + `npm run build` with no runtime changes.
 
 ## Phase 3 Triage (Build Warnings)
 

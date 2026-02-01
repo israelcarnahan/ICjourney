@@ -13,15 +13,6 @@ import { loadAppState, saveAppState, clearAppState } from "../services/persisten
 import { devLog } from "../utils/devLog";
 import { useAuth } from "./AuthContext";
 
-// Ensure process.env is available
-declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      NODE_ENV: "development" | "production" | "test";
-    }
-  }
-}
-
 export type UUID = string;
 
 export type ListType = "wins" | "hitlist" | "unvisited" | "masterhouse";
