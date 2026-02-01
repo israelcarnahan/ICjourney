@@ -34,6 +34,13 @@ interface ScheduleVisit extends ExtendedPub {
   driveTimeToNext: number;
 }
 
+interface FileTypeDialogInitialValues {
+  type: ListType;
+  deadline?: string;
+  priorityLevel?: number;
+  followUpDays?: number;
+}
+
 const PlannerDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +53,8 @@ const PlannerDashboard: React.FC = () => {
   const [processedPubs, setProcessedPubs] = useState<ExtendedPub[]>([]);
   const [isQuickStartExpanded, setIsQuickStartExpanded] = useState(true);
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
-  const [initialValues, setInitialValues] = useState<any>(null);
+  const [initialValues, setInitialValues] =
+    useState<FileTypeDialogInitialValues | undefined>(undefined);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState(1);
 
@@ -108,14 +116,14 @@ const PlannerDashboard: React.FC = () => {
   )?.deadline;
 
   // Compute which priorities are already taken
-  const getLevel = (f: any) =>
-    typeof f.priority === 'number' ? f.priority : undefined;
+  const getLevel = (f: FileMetadata) =>
+    typeof f.priority === "number" ? f.priority : undefined;
 
   const usedPriorities = useMemo(() => Array.from(new Set(
     userFiles.files
       .filter(f => f.type === 'hitlist' || f.type === 'wins')
       .map(getLevel)
-      .filter((n: any): n is 1|2|3 => n === 1 || n === 2 || n === 3)
+      .filter((n): n is 1 | 2 | 3 => n === 1 || n === 2 || n === 3)
   )), [userFiles.files]);
 
   // Log used priorities in useEffect to prevent spam
@@ -607,7 +615,7 @@ const PlannerDashboard: React.FC = () => {
     setCurrentFileName("");
     setProcessedPubs([]);
     setSelectedFileId(null);
-    setInitialValues(null);
+    setInitialValues(undefined);
   };
 
   const handleFileDelete = (fileId: string) => {
@@ -1003,12 +1011,12 @@ const PlannerDashboard: React.FC = () => {
                           setCurrentFileName("");
                           setProcessedPubs([]);
                           setSelectedFileId(null);
-                          setInitialValues(null);
+                          setInitialValues(undefined);
                         }}
                         onSubmit={handleTypeDialogSubmit}
                         error={error}
                         setError={setError}
-                        fileType={initialValues?.type || ""}
+                        fileType={initialValues?.type ?? "masterhouse"}
                         currentFileName={currentFileName}
                         initialValues={initialValues}
                         isEditing={true}
