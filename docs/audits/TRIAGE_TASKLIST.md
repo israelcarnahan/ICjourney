@@ -130,29 +130,29 @@
 
 ## Current Lint After Fixes (2026-02-01)
 
-- Lint after fixes: 62 problems (53 errors, 9 warnings).
-- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (52), `react-hooks/exhaustive-deps` (9), `@typescript-eslint/no-namespace` (1).
+- Lint after fixes: 45 problems (36 errors, 9 warnings).
+- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (35), `react-hooks/exhaustive-deps` (9), `@typescript-eslint/no-namespace` (1).
 - FIX rules resolved: `@typescript-eslint/no-unused-vars`, `no-empty`, `prefer-const`, `react-refresh/only-export-components` in `src/context`, and `*.d.ts` overrides.
 
 ### Current ESLint Rule Frequency (2026-02-01)
 
 | Rule ID | Count | Hotspots |
 | --- | ---: | --- |
-| @typescript-eslint/no-explicit-any | 52 | `src/components/UnscheduledPubsPanel.tsx` (7), `src/utils/sourceDetails.ts` (7), `src/components/DedupReviewDialog.tsx` (6) |
+| @typescript-eslint/no-explicit-any | 35 | `src/components/UnscheduledPubsPanel.tsx` (7), `src/components/DedupReviewDialog.tsx` (6), `src/components/RepStatsPanel.tsx` (5) |
 | react-hooks/exhaustive-deps | 9 | `src/context/PubDataContext.tsx` (3), `src/api/useBusinessData.ts` (2), `src/components/DedupReviewDialog.tsx` (1) |
 | @typescript-eslint/no-namespace | 1 | `src/context/PubDataContext.tsx` (1) |
 
 Hotspot files (top 10 by total findings):
 1. `src/components/DedupReviewDialog.tsx` (7)
 2. `src/components/UnscheduledPubsPanel.tsx` (7)
-3. `src/utils/sourceDetails.ts` (7)
-4. `src/components/ScheduleDisplay.tsx` (6)
-5. `src/components/RepStatsPanel.tsx` (5)
-6. `src/context/PubDataContext.tsx` (5)
-7. `src/pages/PlannerDashboard.tsx` (4)
-8. `src/config/maps.ts` (3)
-9. `src/utils/openingHours.ts` (3)
-10. `src/api/useBusinessData.ts` (2)
+3. `src/components/ScheduleDisplay.tsx` (6)
+4. `src/components/RepStatsPanel.tsx` (5)
+5. `src/context/PubDataContext.tsx` (5)
+6. `src/pages/PlannerDashboard.tsx` (4)
+7. `src/config/maps.ts` (3)
+8. `src/api/useBusinessData.ts` (2)
+9. `src/components/DriveTimeBar.tsx` (2)
+10. `src/components/FileUploader.tsx` (1)
 
 ## ESLint Phase 1 (Completed, 2026-01-20)
 
@@ -218,13 +218,15 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
   - **Lint snapshot:** 62 problems (53 errors, 9 warnings).
   - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
 
+- **Parsing/sourceDetails:** `src/utils/sourceDetails.ts`, `src/utils/openingHours.ts`, `src/utils/normalizeFile.ts`, `src/utils/scheduleMappers.ts`, `src/utils/seedFromPub.ts`, `src/utils/calendarUtils.ts`, `src/utils/dedupe.ts`.
+  - **Outcome:** boundary parsing now typed with `unknown` + guards; no runtime behavior changes intended.
+  - **Package completed:** `@typescript-eslint/no-explicit-any` count reduced from 52 ƒ+' 35 (net -17).
+  - **Lint snapshot:** 45 problems (36 errors, 9 warnings).
+  - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
+
 ### Phase 2 Backlog
 
 #### Runtime `any` backlog packages (grouped by boundary)
-
-- **Parsing/sourceDetails:** `src/utils/sourceDetails.ts`, `src/utils/openingHours.ts`, `src/utils/normalizeFile.ts`, `src/utils/scheduleMappers.ts`, `src/utils/seedFromPub.ts`, `src/utils/calendarUtils.ts`, `src/utils/dedupe.ts`. 
-  - **Plan:** introduce parse result types + guards; narrow `unknown` instead of `any`. 
-  - **Validate:** schedule mapping and opening hours parsing.
 
 - **UI panels:** `src/components/DedupReviewDialog.tsx`, `src/components/RepStatsPanel.tsx`, `src/components/ScheduleDisplay.tsx`, `src/components/UnscheduledPubsPanel.tsx`, `src/components/PostcodeReviewDialog.tsx`, `src/components/VisitScheduler.tsx`, `src/pages/PlannerDashboard.tsx`, `src/components/DriveTimeBar.tsx`. 
   - **Plan:** define props/view models; replace `any` with typed interfaces and derived types. 

@@ -2,6 +2,17 @@ import { format } from 'date-fns';
 import { mapsService } from '../config/maps';
 import { devLog } from './devLog';
 
+type PlaceDetailsLike = {
+  error?: unknown;
+  currentPeriod?: { open: string; close: string };
+  isOpen?: boolean;
+  openingHours?: string[];
+  openNow?: boolean;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
 export const checkPubOpeningHours = async (pubName: string): Promise<{
   isOpen: boolean;
   hours?: string;
@@ -35,37 +46,47 @@ export const checkPubOpeningHours = async (pubName: string): Promise<{
     devLog('Searching for pub:', { query: searchQuery });
 
     const placeDetails = await mapsService.getPlaceDetails(searchQuery);
+    const details: PlaceDetailsLike = isRecord(placeDetails)
+      ? placeDetails as PlaceDetailsLike
+      : {};
+    const errorValue = details.error;
+    const errorMessage =
+      typeof errorValue === 'string'
+        ? errorValue
+        : errorValue != null
+          ? String(errorValue)
+          : undefined;
 
-    if ((placeDetails as any).error) {
-      devLog('Place details error:', (placeDetails as any).error);
+    if (errorMessage) {
+      devLog('Place details error:', errorMessage);
       return {
         isOpen: false,
         hours: 'Hours not available',
-        error: (placeDetails as any).error
+        error: errorMessage
       };
     }
 
     devLog('Place details received:', placeDetails);
 
     // Use current period if available
-    if (placeDetails.currentPeriod) {
+    if (details.currentPeriod) {
       // const now = new Date(); // TODO: Use for time-based checks
-      const openHour = parseInt(placeDetails.currentPeriod.open.split(':')[0]);
+      const openHour = parseInt(details.currentPeriod.open.split(':')[0]);
       
       // Check if pub opens too late for scheduling
-      const opensTooLate = openHour > 17 || (openHour === 17 && parseInt(placeDetails.currentPeriod.open.split(':')[1]) > 30);
+      const opensTooLate = openHour > 17 || (openHour === 17 && parseInt(details.currentPeriod.open.split(':')[1]) > 30);
       
       return {
-        isOpen: placeDetails.isOpen && !opensTooLate,
-        hours: placeDetails.openingHours?.join('\n') || 'Full schedule not available',
-        openTime: placeDetails.currentPeriod.open,
-        closeTime: placeDetails.currentPeriod.close
+        isOpen: Boolean(details.isOpen) && !opensTooLate,
+        hours: details.openingHours?.join('\n') || 'Full schedule not available',
+        openTime: details.currentPeriod.open,
+        closeTime: details.currentPeriod.close
       };
     }
     // Fall back to parsing weekday text
-    else if (placeDetails.openingHours?.length) {
+    else if (details.openingHours?.length) {
       const today = format(new Date(), 'EEEE');
-      const todayHours = placeDetails.openingHours?.find(day => 
+      const todayHours = details.openingHours?.find(day => 
         day.toLowerCase().startsWith(today.toLowerCase())
       );
 
@@ -74,8 +95,8 @@ export const checkPubOpeningHours = async (pubName: string): Promise<{
         const [openTime = '', closeTime = ''] = (hours || '').split(' - ');
 
         return {
-          isOpen: placeDetails.openNow ?? false,
-          hours: placeDetails.openingHours.join('\n'),
+          isOpen: details.openNow ?? false,
+          hours: details.openingHours.join('\n'),
           openTime,
           closeTime
         };

@@ -15,76 +15,119 @@ export type SourceDetail = {
 
 type DriverBucket = 'deadline' | 'followup' | 'priority' | 'master';
 
-export function formatPriorityForUser(meta: any): string | null {
+type MetaLike = {
+  priorityLevel?: number;
+  priority?: number;
+  schedulingMode?: string;
+  deadline?: string;
+  followUpDays?: number;
+  Priority?: string;
+  listType?: ListType;
+  fileName?: string;
+  rtm?: string;
+  address?: string;
+  town?: string;
+  phone?: string;
+  email?: string;
+  notes?: string;
+  postcode?: string;
+  sourceLists?: unknown;
+  sources?: unknown;
+  effectivePlan?: {
+    primaryMode?: DriverBucket;
+    deadline?: string;
+    followUpDays?: number;
+    priorityLevel?: number;
+  };
+  mapped?: Record<string, unknown>;
+  extras?: Record<string, unknown>;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const asMeta = (value: unknown): Partial<MetaLike> =>
+  (isRecord(value) ? value as Partial<MetaLike> : {});
+
+const asString = (value: unknown): string | undefined =>
+  typeof value === 'string' ? value : undefined;
+
+const asEffectivePlan = (value: unknown): Partial<NonNullable<MetaLike['effectivePlan']>> =>
+  (isRecord(value) ? value as Partial<NonNullable<MetaLike['effectivePlan']>> : {});
+
+export function formatPriorityForUser(meta: unknown): string | null {
   // Keep logic consistent with FileTypeDialog: priority|deadline|followup
   // Return human labels the user expects.
   // Example fallbacks are OK if a given meta is missing.
   try {
-    const priorityLevel = meta?.priorityLevel ?? meta?.priority;
-    if (meta?.schedulingMode === 'priority' && priorityLevel)
+    const safeMeta = asMeta(meta);
+    const priorityLevel = safeMeta.priorityLevel ?? safeMeta.priority;
+    if (safeMeta.schedulingMode === 'priority' && priorityLevel)
       return `Priority ${priorityLevel}`;
-    if (meta?.schedulingMode === 'deadline' && meta?.deadline)
-      return `Visit by ${meta.deadline}`;
-    if (meta?.schedulingMode === 'followup' && meta?.followUpDays)
-      return `Follow-up ${meta.followUpDays}d`;
+    if (safeMeta.schedulingMode === 'deadline' && safeMeta.deadline)
+      return `Visit by ${safeMeta.deadline}`;
+    if (safeMeta.schedulingMode === 'followup' && safeMeta.followUpDays)
+      return `Follow-up ${safeMeta.followUpDays}d`;
   } catch {
     // Intentionally ignore malformed metadata.
   }
   return null;
 }
 
-const formatPrimaryLabel = (bucket: DriverBucket, meta: any): string => {
-  if (bucket === 'deadline' && meta?.deadline) return `Visit by ${meta.deadline}`;
-  if (bucket === 'followup' && meta?.followUpDays != null) return `Follow-up ${meta.followUpDays}d`;
-  if (bucket === 'priority' && meta?.priorityLevel) return `Priority ${meta.priorityLevel}`;
-  return meta?.Priority || 'Masterfile';
+const formatPrimaryLabel = (bucket: DriverBucket, meta: unknown): string => {
+  const safeMeta = asMeta(meta);
+  if (bucket === 'deadline' && safeMeta.deadline) return `Visit by ${safeMeta.deadline}`;
+  if (bucket === 'followup' && safeMeta.followUpDays != null) return `Follow-up ${safeMeta.followUpDays}d`;
+  if (bucket === 'priority' && safeMeta.priorityLevel) return `Priority ${safeMeta.priorityLevel}`;
+  return safeMeta.Priority || 'Masterfile';
 };
 
-function getPrimaryDriverInfo(pubOrVisit: any): {
+function getPrimaryDriverInfo(pubOrVisit: unknown): {
   bucket: DriverBucket;
   label: string;
 } {
-  const effective = pubOrVisit?.effectivePlan;
-  if (effective?.primaryMode) {
+  const safeMeta = asMeta(pubOrVisit);
+  const effective = asEffectivePlan(safeMeta.effectivePlan);
+  if (effective.primaryMode) {
     return {
       bucket: effective.primaryMode,
       label: formatPrimaryLabel(effective.primaryMode, effective),
     };
   }
-  if (effective?.deadline) {
+  if (effective.deadline) {
     return { bucket: 'deadline', label: formatPrimaryLabel('deadline', effective) };
   }
-  if (effective?.followUpDays != null) {
+  if (effective.followUpDays != null) {
     return { bucket: 'followup', label: formatPrimaryLabel('followup', effective) };
   }
-  if (effective?.priorityLevel) {
+  if (effective.priorityLevel) {
     return { bucket: 'priority', label: formatPrimaryLabel('priority', effective) };
   }
 
-  if (pubOrVisit?.schedulingMode === 'deadline' && pubOrVisit?.deadline) {
-    return { bucket: 'deadline', label: formatPrimaryLabel('deadline', pubOrVisit) };
+  if (safeMeta.schedulingMode === 'deadline' && safeMeta.deadline) {
+    return { bucket: 'deadline', label: formatPrimaryLabel('deadline', safeMeta) };
   }
-  if (pubOrVisit?.schedulingMode === 'followup' && pubOrVisit?.followUpDays != null) {
-    return { bucket: 'followup', label: formatPrimaryLabel('followup', pubOrVisit) };
+  if (safeMeta.schedulingMode === 'followup' && safeMeta.followUpDays != null) {
+    return { bucket: 'followup', label: formatPrimaryLabel('followup', safeMeta) };
   }
-  if (pubOrVisit?.schedulingMode === 'priority' && pubOrVisit?.priorityLevel) {
-    return { bucket: 'priority', label: formatPrimaryLabel('priority', pubOrVisit) };
-  }
-
-  if (pubOrVisit?.deadline) {
-    return { bucket: 'deadline', label: formatPrimaryLabel('deadline', pubOrVisit) };
-  }
-  if (pubOrVisit?.followUpDays != null) {
-    return { bucket: 'followup', label: formatPrimaryLabel('followup', pubOrVisit) };
-  }
-  if (pubOrVisit?.priorityLevel) {
-    return { bucket: 'priority', label: formatPrimaryLabel('priority', pubOrVisit) };
+  if (safeMeta.schedulingMode === 'priority' && safeMeta.priorityLevel) {
+    return { bucket: 'priority', label: formatPrimaryLabel('priority', safeMeta) };
   }
 
-  return { bucket: 'master', label: formatPrimaryLabel('master', pubOrVisit) };
+  if (safeMeta.deadline) {
+    return { bucket: 'deadline', label: formatPrimaryLabel('deadline', safeMeta) };
+  }
+  if (safeMeta.followUpDays != null) {
+    return { bucket: 'followup', label: formatPrimaryLabel('followup', safeMeta) };
+  }
+  if (safeMeta.priorityLevel) {
+    return { bucket: 'priority', label: formatPrimaryLabel('priority', safeMeta) };
+  }
+
+  return { bucket: 'master', label: formatPrimaryLabel('master', safeMeta) };
 }
 
-export function getPrimaryDriverLabel(pubOrVisit: any): string {
+export function getPrimaryDriverLabel(pubOrVisit: unknown): string {
   return getPrimaryDriverInfo(pubOrVisit).label;
 }
 
@@ -102,7 +145,7 @@ const getLabelOrder = (label: string): number => {
   return 99;
 };
 
-export function getDriverSummary(pubOrVisit: any): {
+export function getDriverSummary(pubOrVisit: unknown): {
   primary: string;
   otherCount: number;
   others: string[];
@@ -126,7 +169,7 @@ export function getDriverSummary(pubOrVisit: any): {
   };
 }
 
-export function getListSummary(pubOrVisit: any): {
+export function getListSummary(pubOrVisit: unknown): {
   primary: string;
   otherCount: number;
   others: string[];
@@ -174,7 +217,7 @@ export function getListSummary(pubOrVisit: any): {
  * Build per-source details for a given pub/visit using what we've already
  * persisted (file metadata, mapping, extras). Non-destructive; no storage writes.
  */
-export function getSourceDetails(pubOrVisit: any): {
+export function getSourceDetails(pubOrVisit: unknown): {
   fileNames: string[];                  // unique list names for the chip row
   details: SourceDetail[];
 } {
@@ -187,59 +230,67 @@ export function getSourceDetails(pubOrVisit: any): {
   // Heuristics that usually exist in this project:
   // - A top-level `sources` array of {fileName, listType?, priorityLevel?, schedulingMode?, followUpDays?, deadline?, mapped?, extras?}
   // - Or a single `fileName` on the record, if only one.
-  const sources = Array.isArray(pubOrVisit?.sources) ? pubOrVisit.sources : [];
-  const sourceLists = Array.isArray(pubOrVisit?.sourceLists) ? pubOrVisit.sourceLists : [];
+  const safeMeta = asMeta(pubOrVisit);
+  const rawSources = Array.isArray(safeMeta.sources) ? safeMeta.sources : [];
+  const sources = rawSources.map((source) => (isRecord(source) ? source : {}));
+  const sourceLists = Array.isArray(safeMeta.sourceLists) ? safeMeta.sourceLists : [];
 
   if (sources.length === 0 && sourceLists.length > 0) {
-    sourceLists.forEach((fileName: string) => {
+    sourceLists.forEach((fileName) => {
       sources.push({
         fileName,
-        listType: pubOrVisit.listType,
-        schedulingMode: pubOrVisit.schedulingMode,
-        priorityLevel: pubOrVisit.priorityLevel,
-        followUpDays: pubOrVisit.followUpDays,
-        deadline: pubOrVisit.deadline,
+        listType: safeMeta.listType,
+        schedulingMode: safeMeta.schedulingMode,
+        priorityLevel: safeMeta.priorityLevel,
+        followUpDays: safeMeta.followUpDays,
+        deadline: safeMeta.deadline,
         mapped: {},
         extras: {},
       });
     });
   }
 
-  if (sources.length === 0 && pubOrVisit?.fileName) {
+  if (sources.length === 0 && safeMeta.fileName) {
     sources.push({
-      fileName: pubOrVisit.fileName,
-      listType: pubOrVisit.listType,
-      schedulingMode: pubOrVisit.schedulingMode,
-      priorityLevel: pubOrVisit.priorityLevel,
-      followUpDays: pubOrVisit.followUpDays,
-      deadline: pubOrVisit.deadline,
+      fileName: safeMeta.fileName,
+      listType: safeMeta.listType,
+      schedulingMode: safeMeta.schedulingMode,
+      priorityLevel: safeMeta.priorityLevel,
+      followUpDays: safeMeta.followUpDays,
+      deadline: safeMeta.deadline,
       mapped: {
-        rtm: pubOrVisit.rtm, address: pubOrVisit.address, town: pubOrVisit.town,
-        phone: pubOrVisit.phone, email: pubOrVisit.email, notes: pubOrVisit.notes,
-        postcode: pubOrVisit.postcode,
+        rtm: safeMeta.rtm, address: safeMeta.address, town: safeMeta.town,
+        phone: safeMeta.phone, email: safeMeta.email, notes: safeMeta.notes,
+        postcode: safeMeta.postcode,
       },
-      extras: pubOrVisit.extras ?? {},
+      extras: safeMeta.extras ?? {},
     });
   }
 
   for (const s of sources) {
-    const fileName = String(s.fileName ?? 'Unknown list');
+    const sourceMeta = asMeta(s);
+    const fileName = String(sourceMeta.fileName ?? 'Unknown list');
     if (!fileNames.includes(fileName)) fileNames.push(fileName);
+
+    const mapped = isRecord(sourceMeta.mapped) ? sourceMeta.mapped : {};
+    const extras = isRecord(sourceMeta.extras) ? sourceMeta.extras : {};
+    const getMappedValue = (key: string, fallback: unknown): string | undefined =>
+      asString(mapped[key]) ?? asString(fallback);
 
     out.push({
       fileName,
-      listType: s.listType ?? pubOrVisit?.listType ?? null,
-      priorityLabel: formatPriorityForUser(s),
+      listType: sourceMeta.listType ?? safeMeta.listType ?? null,
+      priorityLabel: formatPriorityForUser(sourceMeta),
       mapped: {
-        rtm: s?.mapped?.rtm ?? pubOrVisit?.rtm ?? undefined,
-        address: s?.mapped?.address ?? pubOrVisit?.address ?? undefined,
-        town: s?.mapped?.town ?? pubOrVisit?.town ?? undefined,
-        phone: s?.mapped?.phone ?? pubOrVisit?.phone ?? undefined,
-        email: s?.mapped?.email ?? pubOrVisit?.email ?? undefined,
-        notes: s?.mapped?.notes ?? pubOrVisit?.notes ?? undefined,
-        postcode: s?.mapped?.postcode ?? pubOrVisit?.postcode ?? undefined,
+        rtm: getMappedValue('rtm', safeMeta.rtm),
+        address: getMappedValue('address', safeMeta.address),
+        town: getMappedValue('town', safeMeta.town),
+        phone: getMappedValue('phone', safeMeta.phone),
+        email: getMappedValue('email', safeMeta.email),
+        notes: getMappedValue('notes', safeMeta.notes),
+        postcode: getMappedValue('postcode', safeMeta.postcode),
       },
-      extras: s?.extras ?? {},
+      extras: extras as SourceDetail['extras'],
     });
   }
 

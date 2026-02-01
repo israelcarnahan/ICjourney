@@ -1,23 +1,49 @@
-import { BusinessData, SourceTag } from "../api/types";
+import { BusinessData, OpeningHours, SourceTag } from "../api/types";
 
-export function seedFromPub(pub: any): Partial<BusinessData> {
-  const sources: SourceTag[] = (pub?.sources || pub?.sourceLists || []).map((s: any) => ({
-    listName: String(s?.listName ?? s?.fileName ?? s?.name ?? s ?? "Unknown"),
-    row: typeof s?.row === "number" ? s.row : null,
-  }));
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
+
+const asString = (value: unknown): string | undefined =>
+  typeof value === "string" ? value : undefined;
+
+const asOpeningHours = (value: unknown): OpeningHours | null => {
+  if (!isRecord(value)) return null;
+  const weekly = value.weekly;
+  if (!Array.isArray(weekly)) return null;
+  const valid = weekly.every((entry) => {
+    if (entry === null) return true;
+    return Array.isArray(entry) && entry.length === 2 && entry.every((item) => typeof item === "string");
+  });
+  return valid ? { weekly: weekly as OpeningHours["weekly"] } : null;
+};
+
+export function seedFromPub(pub: unknown): Partial<BusinessData> {
+  const safePub = isRecord(pub) ? pub : {};
+  const sourceList = Array.isArray(safePub.sources)
+    ? safePub.sources
+    : Array.isArray(safePub.sourceLists)
+      ? safePub.sourceLists
+      : [];
+  const sources: SourceTag[] = sourceList.map((source) => {
+    const safeSource = isRecord(source) ? source : {};
+    return {
+      listName: String(safeSource.listName ?? safeSource.fileName ?? safeSource.name ?? source ?? "Unknown"),
+      row: typeof safeSource.row === "number" ? safeSource.row : null,
+    };
+  });
 
   // extras: merge arbitrary columns across lists if you kept them
-  const extras = { ...(pub?.extras || {}) };
+  const extras = isRecord(safePub.extras) ? { ...safePub.extras } : {};
 
   return {
-    name: pub?.name ?? pub?.pub ?? "",
-    postcode: pub?.postcode ?? pub?.zip ?? "",
-    address: pub?.address ?? pub?.street ?? "",
-    town: pub?.town ?? pub?.city ?? "",
-    phone: pub?.phone ?? null,
-    email: pub?.email ?? null,
-    notes: pub?.notes ?? null,
-    openingHours: pub?.openingHours ?? null,
+    name: asString(safePub.name) ?? asString(safePub.pub) ?? "",
+    postcode: asString(safePub.postcode) ?? asString(safePub.zip) ?? "",
+    address: asString(safePub.address) ?? asString(safePub.street) ?? "",
+    town: asString(safePub.town) ?? asString(safePub.city) ?? "",
+    phone: asString(safePub.phone) ?? null,
+    email: asString(safePub.email) ?? null,
+    notes: asString(safePub.notes) ?? null,
+    openingHours: asOpeningHours(safePub.openingHours),
     sources,
     extras,
   };

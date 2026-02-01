@@ -1,4 +1,4 @@
-import { ScheduleDay } from '../context/PubDataContext';
+import { Pub, ScheduleDay } from '../context/PubDataContext';
 import { createEvents } from 'ics';
 import { devLog } from './devLog';
 import { parseISO, addHours, format } from 'date-fns';
@@ -19,7 +19,7 @@ const generateICSFile = (schedule: ScheduleDay[]): Promise<string> => {
   return new Promise((resolve, reject) => {
     const events = toArray(schedule).flatMap(day => {
       const startDate = parseISO(String(day?.date ?? ''));
-      return toArray(day?.visits).map((visit: any, index: number) => {
+      return toArray(day?.visits).map((visit: Pub, index: number) => {
         // Start at 9 AM and each visit is 1 hour
         const visitStartTime = addHours(startDate, 9 + index);
         const visitEndTime = addHours(visitStartTime, 1);
