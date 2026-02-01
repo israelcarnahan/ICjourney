@@ -336,9 +336,8 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
 
 ## Phase 3 Triage (Build Warnings)
 
-- **Vite devLog chunking warning:** `src/components/ErrorBoundary.tsx` dynamically imports `src/utils/devLog.ts` but the same module is statically imported elsewhere. 
-  - **Plan:** pick one import strategy (all static or all dynamic) to avoid mixed chunking; confirm no logging behavior changes. 
-  - **Validate:** `npm run build` and inspect chunk report for the warning.
+- **Vite devLog chunking warning (resolved):** `src/components/ErrorBoundary.tsx` now uses a static `devLog` import to avoid mixed chunking.
+  - **Validation:** `npm run build` (warning cleared).
 
 - **Optional: Chunk size warning:** `PlannerDashboard` chunk > 1 MB. 
   - **Plan:** consider code-splitting heavy panels or data transforms. 
