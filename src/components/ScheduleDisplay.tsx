@@ -470,7 +470,7 @@ const ScheduleDisplay: React.FC = () => {
         }
       }
     });
-  }, [expandedDays, schedule]);
+  }, [expandedDays, openingHours, schedule]);
 
   const toggleDay = (date: string) => {
     setExpandedDays((prev) => ({
