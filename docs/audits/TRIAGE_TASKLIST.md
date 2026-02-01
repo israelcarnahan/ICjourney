@@ -183,11 +183,11 @@ Hotspot files (top 10 by total findings):
 3) Add intent comments to empty blocks (`no-empty`).
 4) Apply `prefer-const` change in `src/components/RepStatsPanel.tsx:344`.
 
-## ESLint Phase 2 (Active)
+## ESLint Phase 2 (Completed, 2026-02-01)
 
 Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit-any` remains `error` (Option 1).
 
-### Phase 2 Completed Packages (2026-02-01)
+### Phase 2 Completed Packages (Completed 2026-02-01)
 
 - **API/http/providers:** `src/api/http.ts`, `src/api/fallbackProvider.ts`, `src/api/nominatimProvider.ts`, `src/api/postcodesProvider.ts`, `src/api/useBusinessData.ts`.
   - **Outcome:** boundary-safe types and `unknown` + guards; no runtime behavior changes intended.
