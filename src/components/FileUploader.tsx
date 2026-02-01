@@ -123,17 +123,17 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     }
   };
 
-  function coerceNumber(val: unknown): number | null {
-    const n = Number(String(val ?? "").replace(/[^\d.-]/g, ""));
-    return Number.isFinite(n) ? n : null;
-  }
-
-  function mapRowToCanonical(row: RawRow, mapping: ColumnMapping): MappedRow {
+  const mapRowToCanonical = useCallback((row: RawRow, mapping: ColumnMapping): MappedRow => {
     const pick = (field: keyof ColumnMapping) => {
       const src = mapping[field];
       if (!src) return null;
       const v = row[src];
       return typeof v === "string" ? v.trim() : (v ?? null);
+    };
+
+    const coerceNumber = (val: unknown): number | null => {
+      const n = Number(String(val ?? "").replace(/[^\d.-]/g, ""));
+      return Number.isFinite(n) ? n : null;
     };
 
     const used = new Set(Object.values(mapping).filter(Boolean) as string[]);
@@ -159,9 +159,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       if (!used.has(key)) out.extras[key] = v;
     }
     return out;
-  }
+  }, []);
 
-  async function waitForMapping(headers: string[]): Promise<ColumnMapping> {
+  const waitForMapping = useCallback(async (headers: string[]): Promise<ColumnMapping> => {
     const sig: HeaderSignature = { headers };
     setSourceHeaders(headers);
     setStoredForWizard(loadMapping(sig) ?? null);
@@ -172,9 +172,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     return new Promise<ColumnMapping>((resolve) => {
       resolverRef.current = resolve;
     });
-  }
+  }, [loadMapping, showTypeDialog]);
 
-  const runGeocoderSmokeTest = async (rows: ImportedRow[]): Promise<void> => {
+  const runGeocoderSmokeTest = useCallback(async (rows: ImportedRow[]): Promise<void> => {
     // Optional smoke test; never blocks import.
     try {
       if (!mapsService.isInitialized()) await mapsService.initialize();
@@ -191,9 +191,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     } catch {
       /* non-fatal */
     }
-  };
+  }, []);
 
-  const collectPostcodeIssues = (processed: ProcessedImport): PostcodeIssueRow[] => {
+  const collectPostcodeIssues = useCallback((processed: ProcessedImport): PostcodeIssueRow[] => {
     return processed.rows
       .map((row, index) => {
         const parsed = parsePostcode(row.zip);
@@ -206,7 +206,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         };
       })
       .filter((issue) => issue.parsed.status !== "OK");
-  };
+  }, []);
 
   const applyPostcodeDecisions = (
     processed: ProcessedImport,
@@ -262,7 +262,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
   const intentDisplay = pendingImportMeta ? buildIntentLabel(pendingImportMeta) : null;
 
-  const commitImport = (
+  const commitImport = useCallback((
     processed: ProcessedImport,
     meta: PendingImportMeta
   ) => {
@@ -447,9 +447,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
     setIsFileLoaded(false);
     setShowDetails(false);
-  };
+  }, [setUserFiles]);
 
-  const resetPendingImportState = () => {
+  const resetPendingImportState = useCallback(() => {
     setPendingImport(null);
     setPendingImportMeta(null);
     setPostcodeIssues([]);
@@ -458,7 +458,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     setProcessedPubs([]);
     setCurrentFileName("");
     setIsProcessing(false);
-  };
+  }, []);
 
   const handlePostcodeReviewConfirm = (decisions: PostcodeReviewDecision[]) => {
     if (!pendingImport || !pendingImportMeta) {
@@ -486,7 +486,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   };
 
   // ---------- main parse + map flow ----------
-  const processExcelFile = async (buffer: ArrayBuffer): Promise<ProcessedImport> => {
+  const processExcelFile = useCallback(async (buffer: ArrayBuffer): Promise<ProcessedImport> => {
     const workbook = XLSX.read(buffer, { type: "array" });
     if (!workbook?.SheetNames?.length) throw new Error("Invalid Excel file format");
 
@@ -557,7 +557,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       rawRows: filtered.map((r) => rowObjects[r.rowIndex]),
       headers: safeHeaders,
     };
-  };
+  }, [mapRowToCanonical, setError, waitForMapping]);
 
   // ---------- drop handler ----------
   const onDrop = useCallback(
@@ -620,7 +620,17 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       };
       reader.readAsArrayBuffer(file);
     },
-    [isDisabled, isProcessing, showMapping, fileType, setUserFiles]
+    [
+      isDisabled,
+      isProcessing,
+      showMapping,
+      fileType,
+      processExcelFile,
+      collectPostcodeIssues,
+      runGeocoderSmokeTest,
+      commitImport,
+      resetPendingImportState,
+    ]
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({

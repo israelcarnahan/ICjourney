@@ -130,8 +130,8 @@
 
 ## Current Lint After Fixes (2026-02-01)
 
-- Lint after fixes: 9 problems (3 errors, 6 warnings).
-- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (2), `react-hooks/exhaustive-deps` (6), `@typescript-eslint/no-namespace` (1).
+- Lint after fixes: 8 problems (3 errors, 5 warnings).
+- Remaining rule IDs: `@typescript-eslint/no-explicit-any` (2), `react-hooks/exhaustive-deps` (5), `@typescript-eslint/no-namespace` (1).
 - FIX rules resolved: `@typescript-eslint/no-unused-vars`, `no-empty`, `prefer-const`, `react-refresh/only-export-components` in `src/context`, and `*.d.ts` overrides.
 
 ### Current ESLint Rule Frequency (2026-02-01)
@@ -139,15 +139,14 @@
 | Rule ID | Count | Hotspots |
 | --- | ---: | --- |
 | @typescript-eslint/no-explicit-any | 2 | `src/context/PubDataContext.tsx` (1), `src/utils/devLog.ts` (1) |
-| react-hooks/exhaustive-deps | 6 | `src/context/PubDataContext.tsx` (3), `src/components/FileUploader.tsx` (1), `src/components/ScheduleDisplay.tsx` (1) |
+| react-hooks/exhaustive-deps | 5 | `src/context/PubDataContext.tsx` (3), `src/components/ScheduleDisplay.tsx` (1), `src/pages/PlannerDashboard.tsx` (1) |
 | @typescript-eslint/no-namespace | 1 | `src/context/PubDataContext.tsx` (1) |
 
 Hotspot files (top 10 by total findings):
 1. `src/context/PubDataContext.tsx` (5)
-2. `src/components/FileUploader.tsx` (1)
-3. `src/components/ScheduleDisplay.tsx` (1)
-4. `src/pages/PlannerDashboard.tsx` (1)
-5. `src/utils/devLog.ts` (1)
+2. `src/components/ScheduleDisplay.tsx` (1)
+3. `src/pages/PlannerDashboard.tsx` (1)
+4. `src/utils/devLog.ts` (1)
 
 ## ESLint Phase 1 (Completed, 2026-01-20)
 
@@ -285,6 +284,12 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
   - **Lint snapshot:** 9 problems (3 errors, 6 warnings).
   - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
 
+- **Hooks deps: FileUploader:** `src/components/FileUploader.tsx`.
+  - **Outcome:** drop handler dependencies now memoized for stability; no runtime behavior changes intended.
+  - **Package completed:** `react-hooks/exhaustive-deps` count reduced from 6 to 5 (net -1).
+  - **Lint snapshot:** 8 problems (3 errors, 5 warnings).
+  - **Validation:** `npm run lint`, `npm run typecheck`, `npm run build`.
+
 ### Phase 2 Backlog
 
 #### Runtime `any` backlog packages (grouped by boundary)
@@ -297,11 +302,7 @@ Ordered by lowest risk / highest payoff. Runtime `@typescript-eslint/no-explicit
   - **Plan:** define a minimal `PlaceDetails` shape for mock returns. 
   - **Validate:** maps-dependent UI still renders.
 
-#### react-hooks/exhaustive-deps backlog (7 warnings)
-
-- `src/components/FileUploader.tsx:619` missing deps (`commitImport`, `processExcelFile`). 
-  - **Plan:** memoize or include deps, avoid infinite re-renders. 
-  - **Validate:** upload flow.
+#### react-hooks/exhaustive-deps backlog (5 warnings)
 
 - `src/components/ScheduleDisplay.tsx:466` missing `openingHours`. 
   - **Plan:** confirm effect dependency and add if safe. 
