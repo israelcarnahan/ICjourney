@@ -5,6 +5,7 @@ import React, {
   ReactNode,
   useEffect,
   useRef,
+  useMemo,
 } from "react";
 import { useCallback } from "react";
 import { AlertTriangle } from "lucide-react";
@@ -313,7 +314,7 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
   const { userId } = useAuth();
   
   // Initial state constant
-  const initialState: UserFiles = { files: [], pubs: [] };
+  const initialState: UserFiles = useMemo(() => ({ files: [], pubs: [] }), []);
   
   // Track which userId we've loaded data for
   const rehydratedFor = useRef<string>('');
@@ -351,6 +352,29 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
   const [initializationError, setInitializationError] = useState<string | null>(
     null
   );
+
+  const resetAllData = useCallback(() => {
+    try {
+      setUserFiles({ pubs: [], files: [] });
+      setSchedule([]);
+      setBusinessDays(5);
+      setVisitsPerDay(5);
+      setHomeAddress("");
+      setSearchRadius(15);
+      setSelectedVehicle("car");
+      setSelectedVehicleColor("purple");
+      setSelectedDate(new Date());
+      setInitializationError(null);
+
+      // Clear storage
+      Object.values(STORAGE_KEYS).forEach((key) => {
+        localStorage.removeItem(key);
+      });
+    } catch (error) {
+      devLog("Error resetting data:", error);
+      setInitializationError("Failed to reset application data");
+    }
+  }, []);
 
   // Re-hydrate when userId changes
   useEffect(() => {
@@ -419,7 +443,13 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
     return () => {
       clearTimeout(initializationTimeout);
     };
-  }, []);
+  }, [
+    businessDays,
+    isInitialized,
+    resetAllData,
+    searchRadius,
+    visitsPerDay,
+  ]);
 
   // Persist state changes
   useEffect(() => {
@@ -476,29 +506,6 @@ export const PubDataProvider: React.FC<{ children: ReactNode }> = ({
       saveToStorage(STORAGE_KEYS.SELECTED_DATE, selectedDate);
     }
   }, [selectedDate, isInitialized]);
-
-  const resetAllData = useCallback(() => {
-    try {
-      setUserFiles({ pubs: [], files: [] });
-      setSchedule([]);
-      setBusinessDays(5);
-      setVisitsPerDay(5);
-      setHomeAddress("");
-      setSearchRadius(15);
-      setSelectedVehicle("car");
-      setSelectedVehicleColor("purple");
-      setSelectedDate(new Date());
-      setInitializationError(null);
-
-      // Clear storage
-      Object.values(STORAGE_KEYS).forEach((key) => {
-        localStorage.removeItem(key);
-      });
-    } catch (error) {
-      devLog("Error resetting data:", error);
-      setInitializationError("Failed to reset application data");
-    }
-  }, []);
 
   // const resetForUser = useCallback((targetUserId: string) => {
   //   setUserFiles(initialState);
