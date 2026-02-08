@@ -138,12 +138,12 @@ const FileTypeDialog: React.FC<FileTypeDialogProps> = ({
             <Dialog.Title className="text-xl font-bold text-eggplant-100">
               {isEditing ? "Edit List Settings" : "Configure List Settings"}
             </Dialog.Title>
-            <div id="file-type-dialog-description" className="sr-only">
+            <Dialog.Description id="file-type-dialog-description" className="sr-only">
               {isEditing
                 ? "Edit settings for existing list"
                 : "Configure settings for new list"}{" "}
               including priority levels and deadlines.
-            </div>
+            </Dialog.Description>
             <Dialog.Close 
               className="text-eggplant-400 hover:text-eggplant-100"
               data-testid="filetype-cancel"

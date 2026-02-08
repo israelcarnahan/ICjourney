@@ -96,6 +96,9 @@ const PostcodeFixesDialog: FC<PostcodeFixesDialogProps> = ({
               <Dialog.Title className="text-xl font-bold text-eggplant-100">
                 Pending Postcode Fixes
               </Dialog.Title>
+              <Dialog.Description className="sr-only">
+                Review postcode issues, edit invalid values, and save fixes for affected accounts.
+              </Dialog.Description>
               <p className="text-sm text-eggplant-200">
                 Fix invalid postcodes so they can be scheduled. Oddball postcodes can stay scheduled, but remain flagged until confirmed.
               </p>

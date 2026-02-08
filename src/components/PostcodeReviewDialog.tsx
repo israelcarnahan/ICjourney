@@ -127,6 +127,9 @@ export default function PostcodeReviewDialog({
               <Dialog.Title className="text-xl font-bold text-eggplant-100">
                 Fix Postcode Issues Before Import
               </Dialog.Title>
+              <Dialog.Description className="sr-only">
+                Review flagged rows, fix postcode values, keep rows with warnings, or remove rows before import.
+              </Dialog.Description>
               <p className="text-sm text-eggplant-200">
                 Review the highlighted rows, fix postcodes if needed, or remove rows you don’t want to keep.
               </p>
