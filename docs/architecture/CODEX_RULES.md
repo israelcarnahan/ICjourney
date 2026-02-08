@@ -1,250 +1,179 @@
-# ...pending...Codex Operating Rules
-
-!! This file is pending improvement. These are not actual rules yet. please ignore this file 'CODEX_RULES.md' unless otherwise requested (or this note isn't here)!!
+# Codex Operating Rules
 
 ## Purpose
 
-This document defines **how Codex must operate** on this project.
-
-It is a binding contract between:
-
-- the human maintainer
-- Codex (AI coding agent)
-
-Codex must follow this document at all times.
+This document defines how Codex and maintainers execute work in this repository.
+It is authoritative for AI-assisted execution and documentation discipline.
 
 ---
 
-## Codex Role
+## Core Principles
 
-Codex is a **technical partner**, not an authority.
+- Evidence first: do not invent facts.
+- If uncertain, write `UNKNOWN` or `NEEDS VALIDATION`.
+- Preserve behavior unless change is explicitly approved.
+- Keep scope tight to the approved task.
+- Keep docs and code in sync when behavior changes.
 
-Codex responsibilities:
+---
 
-- Execute explicitly approved work
-- Validate assumptions against code
-- Challenge incorrect or risky assumptions
-- Flag contradictions, risks, and unclear intent
+## Reading Tiers
 
-Codex must **not**:
+Use the smallest tier that satisfies the task.
 
-- Decide product or engineering intent
-- Override documented rules
-- Perform unsolicited cleanup or refactors
-- Expand scope beyond the approved task
+### Tier 0 (always read)
+
+- `docs/architecture/CODEX_RULES.md`
+- Relevant sections of `docs/architecture/SYSTEM.md` and `docs/architecture/PRD.md`
+- Target code files being changed/audited
+
+### Tier 1 (read relevant sections)
+
+Read when task includes planning, diagnosis, or issue triage (read tier 0 + teir 1):
+
+- `docs/architecture/ISSUES.md`
+- `docs/audits/TRIAGE_TASKLIST.md`
+
+### Tier 2 (full read)
+
+Full read is required for governance/doc-refactor/planning passes (read all tiers 0-2):
+
+- Full `docs/architecture/ISSUES.md`
+- Full `docs/audits/TRIAGE_TASKLIST.md`
 
 ---
 
 ## Modes of Work
 
-### Planning-Only Mode
-
-Planning-only mode is active **by default** unless explicitly exited.
+### Planning Mode
 
 Allowed:
 
-- Reading code
-- Tracing logic
-- Auditing flows
-- Reviewing tests (read-only)
-- Writing or refining documentation
-- Asking clarifying questions
+- Reading code and docs
+- Tracing flows and risks
+- Writing/refining docs
+- Proposing options and tradeoffs
 
-Not allowed:
+Not allowed without explicit approval:
 
-- Writing or modifying code
-- Writing or modifying tests
-- Refactors of any kind
-- Creating branches
-- Committing or pushing
-
-Planning-only mode ends **only** when explicitly approved.
-
----
+- Runtime behavior changes
+- Refactors beyond approved scope
 
 ### Implementation Mode
 
-Implementation may begin **only after** all of the following:
-
-1. A pre-start brief (including audit) is agreed
-2. Explicit approval is given to implement
+Implementation may begin only after explicit user approval to execute.
 
 ---
 
-## Required Reading (by Phase)
+## Task Lifecycle
 
-### Before Any Planning or Audit Work
+### 1. Pre-start brief
 
-Codex must read:
+State:
 
-- `docs/CODEX_RULES.md`
-- `docs/PRD.md`
-- `docs/SYSTEM.md`
-- `docs/ISSUES.md`
-- Relevant branch summaries **only if explicitly instructed**
-
-README files and legacy summaries are **not authoritative** unless explicitly stated.
-
----
-
-## Task Lifecycle (Mandatory)
-
-Every task must follow this lifecycle exactly.
-
-### 1. Pre-Start Brief
-
-Codex must provide:
-
-- Goal
-- Current state (validated against code)
+- Goal (relivant issue detail, with `triage_tasklist.md`)
+- Pre-task audit
+  - Identify:
+    - Files touched
+    - Dependencies and coupling risks
+    - Potential regressions
+    - Any duplicated or similar logic within the codebase? If yes, code example and explanation of task/duplicated logic differences.
+- Current state (current code-backed)
 - Assumptions
 - Risks
 - Options considered
-- Recommended approach (with reasoning)
+- Recommended approach
 
-### 2. Pre-Task Code Audit (part of pre-start)
+### 2. Execution
 
-Codex must identify:
+Rules:
 
-- Files involved
-- Dependencies
-- Red flags (legacy code, similar code or duplication, tight coupling)
-
----
-
-### 3. Approval
-
-No work proceeds without approval.
-
----
-
-### 4. Implementation
-
-Rules during implementation:
-
-- Incremental commits and pushes
+- Incremental, scoped changes
 - No silent behavior changes
+- Record unknowns explicitly
 
----
+### 3. Post-task debrief
 
-### 5. Post-Task Debrief
-
-Codex must report:
+Report:
 
 - What changed
 - Files touched
-- Why this approach was chosen
-- Tests run or needed
-- Open questions
-- New issues discovered
+- Tests/checks run
+- Open/new questions
+- New issues/doc debt created
+- Suggested next step(s)
 
 ---
 
-## File Modification Rules
+## Definition of Done (implementation tasks)
 
-Before changing **any code**, Codex must:
+Run and report all checks below unless explicitly waived by user:
 
-- List every file it intends to modify
-- Explain why each file is involved
-- Identify risks or downstream dependencies
+1. `npm run lint > docs/audits/knip_lint/eslint_report_latest.txt`
+2. `npm run typecheck`
+3. `npm run build`
+4. Dev smoke test when UI flows changed
 
-Codex must **stop and ask** if:
+Notes:
 
-- Instructions conflict with documented rules
-- Behavior changes are ambiguous
-- Required assumptions are missing
-- The task touches areas outside the approved scope
-
----
-
-## Documentation Update Rules (Critical)
-
-Codex must understand **what to update and when**.
-
-After any implementation task, a **Doc Delta Check** is required.
-
-Ask:
-
-- Did this change structure?
-- Did this change data flow or semantics?
-- Did this change intent or rules?
-
-If yes:
-
-- Update the relevant documentation
-- Or log Doc Debt in `docs/ISSUES.md`
-
-### Update Responsibilities
-
-| Change Type                     | Document to Update |
-| ------------------------------- | ------------------ |
-| Bugs, risks, odd behavior       | `docs/ISSUES.md`   |
-| Structural or ownership changes | `docs/SYSTEM.md`   |
-| Data flow or semantic changes   | `docs/SYSTEM.md`   |
-| Product or engineering intent   | `docs/PRD.md`      |
+- If lint exits non-zero, the redirected report remains authoritative.
+  - Follow `# Lint Triage + Lint Rules (must read rules before action)` section Rules within `docs/architecture/TRIAGE_TASKLIST.md`
+- Do not claim completion without reporting check outcomes.
 
 ---
 
-### Rule A — Evidence-Based Updates
+## Completion Sync Rule
 
-- Codex may update documentation **only** if it inspected the relevant code
-- If unsure, Codex must write `UNKNOWN` or `NEEDS VALIDATION`
+When a triage item is completed:
 
----
+1. Update `docs/audits/TRIAGE_TASKLIST.md`
+2. Update the linked issue entry in `docs/architecture/ISSUES.md`
 
-### Rule B — Definition of Done
+Required issue updates on completion:
 
-Every completed task must state:
+- Status
+- Resolution date
+- Commit reference(s)
+- Any acceptance-criteria note
 
-- Which docs were updated
-- Which docs were not updated
-- Why
-
----
-
-### Rule C — Doc Debt
-
-If documentation **should** be updated later:
-
-- Log **Doc Debt** in `docs/ISSUES.md`
-- Do not assume it will be remembered
+Only update dependent/related issues if the completed task actually impacted them.
 
 ---
 
-## Behavior Changes (Hard Rule)
+## Documentation Update Scope Rule
 
-Codex must **never change observable behavior silently**.
+Only update other docs (`PRD`, `SYSTEM`, `PROJECT_SUMMARY`, `README`, branch summaries, etc.) when:
 
-If behavior changes:
+1. The current task changes the behavior/feature those docs describe, or
+2. A contradiction is proven by direct code evidence
 
-- State explicitly **what changed**
-- State **why**
-- Confirm alignment with `docs/PRD.md`
+If contradiction is suspected but not proven:
+
+- Do not rewrite the claim as fact
+- Add Doc Debt issue in `docs/architecture/ISSUES.md` with `NEEDS VALIDATION`
 
 ---
 
-## Discovery Protocol (Mid-Task)
+## Evidence-based Documentation Rules
 
-If Codex discovers:
+- Documentation updates must be backed by inspected code and/or validated outputs.
+- Prefer file/line references when possible.
+- Mark uncertainty explicitly with `UNKNOWN` or `NEEDS VALIDATION`.
 
-- Bugs
-- Duplicate logic
-- Architectural concerns
-- Unclear or conflicting intent
+---
 
-Then Codex must:
+## Discovery Protocol
 
-1. Not fix immediately
-2. Record the discovery in the task debrief
-3. With approval, log it in `docs/ISSUES.md`
-4. Explicitly decide whether to scope it in or defer
+If you discover bugs, architectural risk, duplicate logic, or unclear intent:
+
+1. Record findings in task debrief
+2. Add update issue entry in `docs/architecture/ISSUES.md`
+3. Decide explicitly: in scope now or deferred
 
 ---
 
 ## Git Discipline
 
-- No new branches, merges, or deletions unless instructed
-- When approved to merge a branch, this must be done on local and remote, also deleting the merged branch.
-- Commits should be incremental and scoped
-- Large unpushed local diffs are discouraged
-- Never rewrite history without approval
+- No new branches, merges, or history rewrites unless instructed.
+- Keep commits scoped and descriptive.
+- Do not amend/rebase shared history without approval.

@@ -1,134 +1,96 @@
-# SYSTEM — IC Journey Planner (As-Is)
+# SYSTEM - IC Journey Planner (As-Is)
 
 ## Purpose
 
-This document describes the current, observable behavior of the IC Journey Planner as implemented in the main branch.
-
-It is factual, code-backed, and non-aspirational.
-
----
-
-## High-Level Overview
-
-IC Journey Planner is a browser-based planning tool for field sales representatives.  
-It ingests Excel files containing account data, normalizes and deduplicates records, and produces a multi-day visit schedule using heuristic prioritization and locality logic.
-
-All state is client-side.
+This document describes current behavior in the main branch based on inspected code.
+For intended future behavior, see `docs/architecture/PRD.md`.
 
 ---
 
-## Technology Stack (Current)
+## Canonical Docs Routing
 
-- React 18 + TypeScript
-- Vite 6.4.1
-- Tailwind CSS
-- React Context API
-- localStorage persistence
-- xlsx-js-style (Excel ingestion)
-- date-fns (date handling)
-
-### API / Mapping / Geo
-
-- Mock distance + locality heuristics in main
-- Google Maps / Places integration exists only in paused branch
-- No live routing or turn-by-turn optimization
-- Multi-provider business data enrichment chain:
-  - Postcodes API (UK postcode data)
-  - Google Places API (in development branch)
-  - Nominatim/OpenStreetMap (geocoding)
-  - Fallback provider (defaults)
-- Opening hours detection and display
-- Business information enrichment (phone, website, ratings)
+- Operating rules: `docs/architecture/CODEX_RULES.md`
+- Issue ledger: `docs/architecture/ISSUES.md`
+- Execution queue: `docs/audits/TRIAGE_TASKLIST.md`
 
 ---
 
-## Core Capabilities (As Implemented)
+## High-level Architecture
 
-### User accounts `all must be improved / configured`
+- Frontend-only React + TypeScript application.
+- Primary orchestration in `src/pages/PlannerDashboard.tsx`.
+- Core state in `src/context/PubDataContext.tsx` persisted to localStorage.
+- Scheduling logic in `src/utils/scheduleUtils.ts`.
+- Import/mapping/dedupe pipeline centered in `src/components/FileUploader.tsx` and lineage utilities.
 
-- Persisting user login
-- Master House List auto applied to x user
-- CRM / Repsly visited auto applied to x user
--
-- Generated schedule saves unless user request to 'start over'
+---
 
-### File Ingestion
+## Data Source Reality Matrix (verified)
 
-- Excel upload (Masterfile + optional lists)
-- Column Mapping Wizard
-- Required fields enforced (name, postcode)
-- Extras preserved
-- Postcode validation & review step
+### Real external endpoints (main branch)
 
-### Deduplication & Lineage
+- Postcodes API: `https://api.postcodes.io/postcodes/...`
+  - `src/api/postcodesProvider.ts`
+- Nominatim/OpenStreetMap search:
+  - `https://nominatim.openstreetmap.org/search`
+  - `src/api/nominatimProvider.ts`
 
-- Fuzzy matching on key fields
-- Canonical pub record with source lineage
-- Effective scheduling plan derived from merged sources
+### Fallback/synthesized behavior
+
+- Default opening-hours synthesis when data is missing:
+  - `src/api/fallbackProvider.ts`
+
+### Placeholder/mock behavior in main
+
+- Maps service is placeholder/mock (geocoder + place details):
+  - `src/config/maps.ts`
+
+### Paused/branch-only behavior
+
+- Google Places provider integration is documented in a paused branch summary and is not present as an active provider file in current main source.
+  - `docs/architecture/BRANCH_SUMMARY_feat-api-google-places.md`
+
+---
+
+## Core Functional Areas (as implemented)
+
+### Import and normalization
+
+- Excel upload and column mapping wizard.
+- Required mapping fields enforced (`name`, `postcode`).
+- Postcode review flow and dedupe review flow.
+- Source metadata and extras retained for lineage-oriented display.
 
 ### Scheduling
 
-- Driver buckets: deadline → follow-up (gated) → priority → baseline
-- Deadline semantics: scheduled on or before target date where possible
-- Locality clustering via mock geo truth
-- Configurable visits per day
-- Business/weekdays calculation
-- Home address-based route planning `logic test`
-- Configurable search radius planning `logic test`
-- Heuristic, not deterministic routing `what does this mean`
-- Capacity-based day filling
-- Account within OPEN hours `flags fake hours, doesn't honor`
+- Heuristic scheduling with priority/deadline/locality balancing.
+- Configurable visits/day, business days, home postcode, search radius.
+- Follow-up mode remains deferred/gated.
 
-### Schedule Interaction
+### Schedule interaction
 
-- Schedule display (daily / weekly)
-- Drag-and-drop rescheduling `dont think so - logic test`
-- Replacement / regeneration / deletion `logic improvement`
-  - Unscheduled pubs panel `where/how`
-  - Nearby pubs panel `used to exist, logic/where`
-- Daily Drive time calculations `remove/update lying placeholder`
-- Visit notes
-- Visit book anytime / specific time
-- Daily HOME BY X TIME configuration `logic improvement`
-- Daily journey maps link `daily? all visits? in order?`
+- Day expansion, visit scheduling dialog, replace/delete/regenerate actions.
+- Drive-time/mileage summaries are generated from current scheduling data paths.
 
-### Export & Reporting
+### Export
 
-- Styled Excel export
-- ICS calendar export
-- Coverage heat maps Patch / RTM `did exist but where now?`
-- Rep Stats Panel
-  - Request vs Scheduled days / visits
-  - Icon flags unexpected effected days (with why)
-  - Full schedule milage counter `remove/update lying placeholder`
+- Excel export.
+- ICS calendar export.
 
 ---
 
-## Data Model & Persistence
+## Persistence
 
-- All user data stored in localStorage
-- User-scoped persistence keys
-- No backend sync
-- Schedule persisted separately from raw data
+- User files and schedule state persisted client-side (localStorage and app persistence helpers).
+- No backend sync in main branch.
 
 ---
 
-## Source Structure (Condensed)
+## Known Gaps (code-backed)
 
-- `src/pages/PlannerDashboard.tsx` — orchestration
-- `src/utils/scheduleUtils.ts` — scheduling logic
-- `src/context/PubDataContext.tsx` — data & state
-- `src/utils/dedupe.ts` — deduplication
-- `src/api/*` — enrichment providers
-- `src/services/persistence.ts` — storage
+- Deterministic scheduling guarantees are not formally test-backed.
+- Follow-up-by-date is deferred.
+- Automated test coverage is not established.
+- Main branch still contains transitional boundaries between real endpoints and placeholder services.
 
----
-
-## Known Gaps (As-Is Facts)
-
-- Follow-up-by-date logic is gated / deferred
-- Determinism not guaranteed across runs
-- No automated test coverage
-- No backend or auth-scoped persistence
-
-(See `docs/ISSUES.md` for risks.)
+Refer to `docs/architecture/ISSUES.md` for tracked severity/status/acceptance criteria.
