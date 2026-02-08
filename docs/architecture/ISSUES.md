@@ -181,6 +181,9 @@ Acceptance criteria:
 - Acceptance criteria:
 1. Opening visit dialog no longer produces `Maximum update depth exceeded`.
 2. Business data request flow runs once per visit per open (or bounded/cached equivalent).
+- Update (2026-02-08):
+1. Implemented stabilization in `src/api/useBusinessData.ts` and removed duplicate hook invocation in `src/components/VisitScheduler.tsx`.
+2. Browser-console confirmation of warning removal remains NEEDS VALIDATION.
 
 ### Issue: Radix dialog description warning risk in active codebase
 - Category: Bugs
@@ -228,6 +231,10 @@ Acceptance criteria:
 1. Dialog does not remain in “Loading business data...” for multi-minute periods.
 2. Requests are bounded (no repeated spam loop).
 3. If upstream is unavailable, UI settles quickly without fake external values.
+- Update (2026-02-08):
+1. Added fetch timeout in `src/api/http.ts` (`API_CFG.requestTimeoutMs`).
+2. `useBusinessData` now publishes immediate seed-based data while enrichment continues.
+3. Exact in-browser 404 count/latency still NEEDS VALIDATION with real dataset.
 
 ### Issue: Business hours source-of-truth ambiguity (real vs fallback vs placeholder)
 - Category: Legacy / Transitional Code
@@ -296,6 +303,10 @@ Acceptance criteria:
 - Acceptance criteria:
 1. For chosen supported fields, if present at runtime they are visible in dialog.
 2. If missing, issue path documents exact drop stage with evidence.
+- Update (2026-02-08):
+1. Added user-facing rendering of `landlord`, `last_visited`, and `visitNotes` in `src/components/VisitScheduler.tsx`.
+2. Raw extras moved behind a dev-only disclosure section.
+3. Runtime presence of each field for all import variants remains NEEDS VALIDATION.
 
 ---
 

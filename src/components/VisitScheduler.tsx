@@ -38,6 +38,10 @@ function SourceDetailsPanel({
   businessData: ReturnType<typeof useBusinessData>;
 }) {
   const listSummary = getListSummary(visitOrPub);
+  const hasDevExtras = Boolean(
+    businessData?.extras && Object.keys(businessData.extras).length > 0
+  );
+  const isDev = import.meta.env.DEV;
 
   if (!businessData) {
     return (
@@ -84,6 +88,9 @@ function SourceDetailsPanel({
               {businessData.town && <li className="break-words"><span className="opacity-70">Town/City:</span> {businessData.town}</li>}
               {businessData.phone && <li className="break-words"><span className="opacity-70">Phone:</span> {businessData.phone}</li>}
               {businessData.email && <li className="break-words"><span className="opacity-70">Email:</span> {businessData.email}</li>}
+              {visitOrPub.landlord && <li className="break-words"><span className="opacity-70">Landlord:</span> {visitOrPub.landlord}</li>}
+              {visitOrPub.last_visited && <li className="break-words"><span className="opacity-70">Last visit:</span> {visitOrPub.last_visited}</li>}
+              {visitOrPub.visitNotes && <li className="break-words"><span className="opacity-70">Visit notes:</span> {visitOrPub.visitNotes}</li>}
             </ul>
 
             {businessData.notes && (
@@ -95,17 +102,21 @@ function SourceDetailsPanel({
               </div>
             )}
 
-            {/* Extras from all sources */}
-            {businessData.extras && Object.keys(businessData.extras).length > 0 && (
+            {/* Dev-only raw extras */}
+            {isDev && hasDevExtras && (
               <div className="mt-2">
-                <div className="opacity-70 text-xs mb-1">Additional fields from your lists</div>
-                <div className="grid grid-cols-1 gap-x-6 gap-y-1">
-                  {Object.entries(businessData.extras).map(([k, v]) => (
-                    <div key={k} className="break-words">
-                      <span className="opacity-70">{k}:</span> <span>{String(v ?? '')}</span>
-                    </div>
-                  ))}
-                </div>
+                <details className="rounded bg-eggplant-900 border border-eggplant-700/40">
+                  <summary className="cursor-pointer px-2 py-1 text-xs opacity-80">
+                    Dev: additional raw fields
+                  </summary>
+                  <div className="p-2 grid grid-cols-1 gap-x-6 gap-y-1">
+                    {Object.entries(businessData.extras).map(([k, v]) => (
+                      <div key={k} className="break-words">
+                        <span className="opacity-70">{k}:</span> <span>{String(v ?? "")}</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
               </div>
             )}
           </div>
