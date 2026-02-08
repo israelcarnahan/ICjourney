@@ -30,12 +30,13 @@ interface VisitSchedulerProps {
   ) => void;
 }
 
-function SourceDetailsPanel({ visitOrPub }: { visitOrPub: ScheduleVisit }) {
-  const seed = seedFromPub(visitOrPub);
-  const businessData = useBusinessData(
-    visitOrPub.pub || visitOrPub.uuid || "unknown",
-    seed
-  );
+function SourceDetailsPanel({
+  visitOrPub,
+  businessData,
+}: {
+  visitOrPub: ScheduleVisit;
+  businessData: ReturnType<typeof useBusinessData>;
+}) {
   const listSummary = getListSummary(visitOrPub);
 
   if (!businessData) {
@@ -433,7 +434,7 @@ const VisitScheduler: React.FC<VisitSchedulerProps> = ({
               />
             </div>
 
-            <SourceDetailsPanel visitOrPub={visit} />
+            <SourceDetailsPanel visitOrPub={visit} businessData={businessData} />
             </div>
           </div>
 

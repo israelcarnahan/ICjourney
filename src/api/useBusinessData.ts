@@ -11,27 +11,51 @@ export function useBusinessData(pubId: string, seed: Partial<BusinessData>, chai
   const [data, setData] = useState<BusinessData | null>(null);
 
   const providers = useMemo(() => chain?.providers ?? [postcodesProvider, nominatimProvider, fallbackProvider], [chain]);
+  const seedKey = makeSeedKey(seed);
+  const normalizedSeed = useMemo(
+    () => JSON.parse(seedKey) as Partial<BusinessData>,
+    [seedKey]
+  );
 
   useEffect(() => {
     let alive = true;
+    const cacheKey = `${pubId}|${seedKey}`;
     async function run() {
       // serve from cache fast
-      if (cache.has(pubId)) { setData(cache.get(pubId)!); }
+      if (cache.has(cacheKey)) {
+        setData(cache.get(cacheKey)!);
+        return;
+      }
       // run providers in order
-      let current: Partial<BusinessData> = { ...seed };
+      let current: Partial<BusinessData> = { ...normalizedSeed };
       for (const p of providers) {
         const next = await p.get(pubId, current);
         current = { ...current, ...mergePreferNonEmpty(current, next) };
       }
       const final = current as BusinessData;
-      cache.set(pubId, final);
+      cache.set(cacheKey, final);
       if (alive) setData(final);
     }
     run();
     return () => { alive = false; };
-  }, [pubId, providers, seed]);
+  }, [pubId, providers, normalizedSeed, seedKey]);
 
   return data;
+}
+
+function makeSeedKey(seed: Partial<BusinessData>) {
+  return JSON.stringify({
+    name: seed.name ?? null,
+    postcode: seed.postcode ?? null,
+    address: seed.address ?? null,
+    town: seed.town ?? null,
+    phone: seed.phone ?? null,
+    email: seed.email ?? null,
+    notes: seed.notes ?? null,
+    openingHours: seed.openingHours ?? null,
+    sources: seed.sources ?? [],
+    extras: seed.extras ?? {},
+  });
 }
 
 function mergePreferNonEmpty(a: Partial<BusinessData>, b: Partial<BusinessData>) {
