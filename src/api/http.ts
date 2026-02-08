@@ -26,7 +26,14 @@ export async function getJson(
   if (hit && (now - hit.t) < API_CFG.cacheTTLms) return hit.data;
 
   const exec = async () => {
-    const res = await fetch(url, { headers: { ...headers } });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), API_CFG.requestTimeoutMs);
+    const res = await fetch(url, {
+      headers: { ...headers },
+      signal: controller.signal,
+    }).finally(() => {
+      clearTimeout(timeoutId);
+    });
     if (!res.ok) throw new Error(`GET ${url} ${res.status}`);
     const data = await res.json();
     mem.set(url, { t: Date.now(), data });

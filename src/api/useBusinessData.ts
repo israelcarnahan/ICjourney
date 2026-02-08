@@ -26,6 +26,9 @@ export function useBusinessData(pubId: string, seed: Partial<BusinessData>, chai
         setData(cache.get(cacheKey)!);
         return;
       }
+      if (alive) {
+        setData(toImmediateBusinessData(normalizedSeed, pubId));
+      }
       // run providers in order
       let current: Partial<BusinessData> = { ...normalizedSeed };
       for (const p of providers) {
@@ -56,6 +59,22 @@ function makeSeedKey(seed: Partial<BusinessData>) {
     sources: seed.sources ?? [],
     extras: seed.extras ?? {},
   });
+}
+
+function toImmediateBusinessData(seed: Partial<BusinessData>, pubId: string): BusinessData {
+  return {
+    name: seed.name ?? pubId,
+    postcode: seed.postcode ?? null,
+    address: seed.address ?? null,
+    town: seed.town ?? null,
+    phone: seed.phone ?? null,
+    email: seed.email ?? null,
+    notes: seed.notes ?? null,
+    openingHours: seed.openingHours ?? null,
+    isOpenAt: seed.isOpenAt,
+    sources: seed.sources ?? [],
+    extras: seed.extras ?? {},
+  };
 }
 
 function mergePreferNonEmpty(a: Partial<BusinessData>, b: Partial<BusinessData>) {
