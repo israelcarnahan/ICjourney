@@ -1,21 +1,31 @@
-# IC Journey Planner Docs
+# IC Journey Planner — Architecture Docs
 
-Use these files as the canonical documentation system:
+For project setup, stack overview, and getting started, see the [root README](../../README.md).
 
-1. `docs/architecture/CODEX_RULES.md` - operating rules for Codex + maintainers
-2. `docs/architecture/SYSTEM.md` - current code-backed behavior (as-is)
-3. `docs/architecture/PRD.md` - intended behavior and product semantics
-4. `docs/architecture/ISSUES.md` - source-of-truth issue ledger
-5. `docs/audits/TRIAGE_TASKLIST.md` - execution plan and active work queue
-6. `docs/architecture/PROJECT_SUMMARY.md` - high-level orientation summary
+---
 
-## Audit Artifacts
+## Canonical documentation files
 
-- JSCPD report: `docs/audits/JSCPD/html/index.html`
-- Canonical ESLint report output path:
-  - `docs/audits/knip_lint/eslint_report_latest.txt`
+| File | Purpose |
+|------|---------|
+| [`CODEX_RULES.md`](CODEX_RULES.md) | Operating rules for AI-assisted and human development — read first |
+| [`SYSTEM.md`](SYSTEM.md) | Current code-backed behaviour (as-is) |
+| [`PRD.md`](PRD.md) | Intended product behaviour and scheduling semantics |
+| [`ISSUES.md`](ISSUES.md) | Source-of-truth issue ledger |
+| [`PROJECT_SUMMARY.md`](PROJECT_SUMMARY.md) | High-level orientation summary |
+| [`../audits/TRIAGE_TASKLIST.md`](../audits/TRIAGE_TASKLIST.md) | Active execution queue |
 
-## Link Hygiene Notes
+## Deferred / archived docs (do not edit)
 
-- Keep issue references by slug from `ISSUES.md`.
-- Keep execution detail in TRIAGE, not duplicated in summary docs.
+- [`BRANCH_SUMMARY_feat-api-google-places.md`](BRANCH_SUMMARY_feat-api-google-places.md) — paused Google Places branch notes
+- [`followup-by-date.md`](followup-by-date.md) — deferred follow-up scheduling design
+
+## Audit artifacts
+
+- JSCPD clone report: `docs/audits/JSCPD/html/index.html`
+- Canonical ESLint report: `docs/audits/knip_lint/eslint_report_latest.txt`
+
+## Link hygiene
+
+- Reference issues by slug from `ISSUES.md`
+- Keep execution detail in `TRIAGE_TASKLIST.md`, not duplicated in summary docs
