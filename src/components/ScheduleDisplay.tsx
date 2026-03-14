@@ -44,12 +44,19 @@ import {
   getSourceDetails
 } from "../utils/sourceDetails";
 import { checkPubOpeningHours } from "../utils/openingHours";
-import {
+import type {
   Visit,
-  ScheduleDay,
+  ScheduleDay as ExportScheduleDay,
   OpeningHoursMap,
 } from "../types";
+import type { ScheduleDay as ContextScheduleDay } from "../context/PubDataContext";
 
+type SchedulerVisit = React.ComponentProps<typeof VisitScheduler>['visit'];
+type DisplayScheduleDay = ExportScheduleDay & {
+  startMileage: number;
+  endMileage: number;
+  visits: Visit[];
+};
 
 
 // Helper function to get proper priority display
@@ -411,7 +418,7 @@ const ScheduleDisplay: React.FC = () => {
   const [totalDriveTime] = useState<Duration>({ minutes: 480 }); // 8 hours
 
   // Convert context schedule to our local type
-  const schedule = contextSchedule.map((day) => ({
+  const schedule: DisplayScheduleDay[] = contextSchedule.map((day) => ({
     date: day.date || "",
     visits: toArray(day.visits).map((visit) => ({
       ...visit,
@@ -427,7 +434,7 @@ const ScheduleDisplay: React.FC = () => {
     schedulingErrors: day.schedulingErrors,
   }));
 
-  const updateSchedule = (updater: (prev: any[]) => any[]) => {
+  const updateSchedule = (updater: (prev: DisplayScheduleDay[]) => DisplayScheduleDay[]) => {
     const updatedSchedule = updater(schedule);
     // Convert back to context schedule type when updating
     setContextSchedule(
@@ -435,7 +442,7 @@ const ScheduleDisplay: React.FC = () => {
         ...day,
         date: day.date,
         visits: day.visits,
-      }))
+      })) as unknown as ContextScheduleDay[]
     );
   };
 
@@ -463,7 +470,7 @@ const ScheduleDisplay: React.FC = () => {
         }
       }
     });
-  }, [expandedDays, schedule]);
+  }, [expandedDays, openingHours, schedule]);
 
   const toggleDay = (date: string) => {
     setExpandedDays((prev) => ({
@@ -596,10 +603,13 @@ const ScheduleDisplay: React.FC = () => {
         return {
           ...day,
           ...metrics,
-        } as ScheduleDay;
+        };
       })
     );
   };
+
+  const toSchedulerVisit = (visit: Visit): SchedulerVisit =>
+    visit as unknown as SchedulerVisit;
 
   const handleVisitSchedule = (
     date: string,
@@ -620,13 +630,16 @@ const ScheduleDisplay: React.FC = () => {
         if (visitIndex === -1) return day;
 
         // Create a copy of the visits array
-        const updatedVisits = [...day.visits];
+        const updatedVisits: Visit[] = [...day.visits];
+        const currentVisit = updatedVisits[visitIndex];
+        if (!currentVisit) return day;
 
         // Update the specific visit with new scheduled time
         updatedVisits[visitIndex] = {
-          ...updatedVisits[visitIndex],
+          ...currentVisit,
           scheduledTime: time,
-          visitNotes: notes || updatedVisits[visitIndex].visitNotes,
+          visitNotes: notes || currentVisit.visitNotes,
+          Priority: currentVisit.Priority || "Unscheduled",
         };
 
         // Sort visits based on scheduled times and proximity
@@ -781,6 +794,7 @@ const ScheduleDisplay: React.FC = () => {
         if (visitIndex !== -1) {
           updatedVisits[visitIndex] = {
             ...replacementVisits[0],
+            Priority: replacementVisits[0].Priority || "Unscheduled",
             scheduledTime: visitToReplace.scheduledTime, // Preserve the time slot
             mileageToNext: 0,
             driveTimeToNext: 30,
@@ -844,7 +858,7 @@ const ScheduleDisplay: React.FC = () => {
     // Take the top N visits based on visitsPerDay
     const newVisits = potentialVisits.slice(0, visitsPerDay).map((visit) => ({
       ...visit,
-      Priority: getPrimaryDriverLabel(visit as any),
+      Priority: getPrimaryDriverLabel(visit),
       mileageToNext: 0,
       driveTimeToNext: 30,
     }));
@@ -874,7 +888,7 @@ const ScheduleDisplay: React.FC = () => {
     );
   };
 
-  const renderDaySchedule = (day: ScheduleDay, dayIndex: number) => {
+  const renderDaySchedule = (day: DisplayScheduleDay, dayIndex: number) => {
     const isExpanded = expandedDays[day.date || ""];
     const visits = day.visits || [];
     const hasWarnings =
@@ -1169,7 +1183,7 @@ const ScheduleDisplay: React.FC = () => {
                               )}
                             </div>
                             <VisitScheduler
-                              visit={visit as any}
+                              visit={toSchedulerVisit(visit)}
                               date={day.date || ""}
                               onSchedule={handleVisitSchedule}
                             />
@@ -1309,7 +1323,7 @@ const ScheduleDisplay: React.FC = () => {
 
       <div className="flex justify-end gap-2 mt-4">
         <button
-          onClick={() => downloadICSFile(schedule as any)}
+          onClick={() => downloadICSFile(contextSchedule)}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md bg-white text-purple-900 hover:bg-white/90 transition-colors"
         >
           <Calendar className="h-4 w-4" />

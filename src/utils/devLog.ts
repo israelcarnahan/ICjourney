@@ -1,4 +1,4 @@
 // src/utils/devLog.ts
-export const devLog = (...args: any[]) => {
+export const devLog = (...args: unknown[]) => {
   if (import.meta.env?.DEV) console.log(...args);
 };

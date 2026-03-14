@@ -1,6 +1,7 @@
 import { getJSON, setJSON, remove } from '../utils/storage';
 import { normalizeFileMetadata } from '../utils/normalizeFile';
 import type { UserFiles, FileMetadata, Pub } from '../context/PubDataContext';
+import type { ColumnMapping } from '../types/import';
 import { devLog } from '../utils/devLog';
 
 const VERSION = 'v1';
@@ -8,6 +9,33 @@ const VERSION = 'v1';
 type PersistedAppState = {
   files: FileMetadata[];
   pubs: Pub[];
+};
+
+type PersistedMappings = Record<string, ColumnMapping>;
+
+const CANONICAL_FIELDS: Array<keyof ColumnMapping> = [
+  'name',
+  'postcode',
+  'rtm',
+  'address',
+  'town',
+  'lat',
+  'lng',
+  'phone',
+  'email',
+  'notes',
+];
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isColumnMapping = (value: unknown): value is ColumnMapping => {
+  if (!isRecord(value)) return false;
+  return CANONICAL_FIELDS.every((field) => {
+    if (!Object.prototype.hasOwnProperty.call(value, field)) return false;
+    const entry = value[field];
+    return typeof entry === 'string' || entry === null;
+  });
 };
 
 export function loadAppState(userId: string): UserFiles {
@@ -43,17 +71,25 @@ export function clearAppState(userId: string) {
   }
 }
 
-export function loadMappings(userId: string): Record<string, any> {
+export function loadMappings(userId: string): PersistedMappings {
   try {
     const KEY_MAPPINGS = `jp.${VERSION}.mappings::${userId}`;
-    return getJSON(KEY_MAPPINGS, {});
+    const raw = getJSON<unknown>(KEY_MAPPINGS, {});
+    if (!isRecord(raw)) return {};
+    const parsed: PersistedMappings = {};
+    Object.entries(raw).forEach(([key, value]) => {
+      if (isColumnMapping(value)) {
+        parsed[key] = value;
+      }
+    });
+    return parsed;
   } catch (error) {
     devLog('[Persistence] Failed to load mappings for userId:', userId, error);
     return {};
   }
 }
 
-export function saveMappings(map: Record<string, any>, userId: string) {
+export function saveMappings(map: PersistedMappings, userId: string) {
   try {
     const KEY_MAPPINGS = `jp.${VERSION}.mappings::${userId}`;
     setJSON(KEY_MAPPINGS, map);

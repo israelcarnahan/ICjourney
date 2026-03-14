@@ -1,5 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
+import { devLog } from "../utils/devLog";
 
 interface Props {
   children: ReactNode;
@@ -26,11 +27,10 @@ class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Gate noisy logs in production
     try {
-      (async () => {
-        const { devLog } = await import("../utils/devLog");
-        devLog("Uncaught error:", error, errorInfo);
-      })();
-    } catch {}
+      devLog("Uncaught error:", error, errorInfo);
+    } catch {
+      // Intentionally ignore logging failures.
+    }
   }
 
   public render() {

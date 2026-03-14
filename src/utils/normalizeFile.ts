@@ -1,25 +1,31 @@
 import type { FileMetadata } from '../context/PubDataContext';
 
-export function normalizeFileMetadata(f: any): FileMetadata {
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+export function normalizeFileMetadata(f: unknown): FileMetadata {
+  const meta = isRecord(f) ? f : {};
+  const priorityLevel = typeof meta.priorityLevel === 'number' ? meta.priorityLevel : undefined;
+  const followUpDays = typeof meta.followUpDays === 'number' ? meta.followUpDays : undefined;
   const base: FileMetadata = {
-    fileId: String(f.fileId ?? crypto.randomUUID()),
-    fileName: String(f.fileName ?? 'Unknown.xlsx'),
-    type: (['masterhouse','hitlist','wins','unvisited'].includes(f.type) ? f.type : 'hitlist') as FileMetadata['type'],
-    count: Number.isFinite(f.count) ? Number(f.count) : 0,
-    name: String(f.name ?? f.fileName ?? 'Unknown.xlsx'),
-    uploadTime: Number.isFinite(f.uploadTime) ? Number(f.uploadTime) : Date.now(),
+    fileId: String(meta.fileId ?? crypto.randomUUID()),
+    fileName: String(meta.fileName ?? 'Unknown.xlsx'),
+    type: (['masterhouse','hitlist','wins','unvisited'].includes(String(meta.type)) ? meta.type : 'hitlist') as FileMetadata['type'],
+    count: typeof meta.count === 'number' && Number.isFinite(meta.count) ? Number(meta.count) : 0,
+    name: String(meta.name ?? meta.fileName ?? 'Unknown.xlsx'),
+    uploadTime: typeof meta.uploadTime === 'number' && Number.isFinite(meta.uploadTime) ? Number(meta.uploadTime) : Date.now(),
   };
 
-  const hasPriority = typeof f.priorityLevel === 'number';
-  const hasDeadline = typeof f.deadline === 'string' && f.deadline.trim() !== '';
-  const hasFollowup = typeof f.followUpDays === 'number' && f.followUpDays > 0;
+  const hasPriority = typeof priorityLevel === 'number';
+  const hasDeadline = typeof meta.deadline === 'string' && meta.deadline.trim() !== '';
+  const hasFollowup = typeof followUpDays === 'number' && followUpDays > 0;
 
   if (hasPriority) {
     return { 
       ...base, 
       schedulingMode: 'priority', 
-      priorityLevel: f.priorityLevel, 
-      priority: f.priorityLevel,
+      priorityLevel: priorityLevel, 
+      priority: priorityLevel,
       type: 'hitlist' 
     };
   }
@@ -27,7 +33,7 @@ export function normalizeFileMetadata(f: any): FileMetadata {
     return { 
       ...base, 
       schedulingMode: 'deadline', 
-      deadline: String(f.deadline), 
+      deadline: String(meta.deadline), 
       type: 'hitlist' 
     };
   }
@@ -35,7 +41,7 @@ export function normalizeFileMetadata(f: any): FileMetadata {
     return { 
       ...base, 
       schedulingMode: 'followup', 
-      followUpDays: Number(f.followUpDays), 
+      followUpDays: Number(followUpDays), 
       type: 'wins' 
     };
   }

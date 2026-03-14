@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { Pub } from "../context/PubDataContext";
+import type { Pub } from "../context/PubDataContext";
 import { toArray } from "../utils/typeGuards";
 import { parsePostcode } from "../utils/postcodeUtils";
 import PostcodeFixesDialog, {
@@ -109,13 +109,13 @@ const RepStatsPanel: React.FC = () => {
   };
 
   const getListEntries = (pub: Pub) => {
-    const sources: Array<{ fileName?: string; listName?: string }> = Array.isArray((pub as any).sources)
-      ? (pub as any).sources
-      : [];
-    if (sources.length > 0) {
-      return sources.map((source) => ({
-        fileName: source.fileName ?? source.listName ?? pub.fileName,
+    if (pub.sources?.length) {
+      return pub.sources.map((source) => ({
+        fileName: source.fileName ?? pub.fileName,
       }));
+    }
+    if (pub.sourceLists?.length) {
+      return pub.sourceLists.map((fileName) => ({ fileName }));
     }
     return [{ fileName: pub.fileName }];
   };
@@ -320,7 +320,7 @@ const RepStatsPanel: React.FC = () => {
     ([aLabel], [bLabel]) => getDriverRank(aLabel) - getDriverRank(bLabel)
   );
 
-  const getStatusColor = (stat: any) => {
+  const getStatusColor = (stat: StatInfo | null) => {
     if (!stat) return "";
     if (stat.isExhausted)
       return "bg-green-900/20 border-green-700/50 text-green-200";
@@ -329,7 +329,7 @@ const RepStatsPanel: React.FC = () => {
     return "bg-yellow-900/20 border-yellow-700/50 text-yellow-200";
   };
 
-  const getStatusIcon = (stat: any) => {
+  const getStatusIcon = (stat: StatInfo | null) => {
     if (!stat) return null;
     if (stat.isExhausted)
       return <CheckCircle2 className="h-4 w-4 text-green-400" />;
@@ -338,10 +338,10 @@ const RepStatsPanel: React.FC = () => {
     return <AlertTriangle className="h-4 w-4 text-yellow-400" />;
   };
 
-  const getStatusMessage = (stat: any) => {
+  const getStatusMessage = (stat: StatInfo | null) => {
     if (!stat) return "";
 
-    let scheduledText = stat.isExhausted
+    const scheduledText = stat.isExhausted
       ? `All ${stat.total} scheduled`
       : stat.scheduled === 0
       ? "None scheduled"

@@ -1,64 +1,31 @@
-# IC Journey Planner
+# IC Journey Planner — Architecture Docs
 
-This repository is documented via canonical files in `/docs`.
+For project setup, stack overview, and getting started, see the [root README](../../README.md).
 
-## Start Here
+---
 
-- `SYSTEM.md` → What the system does today (facts, mechanics, current behavior)
-- `PRD.md` → What the system should do (future intent, roadmap, principles)
-- `ISSUES.md` → Known problems / inconsistencies / TODOs
-- `CODEX_RULES.md` → How AI + tooling should behave
-- `README.md` → Entry point / map / signposting
-- `PROJECT_SUMMARY.md` → temporarily retained as a working consolidation reference, then archived
+## Canonical documentation files
 
-README is intentionally minimal.
+| File | Purpose |
+|------|---------|
+| [`CODEX_RULES.md`](CODEX_RULES.md) | Operating rules for AI-assisted and human development — read first |
+| [`SYSTEM.md`](SYSTEM.md) | Current code-backed behaviour (as-is) |
+| [`PRD.md`](PRD.md) | Intended product behaviour and scheduling semantics |
+| [`ISSUES.md`](ISSUES.md) | Source-of-truth issue ledger |
+| [`PROJECT_SUMMARY.md`](PROJECT_SUMMARY.md) | High-level orientation summary |
+| [`../audits/TRIAGE_TASKLIST.md`](../audits/TRIAGE_TASKLIST.md) | Active execution queue |
 
-# Code Audits
+## Deferred / archived docs (do not edit)
 
-This directory contains outputs and documentation from code quality audits and analysis tools.
+- [`BRANCH_SUMMARY_feat-api-google-places.md`](BRANCH_SUMMARY_feat-api-google-places.md) — paused Google Places branch notes
+- [`followup-by-date.md`](followup-by-date.md) — deferred follow-up scheduling design
 
-## Tools
+## Audit artifacts
 
-### Knip
+- JSCPD clone report: `docs/audits/JSCPD/html/index.html`
+- Canonical ESLint report: `docs/audits/knip_lint/eslint_report_latest.txt`
 
-**Purpose**: Detects unused files, dependencies, exports, and types in the codebase.
+## Link hygiene
 
-**Latest Output**: `knip/knip-2026-01-14-entryfix.txt`
-
-**How to Run**: See [TRIAGE_TASKLIST.md](./TRIAGE_TASKLIST.md#how-to-re-run-audits)
-
-### JSCPD
-
-**Purpose**: Detects code duplication (copy-paste detection) across the codebase.
-
-**Latest Report**: `JSCPD/html/index.html` (open in browser)
-
-**JSON Report**: `JSCPD/html/jscpd-report.json`
-
-**How to Run**: See [TRIAGE_TASKLIST.md](./TRIAGE_TASKLIST.md#how-to-re-run-audits)
-
-## Documentation
-
-- **[TRIAGE_TASKLIST.md](./TRIAGE_TASKLIST.md)** - Current audit findings, triage plan, and action items
-
-## Directory Structure
-
-```
-docs/audits/
-├── README.md                    # This file
-├── TRIAGE_TASKLIST.md          # Triage plan and findings
-├── knip/                       # Knip audit outputs
-│   ├── knip-2026-01-14-entryfix.txt
-│   └── knip-2026-01-14-tsconfig.txt
-└── JSCPD/                      # JSCPD duplicate detection reports
-    └── html/
-        ├── index.html          # HTML report (open in browser)
-        ├── jscpd-report.json  # JSON report
-        └── [assets]
-```
-
-## Quick Links
-
-- [View Triage Plan](./TRIAGE_TASKLIST.md)
-- [View JSCPD HTML Report](./JSCPD/html/index.html)
-- [View Latest Knip Output](./knip/knip-2026-01-14-entryfix.txt)
+- Reference issues by slug from `ISSUES.md`
+- Keep execution detail in `TRIAGE_TASKLIST.md`, not duplicated in summary docs

@@ -83,6 +83,7 @@ const BUSINESS_HOURS_DISTRIBUTION: BusinessHours[] = [
 
 // Function to get business hours for a pub based on its index
 const getPubBusinessHours = (_pubIndex: number): BusinessHours => {
+  void _pubIndex;
   const random = Math.random() * 100;
   if (random < 75) return BUSINESS_HOURS_DISTRIBUTION[0];
   if (random < 85) return BUSINESS_HOURS_DISTRIBUTION[1];
@@ -311,13 +312,19 @@ const DriveTimeBar: React.FC<DriveTimeBarProps> = ({
     return time;
   };
 
+  const getOptimizedTime = (visit: Visit): string | undefined => {
+    const candidate = (visit as unknown as Record<string, unknown>).optimizedTime;
+    return typeof candidate === "string" ? candidate : undefined;
+  };
+
   // Sort visits to match list view order
   const sortedVisits = [...visits]; // Keep original list view order
 
   const getVisitTime = (visit: Visit): Date => {
     // For any visit with an optimized time in the list view, use that exact time
-    if ((visit as any).optimizedTime) {
-      return getTimeFromString((visit as any).optimizedTime);
+    const optimizedTime = getOptimizedTime(visit);
+    if (optimizedTime) {
+      return getTimeFromString(optimizedTime);
     }
 
     // For scheduled visits, use their explicit time

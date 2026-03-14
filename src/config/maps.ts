@@ -1,6 +1,39 @@
 // Placeholder Maps Service
 import { devLog } from "../utils/devLog";
 
+type GeocodeStatus = "OK";
+
+interface GeocodeRequest {
+  address?: string;
+  location?: { lat: number; lng: number };
+  region?: string;
+  componentRestrictions?: { country?: string };
+}
+
+interface GeocodeResult {
+  formatted_address?: string;
+  geometry?: {
+    location?: { lat: number; lng: number };
+  };
+}
+
+interface Geocoder {
+  geocode: (
+    request: GeocodeRequest,
+    callback: (results: GeocodeResult[], status: GeocodeStatus) => void
+  ) => void;
+}
+
+interface PlaceDetails {
+  isOpen: boolean;
+  openNow: boolean;
+  openingHours: string[];
+  currentPeriod: {
+    open: string;
+    close: string;
+  };
+}
+
 class MapsService {
   private static instance: MapsService;
   private initialized = false;
@@ -24,17 +57,18 @@ class MapsService {
     return Promise.resolve();
   }
 
-  getGeocoder(): any {
+  getGeocoder(): Geocoder {
     // Return a mock geocoder for now
     return {
-      geocode: (_request: any, callback: (results: any, status: string) => void) => {
+      geocode: (_request: GeocodeRequest, callback) => {
         // Mock successful geocoding
         callback([], "OK");
-      }
+      },
     };
   }
 
-  getPlaceDetails(_query: string) {
+  getPlaceDetails(_query: string): PlaceDetails {
+    void _query;
     return {
       isOpen: true,
       openNow: true,

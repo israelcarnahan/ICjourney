@@ -5,7 +5,7 @@ import { Upload, AlertCircle, Info } from "lucide-react";
 import clsx from "clsx";
 import * as Dialog from "@radix-ui/react-dialog";
 
-import type { ListType, Pub } from "../context/PubDataContext";
+import type { FileMetadata, ListType, Pub } from "../context/PubDataContext";
 import { usePubData } from "../context/PubDataContext";
 import { mapsService } from "../config/maps";
 
@@ -34,10 +34,12 @@ type ImportedRow = {
   notes?: string;
 };
 
+type RawRow = Record<string, unknown>;
+
 type ProcessedImport = {
   rows: ImportedRow[];
   mappedRows: MappedRow[];
-  rawRows: Record<string, any>[];
+  rawRows: RawRow[];
   headers: string[];
 };
 
@@ -92,7 +94,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   const [showDedupDialog, setShowDedupDialog] = useState(false);
   const [dedupSuggestions, setDedupSuggestions] = useState<{ autoMerge: Suggestion[]; needsReview: Suggestion[] }>({ autoMerge: [], needsReview: [] });
   const [pendingPubs, setPendingPubs] = useState<Pub[]>([]);
-  const [pendingFile, setPendingFile] = useState<any>(null);
+  const [pendingFile, setPendingFile] = useState<FileMetadata | null>(null);
   const [hasPendingDedup, setHasPendingDedup] = useState(false);
   const [pendingRowIndices, setPendingRowIndices] = useState<Record<string, number>>({});
   const [showFollowupBlocked, setShowFollowupBlocked] = useState(false);
@@ -121,17 +123,17 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     }
   };
 
-  function coerceNumber(val: any): number | null {
-    const n = Number(String(val ?? "").replace(/[^\d.-]/g, ""));
-    return Number.isFinite(n) ? n : null;
-  }
-
-  function mapRowToCanonical(row: Record<string, any>, mapping: ColumnMapping): MappedRow {
+  const mapRowToCanonical = useCallback((row: RawRow, mapping: ColumnMapping): MappedRow => {
     const pick = (field: keyof ColumnMapping) => {
       const src = mapping[field];
       if (!src) return null;
       const v = row[src];
       return typeof v === "string" ? v.trim() : (v ?? null);
+    };
+
+    const coerceNumber = (val: unknown): number | null => {
+      const n = Number(String(val ?? "").replace(/[^\d.-]/g, ""));
+      return Number.isFinite(n) ? n : null;
     };
 
     const used = new Set(Object.values(mapping).filter(Boolean) as string[]);
@@ -149,15 +151,17 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       extras: {},
     };
 
+    out.extras = out.extras ?? {};
+
     // keep anything the user didn’t map (so we never lose columns)
     for (const [k, v] of Object.entries(row)) {
       const key = String(k).trim().toLowerCase();
-      if (!used.has(key)) (out.extras as any)[key] = v;
+      if (!used.has(key)) out.extras[key] = v;
     }
     return out;
-  }
+  }, []);
 
-  async function waitForMapping(headers: string[]): Promise<ColumnMapping> {
+  const waitForMapping = useCallback(async (headers: string[]): Promise<ColumnMapping> => {
     const sig: HeaderSignature = { headers };
     setSourceHeaders(headers);
     setStoredForWizard(loadMapping(sig) ?? null);
@@ -168,9 +172,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     return new Promise<ColumnMapping>((resolve) => {
       resolverRef.current = resolve;
     });
-  }
+  }, [loadMapping, showTypeDialog]);
 
-  const runGeocoderSmokeTest = async (rows: ImportedRow[]): Promise<void> => {
+  const runGeocoderSmokeTest = useCallback(async (rows: ImportedRow[]): Promise<void> => {
     // Optional smoke test; never blocks import.
     try {
       if (!mapsService.isInitialized()) await mapsService.initialize();
@@ -187,9 +191,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     } catch {
       /* non-fatal */
     }
-  };
+  }, []);
 
-  const collectPostcodeIssues = (processed: ProcessedImport): PostcodeIssueRow[] => {
+  const collectPostcodeIssues = useCallback((processed: ProcessedImport): PostcodeIssueRow[] => {
     return processed.rows
       .map((row, index) => {
         const parsed = parsePostcode(row.zip);
@@ -202,7 +206,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         };
       })
       .filter((issue) => issue.parsed.status !== "OK");
-  };
+  }, []);
 
   const applyPostcodeDecisions = (
     processed: ProcessedImport,
@@ -213,7 +217,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
     const nextRows: ImportedRow[] = [];
     const nextMapped: MappedRow[] = [];
-    const nextRaw: Record<string, any>[] = [];
+    const nextRaw: RawRow[] = [];
 
     processed.rows.forEach((row, index) => {
       const decision = decisionMap.get(index);
@@ -258,7 +262,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
   const intentDisplay = pendingImportMeta ? buildIntentLabel(pendingImportMeta) : null;
 
-  const commitImport = (
+  const commitImport = useCallback((
     processed: ProcessedImport,
     meta: PendingImportMeta
   ) => {
@@ -443,9 +447,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
     setIsFileLoaded(false);
     setShowDetails(false);
-  };
+  }, [setUserFiles]);
 
-  const resetPendingImportState = () => {
+  const resetPendingImportState = useCallback(() => {
     setPendingImport(null);
     setPendingImportMeta(null);
     setPostcodeIssues([]);
@@ -454,7 +458,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     setProcessedPubs([]);
     setCurrentFileName("");
     setIsProcessing(false);
-  };
+  }, []);
 
   const handlePostcodeReviewConfirm = (decisions: PostcodeReviewDecision[]) => {
     if (!pendingImport || !pendingImportMeta) {
@@ -482,7 +486,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   };
 
   // ---------- main parse + map flow ----------
-  const processExcelFile = async (buffer: ArrayBuffer): Promise<ProcessedImport> => {
+  const processExcelFile = useCallback(async (buffer: ArrayBuffer): Promise<ProcessedImport> => {
     const workbook = XLSX.read(buffer, { type: "array" });
     if (!workbook?.SheetNames?.length) throw new Error("Invalid Excel file format");
 
@@ -494,15 +498,15 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       raw: false,
       defval: "",
       blankrows: false,
-    }) as any[][];
+    }) as unknown[][];
 
     if (raw.length < 2) throw new Error("File must contain a header row and at least one data row");
 
-    const headerRow = (raw[0] ?? []).map((h: any) => String(h ?? "").trim().toLowerCase());
+    const headerRow = (raw[0] ?? []).map((h) => String(h ?? "").trim().toLowerCase());
     const bodyRows = raw.slice(1);
 
-    const rowObjects: Record<string, any>[] = bodyRows.map((arr) => {
-      const obj: Record<string, any> = {};
+    const rowObjects: RawRow[] = bodyRows.map((arr) => {
+      const obj: RawRow = {};
       headerRow.forEach((h, i) => (obj[h] = arr[i]));
       return obj;
     });
@@ -553,7 +557,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       rawRows: filtered.map((r) => rowObjects[r.rowIndex]),
       headers: safeHeaders,
     };
-  };
+  }, [mapRowToCanonical, setError, waitForMapping]);
 
   // ---------- drop handler ----------
   const onDrop = useCallback(
@@ -616,7 +620,17 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       };
       reader.readAsArrayBuffer(file);
     },
-    [isDisabled, isProcessing, showMapping, fileType, setUserFiles]
+    [
+      isDisabled,
+      isProcessing,
+      showMapping,
+      fileType,
+      processExcelFile,
+      collectPostcodeIssues,
+      runGeocoderSmokeTest,
+      commitImport,
+      resetPendingImportState,
+    ]
   );
 
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
@@ -635,6 +649,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   });
 
   const handleDedupConfirm = (decisions: Array<{ id: string; action: 'merge' | 'skip' }>) => {
+    if (!pendingFile) {
+      setShowDedupDialog(false);
+      return;
+    }
+
     setUserFiles((prev) => {
       const updatedPubs = [...prev.pubs];
       const newPubs: Pub[] = [];

@@ -20,8 +20,8 @@ const toScheduleDay = (d: DaySchedule): ScheduleDay => ({
   visits: toArray(d.visits).map(visit => ({
     ...visit,
     // Preserve sourceLists and schedulingMode from Pub objects
-    sourceLists: (visit as any).sourceLists || [],
-    schedulingMode: (visit as any).schedulingMode || undefined,
+    sourceLists: visit.sourceLists || [],
+    schedulingMode: visit.schedulingMode || undefined,
   })),
   pub: '', // Default empty string for pub field
   arrival: new Date(),
