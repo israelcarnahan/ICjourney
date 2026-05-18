@@ -1,5 +1,9 @@
 # Branch Summary: feat/api-google-places
 
+> **ARCHIVED — do not edit.** This branch is **not merged to main**. `@googlemaps/js-api-loader` is **not in `package.json`**. `GOOGLE_PLACES_KEY` is **not set** in any environment. This doc is reference only for when branch work resumes. See N6 in `docs/audits/TRIAGE_TASKLIST.md`.
+
+---
+
 ## Status
 - **Branch**: `feat/api-google-places`
 - **Status**: Pushed to GitHub (origin/feat/api-google-places)
