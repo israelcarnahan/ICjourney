@@ -136,12 +136,12 @@ icjourney/
 │   ├── types/            # TypeScript type declarations and shims
 │   └── utils/            # Pure utility functions (scheduling, dedup, lineage, etc.)
 ├── docs/
-│   ├── architecture/     # Design docs: SYSTEM, PRD, ISSUES, CODEX_RULES
-│   └── audits/           # Lint reports, JSCPD clone reports, triage task list
+│   ├── architecture/     # Design docs: SYSTEM.md, PRD.md, TRIAGE.md, followup-by-date.md
+│   └── audits/           # Lint reports, JSCPD clone reports
 ├── testFiles/            # Manual test Excel files (not automated tests)
-├── _archive/src/         # Deliberately archived components and utilities
+├── _archive/             # Archived components, utilities, and branch docs
 ├── scripts/              # Node utility scripts (audit-dates, run-schedule)
-├── AI_CONTEXT.md         # AI assistant context file — read at start of every AI session
+├── CLAUDE.md             # AI assistant context + operating rules — read at start of every AI session
 ├── .env.example          # Environment variable template
 └── vite.config.ts        # Vite build and dev-server configuration
 ```
@@ -207,17 +207,14 @@ All design and operational documentation lives in [`docs/architecture/`](docs/ar
 
 | Document | Purpose |
 |----------|---------|
-| [`docs/architecture/CODEX_RULES.md`](docs/architecture/CODEX_RULES.md) | Operating rules for AI-assisted and human development — **read this before any code change** |
+| [`CLAUDE.md`](CLAUDE.md) | AI assistant context + operating rules — **read at start of every AI session** (Claude, Codex, Cursor, etc.) |
 | [`docs/architecture/SYSTEM.md`](docs/architecture/SYSTEM.md) | Current code-backed behaviour (as-is reference) |
 | [`docs/architecture/PRD.md`](docs/architecture/PRD.md) | Intended product behaviour and scheduling semantics |
-| [`docs/architecture/ISSUES.md`](docs/architecture/ISSUES.md) | Source-of-truth issue ledger (bugs, debt, risks) |
-| [`docs/audits/TRIAGE_TASKLIST.md`](docs/audits/TRIAGE_TASKLIST.md) | Active execution queue and attack plan |
-| [`docs/architecture/PROJECT_SUMMARY.md`](docs/architecture/PROJECT_SUMMARY.md) | High-level orientation summary |
-| [`AI_CONTEXT.md`](AI_CONTEXT.md) | Compact context file for AI assistants — load at session start |
+| [`docs/architecture/TRIAGE.md`](docs/architecture/TRIAGE.md) | Single source-of-truth: all issues, tasks, and active attack plan |
 
 ### Deferred / archived docs (do not edit)
 
-- [`docs/architecture/BRANCH_SUMMARY_feat-api-google-places.md`](docs/architecture/BRANCH_SUMMARY_feat-api-google-places.md) — notes for paused Google Places branch
+- [`_archive/BRANCH_SUMMARY_feat-api-google-places.md`](_archive/BRANCH_SUMMARY_feat-api-google-places.md) — notes for paused Google Places branch (**not merged to main**)
 - [`docs/architecture/followup-by-date.md`](docs/architecture/followup-by-date.md) — deferred follow-up scheduling design
 
 ---
@@ -234,7 +231,7 @@ There are currently **34 open issues** tracked in [`docs/architecture/ISSUES.md`
 | `testing-gap-no-automated-suite` | 🔴 High | No automated tests — all validation is manual |
 | `structural-debt-scheduling-duplication` | 🔴 High | Scheduling logic duplicated across utility and display layers |
 
-See [`docs/audits/TRIAGE_TASKLIST.md`](docs/audits/TRIAGE_TASKLIST.md) for the phased attack plan.
+See [`docs/architecture/TRIAGE.md`](docs/architecture/TRIAGE.md) for the phased attack plan.
 
 ### On the roadmap (not yet built)
 

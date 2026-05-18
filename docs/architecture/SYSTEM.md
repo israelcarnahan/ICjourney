@@ -9,9 +9,8 @@ For intended future behavior, see `docs/architecture/PRD.md`.
 
 ## Canonical Docs Routing
 
-- Operating rules: `docs/architecture/CODEX_RULES.md`
-- Issue ledger: `docs/architecture/ISSUES.md`
-- Execution queue: `docs/audits/TRIAGE_TASKLIST.md`
+- Operating rules: `CLAUDE.md`
+- Issues, tasks, and execution queue: `docs/architecture/TRIAGE.md`
 
 ---
 
@@ -93,4 +92,13 @@ For intended future behavior, see `docs/architecture/PRD.md`.
 - Automated test coverage is not established.
 - Main branch still contains transitional boundaries between real endpoints and placeholder services.
 
-Refer to `docs/architecture/ISSUES.md` for tracked severity/status/acceptance criteria.
+Refer to `docs/architecture/TRIAGE.md` for tracked severity, status, and acceptance criteria.
+
+---
+
+## Active Improvement Themes
+
+- Reduce scheduler/orchestration complexity and duplication.
+- Improve deterministic behaviour and fixture-backed validation.
+- Clarify mock vs real boundaries in docs and implementation.
+- All issues and execution queue maintained in `docs/architecture/TRIAGE.md` (single source of truth).
